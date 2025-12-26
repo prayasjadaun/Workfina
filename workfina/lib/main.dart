@@ -24,7 +24,7 @@ class WorkfinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ThemeController()),
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => CandidateController()),
-        ChangeNotifierProvider(create: (_) => HRController()),
+        ChangeNotifierProvider(create: (_) => RecruiterController()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, child) {

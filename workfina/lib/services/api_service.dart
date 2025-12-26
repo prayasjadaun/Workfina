@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = kDebugMode
-      ? 'http://10.140.76.136:8000/api'
-      : 'http://localhost:8000/api';
+  static const String baseUrl = 
+  // kDebugMode
+  //     ? 'http://10.140.76.136:8000/api'
+  //     : 
+      'http://localhost:8000/api';
 
   static late Dio _dio;
   static bool _isRefreshing = false;

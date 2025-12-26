@@ -64,6 +64,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
   ];
 
   void _nextStep() {
+    FocusScope.of(context).unfocus();
     final currentFormKey = _getCurrentFormKey();
     if (currentFormKey?.currentState?.validate() ?? false) {
       // Check resume file on step 4 (resume upload step)
@@ -76,7 +77,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
         );
         return;
       }
-      
+
       if (_currentStep < _totalSteps - 1) {
         setState(() => _currentStep++);
         _pageController.nextPage(
@@ -88,6 +89,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
   }
 
   void _previousStep() {
+    FocusScope.of(context).unfocus();
     if (_currentStep > 0) {
       setState(() => _currentStep--);
       _pageController.previousPage(
@@ -173,29 +175,35 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: Column(
-          children: [
-            // Progress Header
-            _buildProgressHeader(),
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            FocusScope.of(context).unfocus(); // ✅ keyboard close
+          },
+          child: Column(
+            children: [
+              // Progress Header
+              _buildProgressHeader(),
 
-            // Step Content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildStep1(),
-                  _buildStep2(),
-                  _buildStep3(),
-                  _buildStep4(),
-                  _buildStep5(),
-                ],
+              // Step Content
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildStep1(),
+                    _buildStep2(),
+                    _buildStep3(),
+                    _buildStep4(),
+                    _buildStep5(),
+                  ],
+                ),
               ),
-            ),
 
-            // Navigation Buttons
-            _buildNavigationButtons(),
-          ],
+              // Navigation Buttons
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -454,6 +462,8 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
                     label: 'City',
                     icon: Icons.location_city,
                     isRequired: true,
+                    textInputAction: TextInputAction.done,
+                    onDone: _nextStep,
                     validator: (value) =>
                         value?.isEmpty == true ? 'City is required' : null,
                   ),
@@ -498,9 +508,13 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
               child: Column(
                 children: [
                   Icon(
-                    _resumeFile != null ? Icons.check_circle : Icons.cloud_upload_outlined,
+                    _resumeFile != null
+                        ? Icons.check_circle
+                        : Icons.cloud_upload_outlined,
                     size: 64,
-                    color: _resumeFile != null ? const Color(0xFF4CAF50) : const Color(0xFF6B7280),
+                    color: _resumeFile != null
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFF6B7280),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -523,12 +537,19 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     onPressed: _pickResumeFile,
-                    icon: Icon(_resumeFile != null ? Icons.refresh : Icons.upload_file),
-                    label: Text(_resumeFile != null ? 'Change Resume' : 'Choose File'),
+                    icon: Icon(
+                      _resumeFile != null ? Icons.refresh : Icons.upload_file,
+                    ),
+                    label: Text(
+                      _resumeFile != null ? 'Change Resume' : 'Choose File',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4CAF50),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -546,7 +567,11 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Color(0xFF6B7280), size: 20),
+                  const Icon(
+                    Icons.info_outline,
+                    color: Color(0xFF6B7280),
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -600,7 +625,9 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
               ]),
               const SizedBox(height: 16),
               _buildReviewCard('Resume', [
-                _resumeFileName != null ? 'Resume: $_resumeFileName' : 'Resume: Not uploaded',
+                _resumeFileName != null
+                    ? 'Resume: $_resumeFileName'
+                    : 'Resume: Not uploaded',
               ]),
               const SizedBox(height: 24),
               Container(
@@ -710,18 +737,25 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
     String? Function(String?)? validator,
     int maxLines = 1,
     int? maxLength,
+    TextInputAction textInputAction = TextInputAction.next,
+    VoidCallback? onDone,
   }) {
     return TextFormField(
       controller: controller,
+      textInputAction: textInputAction, // ✅
+
+      onFieldSubmitted: (_) {
+        if (textInputAction == TextInputAction.done) {
+          FocusScope.of(context).unfocus(); // ✅ keyboard close
+          onDone?.call(); // optional submit
+        }
+      },
       style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
       decoration: InputDecoration(
         labelText: '$label${isRequired ? ' *' : ''}',
         hintText: hintText,
         floatingLabelBehavior: FloatingLabelBehavior.auto,
-        hintStyle: const TextStyle(
-          color: Color(0xFF374151),
-          fontSize: 16,
-        ),
+        hintStyle: const TextStyle(color: Color(0xFF374151), fontSize: 16),
         labelStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
         prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
         border: OutlineInputBorder(
@@ -762,16 +796,10 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      style: const TextStyle(
-        color: Color(0xFF1A1A1A),
-        fontSize: 16,
-      ),
+      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(
-          color: Color(0xFF6B7280),
-          fontSize: 16,
-        ),
+        labelStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
         prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -795,10 +823,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
               value: item['value'],
               child: Text(
                 item['label']!,
-                style: const TextStyle(
-                  color: Color(0xFF1A1A1A),
-                  fontSize: 16,
-                ),
+                style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
               ),
             ),
           )
