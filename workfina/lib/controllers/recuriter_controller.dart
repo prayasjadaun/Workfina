@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:workfina/services/api_service.dart';
 
-class HRController extends ChangeNotifier {
+class RecruiterController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Map<String, dynamic>? _hrProfile;

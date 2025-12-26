@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 
-class HRSetupScreen extends StatefulWidget {
-  const HRSetupScreen({super.key});
+class RecruiterSetupScreen extends StatefulWidget {
+  const RecruiterSetupScreen({super.key});
 
   @override
-  State<HRSetupScreen> createState() => _HRSetupScreenState();
+  State<RecruiterSetupScreen> createState() => _RecruiterSetupScreenState();
 }
 
-class _HRSetupScreenState extends State<HRSetupScreen> {
+class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
   final int _totalSteps = 3;
@@ -37,6 +37,7 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
   ];
 
   void _nextStep() {
+    FocusScope.of(context).unfocus();
     final currentFormKey = _getCurrentFormKey();
     if (currentFormKey?.currentState?.validate() ?? false) {
       if (_currentStep < _totalSteps - 1) {
@@ -50,6 +51,7 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
   }
 
   void _previousStep() {
+    FocusScope.of(context).unfocus();
     if (_currentStep > 0) {
       setState(() => _currentStep--);
       _pageController.previousPage(
@@ -75,7 +77,7 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => HRController(),
+      create: (_) => RecruiterController(),
       child: Scaffold(
         backgroundColor: const Color(0xFFF8F9FA),
         appBar: AppBar(
@@ -93,23 +95,29 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: Column(
-          children: [
-            // Progress Header
-            _buildProgressHeader(),
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () {
+            FocusScope.of(context).unfocus(); // ✅ keyboard close
+          },
+          child: Column(
+            children: [
+              // Progress Header
+              _buildProgressHeader(),
 
-            // Step Content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [_buildStep1(), _buildStep2(), _buildStep3()],
+              // Step Content
+              Expanded(
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [_buildStep1(), _buildStep2(), _buildStep3()],
+                ),
               ),
-            ),
 
-            // Navigation Buttons
-            _buildNavigationButtons(),
-          ],
+              // Navigation Buttons
+              _buildNavigationButtons(),
+            ],
+          ),
         ),
       ),
     );
@@ -304,6 +312,9 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
               label: 'Company Website',
               icon: Icons.web,
               hintText: 'https://yourcompany.com',
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              onDone: _nextStep,
             ),
           ],
         ),
@@ -510,15 +521,25 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
     String? Function(String?)? validator,
     int maxLines = 1,
     int? maxLength,
+    TextInputAction textInputAction = TextInputAction.next,
+    VoidCallback? onDone,
   }) {
     return TextFormField(
       controller: controller,
+      textInputAction: textInputAction,
+
+      onFieldSubmitted: (_) {
+        if (textInputAction == TextInputAction.done) {
+          FocusScope.of(context).unfocus(); // ✅ keyboard close
+          onDone?.call();
+        }
+      },
       style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
       decoration: InputDecoration(
         labelText: '$label${isRequired ? ' *' : ''}',
         hintText: hintText,
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        hintStyle: const TextStyle(color: Color(0xFF374151)), // Very dark gray
+        hintStyle: const TextStyle(color: Color(0xFF374151)),
         prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -682,7 +703,7 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
           if (_currentStep > 0) const SizedBox(width: 16),
           Expanded(
             flex: 2,
-            child: Consumer<HRController>(
+            child: Consumer<RecruiterController>(
               builder: (context, hrController, child) {
                 return ElevatedButton(
                   onPressed: hrController.isLoading
@@ -730,7 +751,7 @@ class _HRSetupScreenState extends State<HRSetupScreen> {
     );
   }
 
-  Future<void> _submitProfile(HRController hrController) async {
+  Future<void> _submitProfile(RecruiterController hrController) async {
     final success = await hrController.registerHR(
       companyName: _companyNameController.text,
       designation: _designationController.text,
