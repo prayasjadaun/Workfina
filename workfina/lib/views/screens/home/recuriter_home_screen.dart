@@ -5,6 +5,7 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/controllers/theme_controller.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_dashboard.dart';
+import 'package:workfina/views/screens/recuriters/recruiter_wallet_screen.dart';
 
 class RecruiterHomeScreen extends StatefulWidget {
   const RecruiterHomeScreen({super.key});
@@ -29,18 +30,6 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
           ),
           automaticallyImplyLeading: false,
           actions: [
-            Consumer<ThemeController>(
-              builder: (context, themeController, child) {
-                return IconButton(
-                  icon: Icon(
-                    themeController.isDarkMode
-                        ? Icons.light_mode
-                        : Icons.dark_mode,
-                  ),
-                  onPressed: () => themeController.toggleTheme(),
-                );
-              },
-            ),
             IconButton(
               icon: const Icon(Icons.logout),
               onPressed: () => _showLogoutDialog(context),
