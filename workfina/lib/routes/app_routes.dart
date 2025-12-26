@@ -3,13 +3,12 @@ import 'package:workfina/views/screens/auth/email_screen.dart';
 import 'package:workfina/views/screens/auth/login_screen.dart';
 import 'package:workfina/views/screens/auth/otp_screen.dart';
 import 'package:workfina/views/screens/auth/create_account_screen.dart';
-import 'package:workfina/views/screens/candidates/candidate_dashboard.dart';
 import 'package:workfina/views/screens/candidates/candidate_setup_screen.dart';
+import 'package:workfina/views/screens/home/candidate_home_screen.dart';
 import 'package:workfina/views/screens/home/recuriter_home_screen.dart';
 import 'package:workfina/views/screens/recuriters/recuriter_setup_screen.dart';
 import 'package:workfina/views/screens/splash_screen.dart';
 import 'package:workfina/views/screens/role/role_selection_screen.dart';
-import 'package:workfina/views/screens/home/candidate_home_screen.dart';
 
 class AppRoutes {
   static const String splash = '/splash';
@@ -34,7 +33,7 @@ class AppRoutes {
       roleSelection: (context) => const RoleSelectionScreen(),
       candidateSetup: (context) => const CandidateSetupScreen(),
       hrSetup: (context) => const RecruiterSetupScreen(),
-      candidateHome: (context) => const CandidateDashboard(),
+      candidateHome: (context) => const CandidateHomeScreen(),
       hrHome: (context) => const RecruiterHomeScreen(),
     };
   }
