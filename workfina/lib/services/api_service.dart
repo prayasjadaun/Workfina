@@ -5,10 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 
-  // kDebugMode
-  //     ? 'http://10.140.76.136:8000/api'
-  //     : 
+  static const String baseUrl =
+      // kDebugMode
+      //     ? 'http://10.140.76.136:8000/api'
+      //     :
       'http://localhost:8000/api';
 
   static late Dio _dio;
@@ -18,7 +18,7 @@ class ApiService {
     _dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 60), 
+        connectTimeout: const Duration(seconds: 60),
         receiveTimeout: const Duration(seconds: 60),
         sendTimeout: const Duration(seconds: 60),
         headers: {
@@ -31,19 +31,51 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (!await isTokenValid()) {
+            try {
+              await refreshToken();
+            } catch (e) {
+              // Token refresh failed, logout user
+              await logout();
+              // Clear token from this request
+              options.headers.remove('Authorization');
+              handler.next(options);
+              return;
+            }
+          }
+
           final token = await getAccessToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           if (kDebugMode) {
             print('[DEBUG] ${options.method} $baseUrl${options.path}');
+            print('[DEBUG] Request Headers: ${options.headers}');
+            if (options.data != null) {
+              print('[DEBUG] Request Data: ${options.data}');
+            }
+            if (options.queryParameters.isNotEmpty) {
+              print('[DEBUG] Query Parameters: ${options.queryParameters}');
+            }
           }
           handler.next(options);
+        },
+        onResponse: (response, handler) async {
+          if (kDebugMode) {
+            print('[DEBUG] Response Status: ${response.statusCode}');
+            print('[DEBUG] Response Data: ${response.data}');
+          }
+          handler.next(response);
         },
         onError: (DioException e, handler) async {
           if (kDebugMode) {
             print('[DEBUG] API Error: ${e.message}');
+            print(
+              '[DEBUG] Request: ${e.requestOptions.method} ${e.requestOptions.path}',
+            );
+            print('[DEBUG] Request Data: ${e.requestOptions.data}');
             print('[DEBUG] Response: ${e.response?.data}');
+            print('[DEBUG] Status Code: ${e.response?.statusCode}');
           }
 
           if (e.response?.statusCode == 401 && !_isRefreshing) {
@@ -102,6 +134,29 @@ class ApiService {
     }
   }
 
+  // Add this helper method after getRefreshToken()
+  static Future<bool> isTokenValid() async {
+    final token = await getAccessToken();
+    if (token == null) return false;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      final payload = json.decode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+
+      final exp = payload['exp'] as int;
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+      // Token expires in less than 30 seconds, consider it invalid
+      return exp > (now + 30);
+    } catch (e) {
+      return false;
+    }
+  }
+
   static Future<void> saveTokens(
     String accessToken,
     String refreshToken,
@@ -148,6 +203,9 @@ class ApiService {
         '/auth/send-otp/',
         data: {'email': email},
       );
+      if (kDebugMode) {
+        print('[DEBUG] OTP Response: ${response.data}');
+      }
       return response.data;
     } on DioException catch (e) {
       if (kDebugMode) {
@@ -200,6 +258,9 @@ class ApiService {
         '/auth/verify-otp/',
         data: {'email': email, 'otp': otp},
       );
+      if (kDebugMode) {
+        print('[DEBUG] Verify OTP Response: ${response.data}');
+      }
       return response.data;
     } on DioException catch (e) {
       // Handle complex validation errors
@@ -249,6 +310,10 @@ class ApiService {
           'confirm_password': confirmPassword,
         },
       );
+
+      if (kDebugMode) {
+        print('[DEBUG] Create Account Response: ${response.data}');
+      }
 
       if (response.data['access'] != null) {
         await saveTokens(
@@ -435,6 +500,9 @@ class ApiService {
         data: {'role': role},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
+      if (kDebugMode) {
+        print('[DEBUG] Update Role Success');
+      }
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Failed to update role');
     }
@@ -516,6 +584,13 @@ class ApiService {
           ),
       });
 
+      if (kDebugMode) {
+        print('[DEBUG] Register Candidate FormData: ${formData.fields}');
+        if (resumeFile != null) {
+          print('[DEBUG] Resume file: ${resumeFile.path}');
+        }
+      }
+
       final response = await _dio.post(
         '/candidates/register/',
         data: formData,
@@ -526,6 +601,11 @@ class ApiService {
           },
         ),
       );
+
+      if (kDebugMode) {
+        print('[DEBUG] Register Candidate Response: ${response.data}');
+      }
+
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Registration failed'};
@@ -533,6 +613,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> registerRecruiter({
+    required String fullName, // ✅ ADD THIS LINE
     required String companyName,
     required String designation,
     required String phone,
@@ -543,6 +624,7 @@ class ApiService {
       final response = await _dio.post(
         '/recruiters/register/',
         data: {
+          'full_name': fullName, // ✅ ADD THIS LINE
           'company_name': companyName,
           'designation': designation,
           'phone': phone,
@@ -550,6 +632,11 @@ class ApiService {
           'company_size': companySize,
         },
       );
+
+      if (kDebugMode) {
+        print('[DEBUG] Register Recruiter Response: ${response.data}');
+      }
+
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Registration failed'};
@@ -559,6 +646,15 @@ class ApiService {
   static Future<Map<String, dynamic>> getRecruiterProfile() async {
     try {
       final response = await _dio.get('/recruiters/profile/');
+      return response.data;
+    } on DioException catch (e) {
+      return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getCandidateProfile() async {
+    try {
+      final response = await _dio.get('/candidates/profile/');
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
@@ -598,9 +694,12 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> unlockCandidate(int candidateId) async {
+  static Future<Map<String, dynamic>> unlockCandidate(String candidateId) async {
     try {
       final response = await _dio.post('/candidates/$candidateId/unlock/');
+      if (kDebugMode) {
+        print('[DEBUG] Unlock Candidate Response: ${response.data}');
+      }
       return response.data;
     } on DioException catch (e) {
       return {
@@ -639,6 +738,9 @@ class ApiService {
         '/wallet/recharge/',
         data: {'credits': credits, 'payment_reference': paymentReference},
       );
+      if (kDebugMode) {
+        print('[DEBUG] Recharge Wallet Response: ${response.data}');
+      }
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Recharge failed'};

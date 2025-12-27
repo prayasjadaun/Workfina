@@ -68,6 +68,36 @@ class CandidateListView(generics.ListAPIView):
             
         return queryset
 
+    def get_serializer(self, *args, **kwargs):
+        # Get unlocked candidate IDs for current HR user
+        unlocked_ids = UnlockHistory.objects.filter(
+            hr_user=self.request.user
+        ).values_list('candidate_id', flat=True)
+        
+        # Use different serializers based on unlock status
+        if hasattr(self, 'object_list'):
+            serialized_data = []
+            for candidate in self.object_list:
+                if candidate.id in unlocked_ids:
+                    serializer = FullCandidateSerializer(candidate)
+                else:
+                    serializer = MaskedCandidateSerializer(candidate)
+                serialized_data.append(serializer.data)
+            return serialized_data
+        
+        return super().get_serializer(*args, **kwargs)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        self.object_list = queryset
+        serializer_data = self.get_serializer()
+        return Response(serializer_data)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def unlock_candidate(request, candidate_id):
@@ -108,6 +138,7 @@ def unlock_candidate(request, candidate_id):
             
             # Deduct credits
             wallet.balance -= credits_required
+            wallet.total_spent += credits_required
             wallet.save()
             
             # Create unlock history
@@ -150,18 +181,46 @@ def unlock_candidate(request, candidate_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_unlocked_candidates(request):
-    """Get list of candidate IDs that HR user has already unlocked"""
+    """Get list of unlocked candidates with full data for HR user"""
     
     if request.user.role != 'hr':
         return Response({
             'error': 'Only HR users can access this'
         }, status=status.HTTP_403_FORBIDDEN)
     
-    unlocked_ids = UnlockHistory.objects.filter(
+    unlocked_histories = UnlockHistory.objects.filter(
         hr_user=request.user
-    ).values_list('candidate_id', flat=True)
+    ).select_related('candidate')
+    
+    unlocked_candidates = []
+    for history in unlocked_histories:
+        candidate = history.candidate
+        serializer = FullCandidateSerializer(candidate)
+        candidate_data = serializer.data
+        candidate_data['credits_used'] = history.credits_used
+        unlocked_candidates.append(candidate_data)
     
     return Response({
         'success': True,
-        'unlocked_candidate_ids': list(unlocked_ids)
+        'unlocked_candidates': unlocked_candidates
     })
+    
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_candidate_profile(request):
+    """Get candidate's own profile"""
+    
+    if request.user.role != 'candidate':
+        return Response({
+            'error': 'Only candidates can access this'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        candidate = Candidate.objects.get(user=request.user)
+        serializer = FullCandidateSerializer(candidate)
+        return Response(serializer.data)
+    except Candidate.DoesNotExist:
+        return Response({
+            'error': 'Profile not found'
+        }, status=status.HTTP_404_NOT_FOUND)

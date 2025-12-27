@@ -4,9 +4,6 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 
-
-
-
 class RecruiterCandidate extends StatefulWidget {
   final ValueChanged<int>? onSwitchToWallet;
   const RecruiterCandidate({super.key, this.onSwitchToWallet});
@@ -19,15 +16,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRole = 'All';
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final hrController = context.read<RecruiterController>();
-      hrController.loadUnlockedCandidates(); // Add this line
-      hrController.loadCandidates();
-    });
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -139,6 +128,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate> {
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ),
+
                           if (isUnlocked)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -181,17 +171,39 @@ class _RecruiterCandidateState extends State<RecruiterCandidate> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
               children: [
-                Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-                Text(' ${candidate['city']}'),
-                const SizedBox(width: 16),
-                Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                Text(' ${candidate['age']} years'),
-                if (isUnlocked && candidate['phone'] != null) ...[
-                  const SizedBox(width: 16),
-                  Icon(Icons.phone, size: 16, color: Colors.grey[600]),
-                  Text(' ${candidate['phone']}'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+                    Text(' ${candidate['city']}'),
+                  ],
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.person, size: 16, color: Colors.grey[600]),
+                    Text(' ${candidate['age']} years'),
+                  ],
+                ),
+                if (isUnlocked) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.phone, size: 16, color: Colors.grey[600]),
+                      Text(' ${candidate['phone'] ?? 'N/A'}'),
+                    ],
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.email, size: 16, color: Colors.grey[600]),
+                      Flexible(child: Text(' ${candidate['email'] ?? 'N/A'}')),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -237,22 +249,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate> {
                 ElevatedButton(
                   onPressed: isUnlocked
                       ? () {
-                          final result = hrController.unlockCandidate(
-                            candidate['id'],
-                          );
-                          result.then((res) {
-                            if (res != null && context.mounted) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CandidateDetailScreen(
-                                    candidate: res['candidate'],
-                                    isAlreadyUnlocked: true,
-                                  ),
-                                ),
-                              );
-                            }
-                          });
+                          _navigateToDetail(context, candidate, true);
                         }
                       : canAffordUnlock
                       ? () => _unlockCandidate(context, candidate, hrController)
@@ -274,7 +271,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate> {
       ),
     );
   }
-
 
   void _navigateToDetail(
     BuildContext context,

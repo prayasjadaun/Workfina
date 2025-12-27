@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 
-
-
 class RecruiterWalletScreen extends StatefulWidget {
   const RecruiterWalletScreen({super.key});
 
@@ -13,13 +11,13 @@ class RecruiterWalletScreen extends StatefulWidget {
 }
 
 class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
+  
   @override
   void initState() {
     super.initState();
+    // Remove all API calls - already loaded by parent
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final hrController = context.read<RecruiterController>();
-      hrController.loadWalletBalance();
-      hrController.loadTransactions();
+      context.read<RecruiterController>().loadTransactions();
     });
   }
 
@@ -83,11 +81,16 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'Transaction History',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Transaction History',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 if (hrController.transactions.isEmpty)
@@ -140,7 +143,10 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
     );
   }
 
-  void _showRechargeDialog(BuildContext context, RecruiterController hrController) {
+  void _showRechargeDialog(
+    BuildContext context,
+    RecruiterController hrController,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

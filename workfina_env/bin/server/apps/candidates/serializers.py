@@ -35,6 +35,7 @@ class FullCandidateSerializer(serializers.ModelSerializer):
     
     skills_list = serializers.SerializerMethodField()
     email = serializers.CharField(source='user.email', read_only=True)
+    credits_used = serializers.IntegerField(read_only=True, required=False)
     
     class Meta:
         model = Candidate
@@ -42,7 +43,7 @@ class FullCandidateSerializer(serializers.ModelSerializer):
             'id', 'full_name', 'email', 'phone', 'age',
             'role', 'experience_years', 'current_ctc', 'expected_ctc',
             'religion', 'country', 'state', 'city',
-            'education', 'skills', 'skills_list', 'resume'
+            'education', 'skills', 'skills_list', 'resume', 'credits_used'
         ]
     
     def get_skills_list(self, obj):
