@@ -18,6 +18,7 @@ db.sqlite3
 env/
 venv/
 workfina_env/
+backend/workfina_env/
 
 # Django static & media (agar ho)
 staticfiles/
