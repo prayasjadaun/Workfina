@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:workfina/theme/app_theme.dart';
 
 class CandidateDetailScreen extends StatelessWidget {
@@ -70,67 +73,51 @@ class CandidateDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Professional Details
-              _buildSectionCard(
-                context,
-                'Professional Details',
-                Icons.work,
-                [
-                  _buildInfoRow('Role', candidate['role'] ?? 'N/A'),
-                  _buildInfoRow('Experience', '${candidate['experience_years'] ?? 0} years'),
-                  if (candidate['current_ctc'] != null)
-                    _buildInfoRow('Current CTC', '₹${candidate['current_ctc']}'),
-                  if (candidate['expected_ctc'] != null)
-                    _buildInfoRow('Expected CTC', '₹${candidate['expected_ctc']}'),
-                ],
-              ),
+              _buildSectionCard(context, 'Professional Details', Icons.work, [
+                _buildInfoRow('Role', candidate['role'] ?? 'N/A'),
+                _buildInfoRow(
+                  'Experience',
+                  '${candidate['experience_years'] ?? 0} years',
+                ),
+                if (candidate['current_ctc'] != null)
+                  _buildInfoRow('Current CTC', '₹${candidate['current_ctc']}'),
+                if (candidate['expected_ctc'] != null)
+                  _buildInfoRow(
+                    'Expected CTC',
+                    '₹${candidate['expected_ctc']}',
+                  ),
+              ]),
               const SizedBox(height: 16),
 
               // Personal Details
-              _buildSectionCard(
-                context,
-                'Personal Details',
-                Icons.person,
-                [
-                  _buildInfoRow('Age', '${candidate['age'] ?? 'N/A'} years'),
-                  if (candidate['religion'] != null)
-                    _buildInfoRow('Religion', candidate['religion']),
-                ],
-              ),
+              _buildSectionCard(context, 'Personal Details', Icons.person, [
+                _buildInfoRow('Age', '${candidate['age'] ?? 'N/A'} years'),
+                if (candidate['religion'] != null)
+                  _buildInfoRow('Religion', candidate['religion']),
+              ]),
               const SizedBox(height: 16),
 
               // Location
-              _buildSectionCard(
-                context,
-                'Location',
-                Icons.location_on,
-                [
-                  _buildInfoRow('City', candidate['city'] ?? 'N/A'),
-                  _buildInfoRow('State', candidate['state'] ?? 'N/A'),
-                  _buildInfoRow('Country', candidate['country'] ?? 'India'),
-                ],
-              ),
+              _buildSectionCard(context, 'Location', Icons.location_on, [
+                _buildInfoRow('City', candidate['city'] ?? 'N/A'),
+                _buildInfoRow('State', candidate['state'] ?? 'N/A'),
+                _buildInfoRow('Country', candidate['country'] ?? 'India'),
+              ]),
               const SizedBox(height: 16),
 
               // Education
               if (candidate['education'] != null)
-                _buildSectionCard(
-                  context,
-                  'Education',
-                  Icons.school,
-                  [
-                    _buildInfoText(candidate['education']),
-                  ],
-                ),
+                _buildSectionCard(context, 'Education', Icons.school, [
+                  _buildInfoText(candidate['education']),
+                ]),
               const SizedBox(height: 16),
 
               // Skills
-              if (candidate['skills'] != null)
-                _buildSkillsCard(context),
+              if (candidate['skills'] != null) _buildSkillsCard(context),
               const SizedBox(height: 16),
 
               // Resume
-              if (candidate['resume'] != null)
-                _buildResumeCard(context),
+              if (candidate['resume'] != null) _buildResumeCard(context),
             ],
           ),
         ),
@@ -166,17 +153,14 @@ class CandidateDetailScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             candidate['full_name'] ?? candidate['masked_name'] ?? 'Unknown',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             candidate['role'] ?? 'N/A',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 16),
           ),
         ],
       ),
@@ -206,9 +190,9 @@ class CandidateDetailScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -247,10 +231,7 @@ class CandidateDetailScreen extends StatelessWidget {
   }
 
   Widget _buildInfoText(String text) {
-    return Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.w500),
-    );
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.w500));
   }
 
   Widget _buildSkillsCard(BuildContext context) {
@@ -272,9 +253,9 @@ class CandidateDetailScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Skills',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -283,26 +264,28 @@ class CandidateDetailScreen extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: skills
-                .map<Widget>((skill) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                .map<Widget>(
+                  (skill) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppTheme.secondaryBlue.withOpacity(0.3),
                       ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryBlue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppTheme.secondaryBlue.withOpacity(0.3),
-                        ),
+                    ),
+                    child: Text(
+                      skill.trim(),
+                      style: TextStyle(
+                        color: AppTheme.secondaryBlue,
+                        fontWeight: FontWeight.w500,
                       ),
-                      child: Text(
-                        skill.trim(),
-                        style: TextStyle(
-                          color: AppTheme.secondaryBlue,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -328,20 +311,44 @@ class CandidateDetailScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Resume',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Implement resume download
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Resume download not implemented')),
-              );
-            },
+            onPressed: candidate['resume'] != null
+                ? () async {
+                    try {
+                      final baseUrl = 'http://localhost:8000';
+                      final resumeUrl = '$baseUrl${candidate['resume']}';
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Downloading resume...')),
+                      );
+
+                      final dir = await getDownloadsDirectory();
+                      final savePath =
+                          '${dir?.path}/resume_${candidate['id']}.pdf';
+
+                      await Dio().download(resumeUrl, savePath);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Downloaded to: $savePath')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Download failed')),
+                        );
+                      }
+                    }
+                  }
+                : null,
             icon: const Icon(Icons.download),
             label: const Text('Download Resume'),
             style: ElevatedButton.styleFrom(

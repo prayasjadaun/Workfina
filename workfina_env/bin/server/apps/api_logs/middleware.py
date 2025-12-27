@@ -16,8 +16,18 @@ class APILoggingMiddleware(MiddlewareMixin):
         request_data = None
         if request.method in ['POST', 'PUT', 'PATCH']:
             try:
-                if hasattr(request, 'body'):
+                content_type = request.META.get('CONTENT_TYPE', '')
+                if 'application/json' in content_type:
                     request_data = json.loads(request.body.decode('utf-8'))
+                elif 'multipart/form-data' in content_type:
+                    request_data = {}
+                    for key, value in request.POST.items():
+                        request_data[key] = value
+                    for key, file in request.FILES.items():
+                        request_data[key] = f"<FILE: {file.name} ({file.size} bytes)>"
+                else:
+                    if hasattr(request, 'body'):
+                        request_data = json.loads(request.body.decode('utf-8'))
             except:
                 pass
         
@@ -33,6 +43,13 @@ class APILoggingMiddleware(MiddlewareMixin):
         user = None
         if hasattr(request, 'user') and request.user.is_authenticated:
             user = request.user
+        
+        # Debug prints
+        print(f'[API DEBUG] {request.method} {request.get_full_path()}')
+        print(f'[API DEBUG] Content-Type: {request.META.get("CONTENT_TYPE", "")}')
+        print(f'[API DEBUG] Request Data: {request_data}')
+        print(f'[API DEBUG] Response Status: {response.status_code}')
+        print(f'[API DEBUG] Response Data: {response_data}')
         
         APILog.objects.create(
             user=user,

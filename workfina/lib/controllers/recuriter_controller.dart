@@ -8,7 +8,7 @@ class RecruiterController extends ChangeNotifier {
   List<dynamic> _candidates = [];
   Map<String, dynamic>? _wallet;
   List<dynamic> _transactions = [];
-  Set<int> _unlockedCandidateIds = {};
+  Set<String> _unlockedCandidateIds = {};
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -16,13 +16,14 @@ class RecruiterController extends ChangeNotifier {
   List<dynamic> get candidates => _candidates;
   Map<String, dynamic>? get wallet => _wallet;
   List<dynamic> get transactions => _transactions;
-  Set<int> get unlockedCandidateIds => _unlockedCandidateIds;
+  Set<String> get unlockedCandidateIds => _unlockedCandidateIds;
 
-  bool isCandidateUnlocked(int candidateId) {
+  bool isCandidateUnlocked(String candidateId) {
     return _unlockedCandidateIds.contains(candidateId);
   }
 
   Future<bool> registerHR({
+    required String fullName, // ✅ ADD THIS LINE
     required String companyName,
     required String designation,
     required String phone,
@@ -35,6 +36,7 @@ class RecruiterController extends ChangeNotifier {
 
     try {
       final response = await ApiService.registerRecruiter(
+        fullName: fullName, // ✅ ADD THIS LINE
         companyName: companyName,
         designation: designation,
         phone: phone,
@@ -75,7 +77,7 @@ class RecruiterController extends ChangeNotifier {
         notifyListeners();
         return false;
       } else {
-        _hrProfile = response['profile'];
+       _hrProfile = response;
         _isLoading = false;
         notifyListeners();
         return true;
@@ -131,7 +133,7 @@ class RecruiterController extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>?> unlockCandidate(int candidateId) async {
+  Future<Map<String, dynamic>?> unlockCandidate(String candidateId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -258,20 +260,23 @@ class RecruiterController extends ChangeNotifier {
     }
   }
 
-Future<void> loadUnlockedCandidates() async {
-  try {
-    final response = await ApiService.getUnlockedCandidates();
-    if (!response.containsKey('error')) {
-      final List<int> unlockedIds = List<int>.from(
-        response['unlocked_candidate_ids'] ?? [],
-      );
-      _unlockedCandidateIds.addAll(unlockedIds);
-      notifyListeners();
+  Future<void> loadUnlockedCandidates() async {
+    try {
+      final response = await ApiService.getUnlockedCandidates();
+      if (!response.containsKey('error')) {
+        // Extract IDs from the unlocked_candidates array
+        final List<dynamic> unlockedCandidates =
+            response['unlocked_candidates'] ?? [];
+        final List<String> unlockedIds = unlockedCandidates
+            .map((c) => c['id'] as String)
+            .toList();
+        _unlockedCandidateIds.addAll(unlockedIds);
+        notifyListeners();
+      }
+    } catch (e) {
+      // Handle error silently
     }
-  } catch (e) {
-    // Handle error silently
   }
-}
 
   int get walletBalance => _wallet?['balance'] ?? 0;
 

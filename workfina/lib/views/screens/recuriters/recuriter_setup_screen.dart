@@ -21,6 +21,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   final GlobalKey<FormState> _step3FormKey = GlobalKey<FormState>();
 
   // Controllers
+  final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _companyNameController = TextEditingController();
   final TextEditingController _designationController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -232,6 +233,16 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                 color: Color(0xFF2196F3),
               ),
             ),
+            const SizedBox(height: 20),
+            _buildTextField(
+              controller: _fullNameController,
+              label: 'Full Name',
+              icon: Icons.person,
+              isRequired: true,
+              hintText: 'e.g., John Doe',
+              validator: (value) =>
+                  value?.isEmpty == true ? 'Full name is required' : null,
+            ),
             const SizedBox(height: 32),
             _buildTextField(
               controller: _companyNameController,
@@ -348,6 +359,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
               ),
               const SizedBox(height: 32),
               _buildReviewCard('Company Details', [
+                'Name: ${_fullNameController.text}',  
                 'Company: ${_companyNameController.text}',
                 'Designation: ${_designationController.text}',
                 'Size: ${_companySizes.firstWhere((s) => s['value'] == _selectedCompanySize)['label']}',
@@ -753,6 +765,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
 
   Future<void> _submitProfile(RecruiterController hrController) async {
     final success = await hrController.registerHR(
+      fullName: _fullNameController.text,  
       companyName: _companyNameController.text,
       designation: _designationController.text,
       phone: _phoneController.text,
@@ -776,6 +789,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _pageController.dispose();
     _companyNameController.dispose();
     _designationController.dispose();

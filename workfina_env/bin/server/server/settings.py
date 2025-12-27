@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.api_logs',
     
+    'rest_framework_simplejwt.token_blacklist',
+    
 ]
 
 MIDDLEWARE = [
@@ -162,8 +164,8 @@ SWAGGER_SETTINGS = {
 # JWT Configuration
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
 }
 
@@ -182,7 +184,6 @@ CORS_ALLOW_CREDENTIALS = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Custom User Model (add this)
 AUTH_USER_MODEL = 'authentication.User'
 # Google OAuth
 # GOOGLE_CLIENT_ID = 'your-google-client-id'

@@ -220,7 +220,15 @@ class AuthController extends ChangeNotifier {
           await ApiService.refreshToken();
         }
         _user = await ApiService.getUserData();
+
+        // Validate user data exists and has role
+        if (_user == null || _user!['role'] == null) {
+          await logout();
+        }
+
         notifyListeners();
+      } else {
+        await logout();
       }
     } catch (e) {
       await logout();

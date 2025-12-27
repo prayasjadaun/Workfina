@@ -2,10 +2,12 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+import uuid
 
 User = get_user_model()
 
 class Candidate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     # Link to User account
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='candidate_profile')
 

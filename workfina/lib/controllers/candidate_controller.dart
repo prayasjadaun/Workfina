@@ -6,7 +6,7 @@ class CandidateController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Map<String, dynamic>? _candidateProfile;
-  
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, dynamic>? get candidateProfile => _candidateProfile;
@@ -64,6 +64,22 @@ class CandidateController extends ChangeNotifier {
       _error = 'Network error. Please try again.';
       _isLoading = false;
       notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> checkProfileExists() async {
+    try {
+      final response = await ApiService.getCandidateProfile();
+
+      if (response.containsKey('error')) {
+        return false;
+      }
+
+      _candidateProfile = response;
+      notifyListeners();
+      return true;
+    } catch (e) {
       return false;
     }
   }
