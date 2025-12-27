@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
+import 'package:workfina/controllers/candidate_controller.dart';
+import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -26,31 +28,66 @@ class _SplashScreenState extends State<SplashScreen>
     _checkAuthStatus();
   }
 
- Future<void> _checkAuthStatus() async {
-  await Future.delayed(const Duration(seconds: 3));
-  if (mounted) {
-    await context.read<AuthController>().checkAuthStatus();
-    final authController = context.read<AuthController>();
+  Future<void> _checkAuthStatus() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
 
-    if (authController.user != null) {
-      final userRole = authController.user?['role'];
-      
-      // Check if user has completed profile setup
-      if (userRole == 'candidate') {
-        // Check if candidate profile exists
-        Navigator.pushReplacementNamed(context, '/candidate-home');
-      } else if (userRole == 'hr') {
-        // Check if HR profile exists  
-        Navigator.pushReplacementNamed(context, '/hr-home');
-      } else {
-        // User exists but role not properly set, go to role selection
-        Navigator.pushReplacementNamed(context, '/role-selection');
+    try {
+      await context.read<AuthController>().checkAuthStatus();
+      final authController = context.read<AuthController>();
+
+      if (authController.user == null) {
+        Navigator.pushReplacementNamed(context, '/login');
+        return;
       }
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
+
+      final userRole = authController.user?['role'];
+      print('[DEBUG] User role from stored data: $userRole');
+
+      if (userRole == 'candidate') {
+        final candidateController = CandidateController();
+        final hasProfile = await candidateController.checkProfileExists();
+
+        // If backend rejects, data is corrupt - logout
+        if (!hasProfile &&
+            candidateController.error != null &&
+            candidateController.error!.contains('Only candidates')) {
+          print('[DEBUG] Role mismatch detected - logging out');
+          await authController.logout();
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+          return;
+        }
+
+        if (mounted) {
+          Navigator.pushReplacementNamed(
+            context,
+            hasProfile ? '/candidate-home' : '/candidate-setup',
+          );
+        }
+      } else if (userRole == 'hr') {
+        if (mounted) {
+          final recruiterController = RecruiterController();
+          final hasProfile = await recruiterController.loadHRProfile();
+
+          Navigator.pushReplacementNamed(
+            context,
+            hasProfile ? '/hr-home' : '/hr-setup',
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/role-selection');
+        }
+      }
+    } catch (e) {
+      print('[DEBUG] Splash error: $e');
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
     }
   }
-}
 
   @override
   void dispose() {

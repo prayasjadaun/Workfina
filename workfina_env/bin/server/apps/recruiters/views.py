@@ -38,3 +38,5 @@ def hr_profile(request):
         return Response({
             'error': 'HR profile not found'
         }, status=status.HTTP_404_NOT_FOUND)
+        
+        
