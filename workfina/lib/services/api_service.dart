@@ -5,11 +5,24 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl =
-      // kDebugMode
-      //     ? 'http://10.140.76.136:8000/api'
-      //     :
-      'http://localhost:8000/api';
+  // static const String baseUrl =
+  //     // kDebugMode
+  //     //     ? 'http://10.140.76.136:8000/api'
+  //     //     :
+  //     'http://localhost:8000/api';
+
+  static const bool testingOnRealDevice = false;
+
+  static String get baseUrl {
+    if (kDebugMode) {
+      if (testingOnRealDevice) {
+        return 'http://192.168.31.243:8000/api';
+      } else {
+        return 'http://localhost:8000/api'; // Simulator
+      }
+    }
+    return 'http://192.168.31.243:8000/api'; // production (temporary)
+  }
 
   static late Dio _dio;
   static bool _isRefreshing = false;
@@ -70,12 +83,20 @@ class ApiService {
         onError: (DioException e, handler) async {
           if (kDebugMode) {
             print('[DEBUG] API Error: ${e.message}');
+            print('[DEBUG] Error Type: ${e.type}');
             print(
               '[DEBUG] Request: ${e.requestOptions.method} ${e.requestOptions.path}',
             );
-            print('[DEBUG] Request Data: ${e.requestOptions.data}');
-            print('[DEBUG] Response: ${e.response?.data}');
             print('[DEBUG] Status Code: ${e.response?.statusCode}');
+          }
+
+          // Handle connection errors specifically
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout) {
+            print('[DEBUG] Network connection error detected');
+            handler.next(e);
+            return;
           }
 
           if (e.response?.statusCode == 401 && !_isRefreshing) {
@@ -612,8 +633,96 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getFilterOptions() async {
+    try {
+      final response = await _dio.get('/recruiters/filter-options/');
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load filter options',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSpecificFilterOptions({
+    required String type,
+    int page = 1,
+    int pageSize = 20,
+    String? search,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': type,
+        'page': page,
+        'page_size': pageSize,
+      };
+
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final response = await _dio.get(
+        '/recruiters/filter-options/',
+        queryParameters: queryParams,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load filter options',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getFilteredCandidates({
+    String? role,
+    int? minExperience,
+    int? maxExperience,
+    int? minAge,
+    int? maxAge,
+    String? city,
+    String? state,
+    String? country,
+    String? religion,
+    String? education,
+    String? skills,
+    double? minCtc,
+    double? maxCtc,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (role != null) queryParams['role'] = role;
+      if (minExperience != null) queryParams['min_experience'] = minExperience;
+      if (maxExperience != null) queryParams['max_experience'] = maxExperience;
+      if (minAge != null) queryParams['min_age'] = minAge;
+      if (maxAge != null) queryParams['max_age'] = maxAge;
+      if (city != null) queryParams['city'] = city;
+      if (state != null) queryParams['state'] = state;
+      if (country != null) queryParams['country'] = country;
+      if (religion != null) queryParams['religion'] = religion;
+      if (education != null) queryParams['education'] = education;
+      if (skills != null) queryParams['skills'] = skills;
+      if (minCtc != null) queryParams['min_ctc'] = minCtc;
+      if (maxCtc != null) queryParams['max_ctc'] = maxCtc;
+      queryParams['page'] = page;
+      queryParams['page_size'] = pageSize;
+
+      final response = await _dio.get(
+        '/recruiters/candidates/filter/',
+        queryParameters: queryParams,
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load candidates',
+      };
+    }
+  }
+
   static Future<Map<String, dynamic>> registerRecruiter({
-    required String fullName, // ✅ ADD THIS LINE
+    required String fullName,
     required String companyName,
     required String designation,
     required String phone,
@@ -624,7 +733,7 @@ class ApiService {
       final response = await _dio.post(
         '/recruiters/register/',
         data: {
-          'full_name': fullName, // ✅ ADD THIS LINE
+          'full_name': fullName,
           'company_name': companyName,
           'designation': designation,
           'phone': phone,
@@ -651,7 +760,6 @@ class ApiService {
       return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
     }
   }
-
 
   static Future<Map<String, dynamic>> updateRecruiterProfile({
     String? fullName,

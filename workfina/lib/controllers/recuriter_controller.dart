@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:workfina/services/api_service.dart';
 
@@ -9,6 +10,7 @@ class RecruiterController extends ChangeNotifier {
   Map<String, dynamic>? _wallet;
   List<dynamic> _transactions = [];
   Set<String> _unlockedCandidateIds = {};
+  Map<String, dynamic>? _pagination;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -17,13 +19,14 @@ class RecruiterController extends ChangeNotifier {
   Map<String, dynamic>? get wallet => _wallet;
   List<dynamic> get transactions => _transactions;
   Set<String> get unlockedCandidateIds => _unlockedCandidateIds;
+  Map<String, dynamic>? get pagination => _pagination;
 
   bool isCandidateUnlocked(String candidateId) {
     return _unlockedCandidateIds.contains(candidateId);
   }
 
   Future<bool> registerHR({
-    required String fullName, // ✅ ADD THIS LINE
+    required String fullName, // âœ… ADD THIS LINE
     required String companyName,
     required String designation,
     required String phone,
@@ -36,7 +39,7 @@ class RecruiterController extends ChangeNotifier {
 
     try {
       final response = await ApiService.registerRecruiter(
-        fullName: fullName, // ✅ ADD THIS LINE
+        fullName: fullName, // âœ… ADD THIS LINE
         companyName: companyName,
         designation: designation,
         phone: phone,
@@ -82,11 +85,22 @@ class RecruiterController extends ChangeNotifier {
         notifyListeners();
         return true;
       }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        _error =
+            'Unable to connect to server. Please check your internet connection.';
+      } else {
+        _error = 'Network error. Please try again.';
+      }
+      _isLoading = false;
+      notifyListeners();
+      throw Exception(_error);
     } catch (e) {
       _error = 'Network error. Please try again.';
       _isLoading = false;
       notifyListeners();
-      return false;
+      throw Exception(_error);
     }
   }
 
@@ -96,22 +110,31 @@ class RecruiterController extends ChangeNotifier {
     int? maxExperience,
     String? city,
     String? state,
+    String? country,
     String? religion,
     String? skills,
+    int page = 1,
+    int pageSize = 20,
+    bool loadMore = false,
   }) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
+    if (!loadMore) {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+    }
 
     try {
-      final response = await ApiService.getCandidatesList(
+      final response = await ApiService.getFilteredCandidates(
         role: role,
         minExperience: minExperience,
         maxExperience: maxExperience,
         city: city,
         state: state,
+        country: country,
         religion: religion,
         skills: skills,
+        page: page,
+        pageSize: pageSize,
       );
 
       if (response.containsKey('error')) {
@@ -120,7 +143,12 @@ class RecruiterController extends ChangeNotifier {
         notifyListeners();
         return false;
       } else {
-        _candidates = response['candidates'];
+        if (loadMore) {
+          _candidates.addAll(response['candidates']);
+        } else {
+          _candidates = response['candidates'];
+        }
+        _pagination = response['pagination'];
         _isLoading = false;
         notifyListeners();
         return true;
@@ -259,8 +287,6 @@ class RecruiterController extends ChangeNotifier {
       return false;
     }
   }
-
-
 
   Future<bool> loadTransactions() async {
     _isLoading = true;

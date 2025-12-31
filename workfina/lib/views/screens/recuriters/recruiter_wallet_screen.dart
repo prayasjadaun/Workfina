@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
@@ -35,6 +36,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                 expandedHeight: 230,
                 pinned: true,
                 backgroundColor: AppTheme.primaryGreen,
+                foregroundColor: Colors.white,
                 flexibleSpace: LayoutBuilder(
                   builder: (context, constraints) {
                     final double collapsedHeight =
@@ -47,10 +49,9 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                           ? const Text(
                               'Wallet',
                               style: TextStyle(
-                                color: Colors.white,
                                 fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             )
                           : null,
@@ -84,10 +85,14 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                         color: Colors.white.withOpacity(0.2),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Icon(
-                                        Icons.account_balance_wallet_rounded,
-                                        color: Colors.white,
-                                        size: 20,
+                                      child: SvgPicture.asset(
+                                        "assets/svgs/wallet.svg",
+                                        width: 24,
+                                        height: 24,
+                                        colorFilter: ColorFilter.mode(
+                                          Colors.white,
+                                          BlendMode.srcIn,
+                                        ),
                                       ),
                                     ),
                                     Container(
@@ -165,10 +170,18 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                     context,
                                     hrController,
                                   ),
-                                  child: const Row(
+                                  child:  Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.add_circle_outline, size: 18),
+                                      SvgPicture.asset(
+                                       "assets/svgs/add.svg",
+                                        width: 24,
+                                        height: 24,
+                                        colorFilter: ColorFilter.mode(
+                                         AppTheme.primaryGreen,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
                                       SizedBox(width: 8),
                                       Text(
                                         'Add Credits',
@@ -200,7 +213,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         child: _buildStatCard(
                           'Total Spent',
                           '${hrController.hrProfile?['total_spent'] ?? 0}',
-                          Icons.trending_down,
+                          "assets/svgs/spend.svg",
                           const Color(0xFFEF5350),
                           isDark,
                         ),
@@ -210,7 +223,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         child: _buildStatCard(
                           'Unlocked',
                           '${hrController.unlockedCandidateIds.length}',
-                          Icons.lock_open_rounded,
+                          "assets/svgs/unlock.svg",
                           AppTheme.primaryGreen,
                           isDark,
                         ),
@@ -306,7 +319,12 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
           _showAddCreditsBottomSheet(context, hrController);
         },
         backgroundColor: AppTheme.primaryGreen,
-        child: const Icon(Icons.add, color: Colors.white),
+        child: SvgPicture.asset(
+          'assets/svgs/add.svg',
+          width: 30,
+          height: 30,
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+        ),
       ),
     );
   }
@@ -314,7 +332,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
   Widget _buildStatCard(
     String label,
     String value,
-    IconData icon,
+    String svgPath,
     Color color,
     bool isDark,
   ) {
@@ -334,7 +352,12 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: Icon(icon, color: color, size: 18),
+            child: SvgPicture.asset(
+              svgPath,
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -384,10 +407,16 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              isRecharge ? Icons.add : Icons.person_outline,
-              color: color,
-              size: 20,
+            // child: Icon(
+            //   isRecharge ? Icons.add : Icons.person_outline,
+            //   color: color,
+            //   size: 20,
+            // ),
+            child: SvgPicture.asset(
+              isRecharge ? 'assets/svgs/add.svg' : 'assets/svgs/unlock.svg',
+              width: 25,
+              height: 25,
+              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
             ),
           ),
           const SizedBox(width: 12),
