@@ -170,15 +170,15 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                     context,
                                     hrController,
                                   ),
-                                  child:  Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       SvgPicture.asset(
-                                       "assets/svgs/add.svg",
+                                        "assets/svgs/add.svg",
                                         width: 24,
                                         height: 24,
                                         colorFilter: ColorFilter.mode(
-                                         AppTheme.primaryGreen,
+                                          AppTheme.primaryGreen,
                                           BlendMode.srcIn,
                                         ),
                                       ),
@@ -205,7 +205,6 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               // Quick Stats
               SliverToBoxAdapter(
                 child: Container(
-                  // decoration: AppTheme.getGradientDecoration(context),
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: Row(
                     children: [
@@ -237,6 +236,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               SliverToBoxAdapter(
                 child: Container(
                   // decoration: AppTheme.getGradientDecoration(context),
+
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,39 +265,44 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               if (hrController.transactions.isEmpty)
                 SliverToBoxAdapter(
                   child: Container(
-                    width: double.infinity,
-                    decoration: AppTheme.getGradientDecoration(context),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getCardColor(context),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.receipt_long_outlined,
-                              size: 56,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'No transactions yet',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
+                  // decoration: AppTheme.getGradientDecoration(context),
+
+                    padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
+                    child: Column(
+                      children: [
+                        SvgPicture.asset(
+                          "assets/svgs/wallet.svg",
+                          width: 48,
+                          height: 48,
+                          colorFilter: ColorFilter.mode(
+                            Colors.grey[400]!,
+                            BlendMode.srcIn,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No transactions yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Add credits to start unlocking profiles',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 )
               else
                 SliverPadding(
+                  
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
@@ -407,11 +412,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            // child: Icon(
-            //   isRecharge ? Icons.add : Icons.person_outline,
-            //   color: color,
-            //   size: 20,
-            // ),
+           
             child: SvgPicture.asset(
               isRecharge ? 'assets/svgs/add.svg' : 'assets/svgs/unlock.svg',
               width: 25,

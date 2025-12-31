@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
@@ -24,6 +27,166 @@ class CandidateDetailScreen extends StatelessWidget {
     return '₹${formatter.format(value.toInt())}';
   }
 
+  void _handleResumeClick(BuildContext context, Map<String, dynamic> profileData) {
+    final resumeUrl = profileData['resume_url'];
+
+    if (resumeUrl == null || resumeUrl.toString().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No resume uploaded yet'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Resume',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(
+                Icons.visibility,
+                color: AppTheme.primaryGreen,
+              ),
+              title: const Text('View Resume'),
+              onTap: () {
+                Navigator.pop(context);
+                String viewUrl = resumeUrl.toString();
+                if (!viewUrl.startsWith('http')) {
+                  final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+                  viewUrl = '$baseUrl$viewUrl';
+                }
+                _launchURL(viewUrl);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.download, color: AppTheme.primaryGreen),
+              title: const Text('Download Resume'),
+              onTap: () {
+                Navigator.pop(context);
+                _downloadFile(resumeUrl.toString(), context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleVideoClick(BuildContext context, Map<String, dynamic> profileData) {
+    final videoUrl = profileData['video_intro_url'];
+
+    if (videoUrl == null || videoUrl.toString().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No video introduction available'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Video Introduction',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(
+                Icons.play_arrow,
+                color: AppTheme.primaryGreen,
+              ),
+              title: const Text('Play Video'),
+              subtitle: const Text('Open in external player'),
+              onTap: () {
+                Navigator.pop(context);
+                String playUrl = videoUrl.toString();
+                if (!playUrl.startsWith('http')) {
+                  final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+                  playUrl = '$baseUrl$playUrl';
+                }
+                _launchURL(playUrl);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _downloadFile(String url, BuildContext context) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Starting download...'),
+          backgroundColor: AppTheme.primaryGreen,
+        ),
+      );
+
+      // Fix URL for local backend
+      String downloadUrl = url;
+      if (!url.startsWith('http')) {
+        final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+        downloadUrl = '$baseUrl$url';
+      }
+
+      final dio = Dio();
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = url.split('/').last;
+      final filePath = '${directory.path}/$fileName';
+
+      await dio.download(downloadUrl, filePath);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Downloaded: $fileName'),
+            backgroundColor: AppTheme.primaryGreen,
+            action: SnackBarAction(
+              label: 'Open',
+              textColor: Colors.white,
+              onPressed: () => _launchURL('file://$filePath'),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -39,8 +202,8 @@ class CandidateDetailScreen extends StatelessWidget {
         ),
         elevation: 0,
         backgroundColor: AppTheme.primaryGreen,
-        foregroundColor: isDark ? Colors.white : Colors.black,
-        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+        foregroundColor: Colors.white,
+        iconTheme: IconThemeData(color: Colors.white),
         surfaceTintColor: Colors.transparent,
       ),
       body: SingleChildScrollView(
@@ -84,7 +247,7 @@ class CandidateDetailScreen extends StatelessWidget {
                 _buildInfoRow(
                   context,
                   'Role',
-                  candidate['role'] ?? 'Not Specified',
+                  candidate['role_name'] ?? 'Not Specified',
                 ),
                 _buildInfoRow(
                   context,
@@ -118,8 +281,8 @@ class CandidateDetailScreen extends StatelessWidget {
                   'Age',
                   '${candidate['age'] ?? 'N/A'} years',
                 ),
-                if (candidate['religion'] != null)
-                  _buildInfoRow(context, 'Religion', candidate['religion']),
+                if (candidate['religion_name'] != null)
+                  _buildInfoRow(context, 'Religion', candidate['religion_name']),
               ],
             ),
             const SizedBox(height: 20),
@@ -128,34 +291,34 @@ class CandidateDetailScreen extends StatelessWidget {
             _buildSectionCard(
               context,
               'Location Details',
-              'assets/svgs/home.svg',
+              'assets/svgs/location.svg',
               [
                 _buildInfoRow(
                   context,
                   'City',
-                  candidate['city'] ?? 'Not Available',
+                  candidate['city_name'] ?? 'Not Available',
                 ),
                 _buildInfoRow(
                   context,
                   'State',
-                  candidate['state'] ?? 'Not Available',
+                  candidate['state_name'] ?? 'Not Available',
                 ),
                 _buildInfoRow(
                   context,
                   'Country',
-                  candidate['country'] ?? 'India',
+                  candidate['country_name'] ?? 'India',
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
             // Education
-            if (candidate['education'] != null)
+            if (candidate['education_name'] != null)
               _buildSectionCard(
                 context,
                 'Education Background',
                 'assets/svgs/candidates.svg',
-                [_buildInfoText(context, candidate['education'])],
+                [_buildInfoText(context, candidate['education_name'])],
               ),
             const SizedBox(height: 20),
 
@@ -164,7 +327,11 @@ class CandidateDetailScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Resume
-            if (candidate['resume'] != null) _buildResumeCard(context),
+            _buildResumeCard(context),
+            const SizedBox(height: 20),
+
+            // Video Introduction
+            _buildVideoCard(context),
             const SizedBox(height: 20),
           ],
         ),
@@ -262,7 +429,7 @@ class CandidateDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            candidate['role'] ?? 'Role not specified',
+            candidate['role_name'] ?? 'Role not specified',
             style: AppTheme.getBodyStyle(
               context,
               color: Colors.grey.shade600,
@@ -495,97 +662,87 @@ class CandidateDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: candidate['resume'] != null
-                  ? () async {
-                      try {
-                        final baseUrl = ApiService.baseUrl.replaceAll(
-                          '/api',
-                          '',
-                        );
-                        final resumeUrl = candidate['resume'].startsWith('http')
-                            ? candidate['resume']
-                            : '$baseUrl${candidate['resume']}';
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Opening resume...',
-                              style: AppTheme.getBodyStyle(context),
-                            ),
-                            backgroundColor: Colors.grey.shade700,
-                          ),
-                        );
-
-                        final uri = Uri.parse(resumeUrl);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        } else {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Could not open resume',
-                                  style: AppTheme.getBodyStyle(context),
-                                ),
-                                backgroundColor: Colors.red.shade700,
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Failed to open resume: ${e.toString()}',
-                                style: AppTheme.getBodyStyle(context),
-                              ),
-                              backgroundColor: Colors.red.shade700,
-                            ),
-                          );
-                        }
-                      }
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isDark ? Colors.white : Colors.black,
-                foregroundColor: isDark ? Colors.black : Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/svgs/wallet.svg',
-                    width: 16,
-                    height: 16,
-                    colorFilter: ColorFilter.mode(
-                      isDark ? Colors.black : Colors.white,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'View Resume',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.black : Colors.white,
-                    ),
-                  ),
-                ],
+          ListTile(
+            leading: SvgPicture.asset(
+              'assets/svgs/docs.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(
+                AppTheme.primaryGreen,
+                BlendMode.srcIn,
               ),
             ),
+            title: const Text('Resume Document'),
+            subtitle: candidate['resume_url'] != null &&
+                    candidate['resume_url'].toString().isNotEmpty
+                ? const Text('View or download resume')
+                : const Text('No resume uploaded'),
+            onTap: () => _handleResumeClick(context, candidate),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SvgPicture.asset(
+                'assets/svgs/wallet.svg',
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.mode(
+                  isDark ? Colors.white : Colors.black,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Video Introduction',
+                style: AppTheme.getTitleStyle(
+                  context,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListTile(
+            leading: SvgPicture.asset(
+              'assets/svgs/play.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(
+                AppTheme.primaryGreen,
+                BlendMode.srcIn,
+              ),
+            ),
+            title: const Text('Video Introduction'),
+            subtitle: candidate['video_intro_url'] != null &&
+                    candidate['video_intro_url'].toString().isNotEmpty
+                ? const Text('Tap to play video introduction')
+                : const Text('No video introduction available'),
+            onTap: () => _handleVideoClick(context, candidate),
+            contentPadding: EdgeInsets.zero,
           ),
         ],
       ),

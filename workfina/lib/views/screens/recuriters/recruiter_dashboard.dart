@@ -39,6 +39,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
         final unlockedCount = controller.unlockedCandidateIds.length;
 
         return Container(
+          height: double.infinity,
           decoration: AppTheme.getGradientDecoration(context),
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -227,7 +228,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
   Widget _buildActivityCard(Map<String, dynamic> candidate) {
     final fullName = candidate['full_name'] ?? 'Unknown';
     final experienceYears = candidate['experience_years'] ?? 0;
-    final city = candidate['city'] ?? 'N/A';
+    final city = candidate['city_name'] ?? 'N/A';
     final creditsUsed = candidate['credits_used'] ?? 10;
 
     return GestureDetector(

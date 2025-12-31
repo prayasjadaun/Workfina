@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
@@ -452,7 +453,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        candidate['role'] ?? 'N/A',
+                        candidate['role_name'] ?? 'N/A',
                         style: AppTheme.getCardSubtitleStyle(context),
                       ),
                     ],
@@ -476,7 +477,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                 _buildInfoChip(
                   context,
                   Icons.location_on_outlined,
-                  candidate['city'] ?? 'N/A',
+                  candidate['city_name'] ?? 'N/A',
                   AppTheme.accentOrange,
                 ),
                 _buildInfoChip(
@@ -653,9 +654,10 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 16,
+                        SvgPicture.asset(
+                          'assets/svgs/unlock.svg',
+                          width: 16,
+                          height: 16,
                           color: AppTheme.primaryGreen,
                         ),
                         const SizedBox(width: 4),
@@ -696,11 +698,13 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      SvgPicture.asset(
                         isUnlocked
-                            ? Icons.visibility_outlined
-                            : Icons.lock_open_outlined,
-                        size: 16,
+                            ? 'assets/svgs/eye.svg'
+                            : 'assets/svgs/lock.svg',
+                        width: 16,
+                        height: 16,
+                        color: Colors.white,
                       ),
                       const SizedBox(width: 6),
                       Text(

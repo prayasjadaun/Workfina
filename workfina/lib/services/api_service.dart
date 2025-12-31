@@ -645,7 +645,7 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
 
   static Future<Map<String, dynamic>> getFilterOptions() async {
     try {
-      final response = await _dio.get('/recruiters/filter-options/');
+      final response = await _dio.get('/candidates/filter-options/');
       return response.data;
     } on DioException catch (e) {
       return {
@@ -672,7 +672,7 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
       }
 
       final response = await _dio.get(
-        '/recruiters/filter-options/',
+        '/candidates/filter-options/',
         queryParameters: queryParams,
       );
       return response.data;
@@ -827,7 +827,7 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
   String? education,
   String? skills,
   File? resumeFile,
-  File? videoIntroFile,  // ✅ ADD THIS
+  File? videoIntroFile, 
 
 }) async {
   try {

@@ -57,6 +57,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
           _isLoading = false;
         });
       } else {
+        // API response has 'results' wrapper
         setState(() {
           _filterOverview = response['results'] ?? {};
           _isLoading = false;
@@ -291,6 +292,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
         'key': entry.key,
         'title': _getDisplayName(entry.key),
         'svg': _getSvgPath(entry.key),
+        'count': (entry.value as Map<String, dynamic>)['total_count'] ?? 0,
       };
     }).toList();
 
@@ -325,8 +327,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
-                final categoryData = _filterOverview[category['key'] as String];
-                final count = categoryData?['total_count'] ?? 0;
+                final count = category['count'] ?? 0;
 
                 return Container(
                   decoration: BoxDecoration(
@@ -556,27 +557,42 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
-                                child: Center(
-                                  child: Text(
-                                    option['label'],
-                                    style: AppTheme.getBodyStyle(
-                                      context,
-                                      fontSize: 14,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                      color: isSelected
-                                          ? (isDark
-                                                ? Colors.white
-                                                : Colors.black87)
-                                          : (isDark
-                                                ? Colors.grey.shade300
-                                                : Colors.grey.shade700),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      option['label'],
+                                      style: AppTheme.getBodyStyle(
+                                        context,
+                                        fontSize: 14,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w600
+                                            : FontWeight.w400,
+                                        color: isSelected
+                                            ? (isDark
+                                                  ? Colors.white
+                                                  : Colors.black87)
+                                            : (isDark
+                                                  ? Colors.grey.shade300
+                                                  : Colors.grey.shade700),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                    if (option['count'] != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${option['count']} candidates',
+                                        style: AppTheme.getBodyStyle(
+                                          context,
+                                          fontSize: 11,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ),
@@ -615,12 +631,12 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
   String _getSvgPath(String key) {
     // Map API keys to SVG icons
     final svgPaths = {
-      'departments': 'assets/svgs/department.svg',
-      'religions': 'assets/svgs/religion.svg',
-      'cities': 'assets/svgs/city.svg',
-      'states': 'assets/svgs/state.svg',
-      'countries': 'assets/svgs/country.svg',
-      'education_options': 'assets/svgs/education.svg',
+      'department': 'assets/svgs/candidates.svg',
+      'religion': 'assets/svgs/profile.svg', 
+      'city': 'assets/svgs/location.svg',
+      'state': 'assets/svgs/location.svg',
+      'country': 'assets/svgs/location.svg',
+      'education': 'assets/svgs/docs.svg',
       // Add more mappings as needed
     };
 
