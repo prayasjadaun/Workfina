@@ -46,35 +46,50 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (userRole == 'candidate') {
         final candidateController = CandidateController();
-        final hasProfile = await candidateController.checkProfileExists();
 
-        // If backend rejects, data is corrupt - logout
-        if (!hasProfile &&
-            candidateController.error != null &&
-            candidateController.error!.contains('Only candidates')) {
-          print('[DEBUG] Role mismatch detected - logging out');
-          await authController.logout();
-          if (mounted) {
-            Navigator.pushReplacementNamed(context, '/login');
+        try {
+          final hasProfile = await candidateController.checkProfileExists();
+
+          if (!hasProfile &&
+              candidateController.error != null &&
+              candidateController.error!.contains('Only candidates')) {
+            print('[DEBUG] Role mismatch detected - logging out');
+            await authController.logout();
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/login');
+            }
+            return;
           }
-          return;
-        }
 
-        if (mounted) {
-          Navigator.pushReplacementNamed(
-            context,
-            hasProfile ? '/candidate-home' : '/candidate-setup',
-          );
+          if (mounted) {
+            Navigator.pushReplacementNamed(
+              context,
+              hasProfile ? '/candidate-home' : '/candidate-setup',
+            );
+          }
+        } catch (e) {
+          print('[DEBUG] Candidate profile check failed: $e');
+          if (mounted) {
+            _showNetworkErrorDialog('Failed to load candidate profile');
+          }
         }
       } else if (userRole == 'hr') {
         if (mounted) {
           final recruiterController = RecruiterController();
-          final hasProfile = await recruiterController.loadHRProfile();
 
-          Navigator.pushReplacementNamed(
-            context,
-            hasProfile ? '/hr-home' : '/hr-setup',
-          );
+          try {
+            final hasProfile = await recruiterController.loadHRProfile();
+
+            Navigator.pushReplacementNamed(
+              context,
+              hasProfile ? '/hr-home' : '/hr-setup',
+            );
+          } catch (e) {
+            print('[DEBUG] HR profile check failed: $e');
+            if (mounted) {
+              _showNetworkErrorDialog('Failed to load HR profile');
+            }
+          }
         }
       } else {
         if (mounted) {
@@ -84,9 +99,47 @@ class _SplashScreenState extends State<SplashScreen>
     } catch (e) {
       print('[DEBUG] Splash error: $e');
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        _showNetworkErrorDialog('Unable to connect to server');
       }
     }
+  }
+
+  void _showNetworkErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: Icon(Icons.wifi_off, size: 48, color: Colors.red.shade400),
+        title: const Text('Connection Error'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message),
+            const SizedBox(height: 16),
+            const Text(
+              'Please check your internet connection and try again.',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+            child: const Text('Go to Login'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _checkAuthStatus();
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

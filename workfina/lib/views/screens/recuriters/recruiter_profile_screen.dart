@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
@@ -66,9 +67,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
     );
 
     if (result.containsKey('error')) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result['error'])));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error'])),
+      );
     } else {
       setState(() => _isEditing = false);
       await context.read<RecruiterController>().loadHRProfile();
@@ -80,18 +81,29 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: double.infinity,
-      decoration: AppTheme.getGradientDecoration(context),
+      color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
       child: Consumer<RecruiterController>(
         builder: (context, controller, child) {
           if (controller.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primaryGreen,
+              ),
+            );
           }
 
           final profile = controller.hrProfile;
           if (profile == null) {
-            return const Center(child: Text('No profile data'));
+            return Center(
+              child: Text(
+                'No profile data',
+                style: AppTheme.getBodyStyle(context),
+              ),
+            );
           }
 
           if (_fullNameController.text.isEmpty) {
@@ -99,373 +111,613 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
           }
 
           return _isEditing
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: AppTheme.getCardColor(context),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: _buildEditForm(profile),
-                  ),
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // Profile Header Section
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          children: [
-                            Stack(
-                              children: [
-                                CircleAvatar(
-                                  radius: 60,
-                                  backgroundColor: AppTheme.primaryGreen,
-                                  child: Text(
-                                    profile['full_name']?.substring(0, 1) ??
-                                        'R',
-                                    style: const TextStyle(
-                                      fontSize: 40,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryGreen,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).scaffoldBackgroundColor,
-                                        width: 3,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.verified,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              profile['full_name'] ?? 'N/A',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              profile['email'] ?? 'N/A',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.check_circle,
-                                  size: 16,
-                                  color: AppTheme.primaryGreen,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Verified',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.primaryGreen,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Account Section
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppTheme.getCardColor(context),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            topRight: Radius.circular(30),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Account',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    onPressed: () =>
-                                        setState(() => _isEditing = true),
-                                    icon: Icon(
-                                      Icons.edit_outlined,
-                                      color: AppTheme.primaryGreen,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                height: 4,
-                                width: 50,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryGreen,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              _buildMenuItem(
-                                icon: Icons.business_outlined,
-                                title: 'Company Details',
-                                subtitle: profile['company_name'] ?? 'N/A',
-                                onTap: () {},
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.badge_outlined,
-                                title: 'Designation',
-                                subtitle: profile['designation'] ?? 'N/A',
-                                onTap: () {},
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.phone_outlined,
-                                title: 'Phone',
-                                subtitle: profile['phone'] ?? 'N/A',
-                                onTap: () {},
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.language_outlined,
-                                title: 'Company Website',
-                                subtitle:
-                                    profile['company_website'] ??
-                                    'Not provided',
-                                onTap: () {},
-                              ),
-                              _buildMenuItem(
-                                icon: Icons.people_outline,
-                                title: 'Company Size',
-                                subtitle: profile['company_size'] ?? 'N/A',
-                                onTap: () {},
-                              ),
-
-                              // const SizedBox(height: 32),
-
-                              // _buildMenuItem(
-                              //   icon: Icons.settings_outlined,
-                              //   title: 'Settings',
-                              //   subtitle: 'Privacy & preferences',
-                              //   onTap: () {},
-                              // ),
-                              // _buildMenuItem(
-                              //   icon: Icons.support_agent_outlined,
-                              //   title: 'Support',
-                              //   subtitle: 'Get assistance',
-                              //   onTap: () {},
-                              // ),
-
-                              const SizedBox(height: 16),
-
-                              _buildMenuItem(
-                                icon: Icons.logout,
-                                iconColor: Colors.red,
-                                title: 'Log Out',
-                                titleColor: Colors.red,
-                                subtitle: 'Log out from your account',
-                                onTap: () => _showLogoutDialog(context),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+              ? _buildEditForm(profile, isDark)
+              : _buildProfileView(profile, isDark);
         },
       ),
     );
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    Color? iconColor,
-    Color? titleColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[850]
-            : Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: (iconColor ?? AppTheme.primaryGreen).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: iconColor ?? AppTheme.primaryGreen,
-            size: 24,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-            color: titleColor,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-        ),
-        // trailing: Icon(
-        //   Icons.arrow_forward_ios,
-        //   size: 16,
-        //   color: Colors.grey[400],
-        // ),
-        onTap: onTap,
-      ),
-    );
-  }
-
-  Widget _buildEditForm(Map<String, dynamic> profile) {
-    return Form(
-      key: _formKey,
+  Widget _buildProfileView(Map<String, dynamic> profile, bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: [
-          TextFormField(
-            controller: _fullNameController,
-            decoration: const InputDecoration(labelText: 'Full Name'),
-            validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _companyNameController,
-            decoration: const InputDecoration(labelText: 'Company Name'),
-            validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _designationController,
-            decoration: const InputDecoration(labelText: 'Designation'),
-            validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _phoneController,
-            decoration: const InputDecoration(labelText: 'Phone'),
-            validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _companyWebsiteController,
-            decoration: const InputDecoration(
-              labelText: 'Company Website (Optional)',
+          const SizedBox(height: 24),
+          
+          // Profile Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark 
+                    ? Colors.black26 
+                    : Colors.grey.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Profile Avatar
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      (profile['full_name'] ?? 'R').substring(0, 1).toUpperCase(),
+                      style: AppTheme.getHeadlineStyle(
+                        context,
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Name and Email
+                Text(
+                  profile['full_name'] ?? 'N/A',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profile['email'] ?? 'N/A',
+                  style: AppTheme.getSubtitleStyle(
+                    context,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Verified Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.primaryGreen.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/svgs/check.svg',
+                        width: 14,
+                        height: 14,
+                        colorFilter: const ColorFilter.mode(
+                          AppTheme.primaryGreen,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Verified',
+                        style: AppTheme.getLabelStyle(
+                          context,
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _selectedCompanySize,
-            decoration: const InputDecoration(labelText: 'Company Size'),
-            items: const [
-              DropdownMenuItem(value: '1-10', child: Text('1-10 employees')),
-              DropdownMenuItem(value: '11-50', child: Text('11-50 employees')),
-              DropdownMenuItem(
-                value: '51-200',
-                child: Text('51-200 employees'),
-              ),
-              DropdownMenuItem(
-                value: '201-1000',
-                child: Text('201-1000 employees'),
-              ),
-              DropdownMenuItem(value: '1000+', child: Text('1000+ employees')),
-            ],
-            onChanged: (v) => setState(() => _selectedCompanySize = v),
-            validator: (v) => v == null ? 'Required' : null,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => setState(() => _isEditing = false),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+          
+          const SizedBox(height: 20),
+          
+          // Profile Details Card
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark 
+                    ? Colors.black26 
+                    : Colors.grey.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Header with Edit Button
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Profile Details',
+                        style: AppTheme.getTitleStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _isEditing = true),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SvgPicture.asset(
+                            'assets/svgs/edit.svg',
+                            width: 16,
+                            height: 16,
+                            colorFilter: const ColorFilter.mode(
+                              AppTheme.primaryGreen,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text('Cancel'),
+                ),
+                
+                // Profile Information
+                _buildProfileInfoItem(
+                  svgPath: 'assets/svgs/company.svg',
+                  title: 'Company Name',
+                  value: profile['company_name'] ?? 'N/A',
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildProfileInfoItem(
+                  svgPath: 'assets/svgs/badge1.svg',
+                  title: 'Designation',
+                  value: profile['designation'] ?? 'N/A',
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildProfileInfoItem(
+                  svgPath: 'assets/svgs/phone.svg',
+                  title: 'Phone',
+                  value: profile['phone'] ?? 'N/A',
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildProfileInfoItem(
+                  svgPath: 'assets/svgs/web.svg',
+                  title: 'Company Website',
+                  value: profile['company_website'] ?? 'Not provided',
+                  isDark: isDark,
+                ),
+                _buildDivider(isDark),
+                _buildProfileInfoItem(
+                  svgPath: 'assets/svgs/users.svg',
+                  title: 'Company Size',
+                  value: profile['company_size'] ?? 'N/A',
+                  isDark: isDark,
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Logout Card
+          Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark 
+                      ? Colors.black26 
+                      : Colors.grey.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () => _showLogoutDialog(context),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _buildProfileInfoItem(
+                    svgPath: 'assets/svgs/logout.svg',
+                    title: 'Log Out',
+                    value: 'Log out from your account',
+                    isDark: isDark,
+                    isLast: true,
+                    titleColor: Colors.red,
+                    iconColor: Colors.red,
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('Save'),
-                ),
-              ),
-            ],
+            ),
           ),
+          
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
+  Widget _buildProfileInfoItem({
+    required String svgPath,
+    required String title,
+    required String value,
+    required bool isDark,
+    bool isLast = false,
+    Color? titleColor,
+    Color? iconColor,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: isLast ? 20 : 16,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: (iconColor ?? AppTheme.primaryGreen).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  svgPath,
+                  width: 20,
+                  height: 20,
+                  colorFilter: ColorFilter.mode(
+                    iconColor ?? AppTheme.primaryGreen,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      color: titleColor ?? (isDark ? Colors.white : Colors.black87),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: AppTheme.getSubtitleStyle(
+                      context,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: isDark ? Colors.grey[800] : Colors.grey[200],
+      ),
+    );
+  }
+
+  Widget _buildEditForm(Map<String, dynamic> profile, bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDark 
+                ? Colors.black26 
+                : Colors.grey.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Edit Profile',
+                style: AppTheme.getTitleStyle(
+                  context,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              _buildTextField(
+                controller: _fullNameController,
+                label: 'Full Name',
+                isDark: isDark,
+                isRequired: true,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _companyNameController,
+                label: 'Company Name',
+                isDark: isDark,
+                isRequired: true,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _designationController,
+                label: 'Designation',
+                isDark: isDark,
+                isRequired: true,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _phoneController,
+                label: 'Phone',
+                isDark: isDark,
+                isRequired: true,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildTextField(
+                controller: _companyWebsiteController,
+                label: 'Company Website (Optional)',
+                isDark: isDark,
+              ),
+              const SizedBox(height: 16),
+              
+              _buildDropdown(isDark),
+              const SizedBox(height: 32),
+              
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => setState(() => _isEditing = false),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                        foregroundColor: isDark ? Colors.white : Colors.black87,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryGreen,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Save',
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required bool isDark,
+    bool isRequired = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      style: AppTheme.getBodyStyle(context),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: AppTheme.getSubtitleStyle(
+          context,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+        ),
+        filled: true,
+        fillColor: isDark ? Colors.grey[850] : Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryGreen,
+            width: 2,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+      validator: isRequired 
+        ? (v) => v?.isEmpty ?? true ? 'This field is required' : null
+        : null,
+    );
+  }
+
+  Widget _buildDropdown(bool isDark) {
+    return DropdownButtonFormField<String>(
+      value: _selectedCompanySize,
+      style: AppTheme.getBodyStyle(context),
+      decoration: InputDecoration(
+        labelText: 'Company Size',
+        labelStyle: AppTheme.getSubtitleStyle(
+          context,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
+        ),
+        filled: true,
+        fillColor: isDark ? Colors.grey[850] : Colors.grey[50],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: AppTheme.primaryGreen,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+      dropdownColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+      items: const [
+        DropdownMenuItem(value: '1-10', child: Text('1-10 employees')),
+        DropdownMenuItem(value: '11-50', child: Text('11-50 employees')),
+        DropdownMenuItem(value: '51-200', child: Text('51-200 employees')),
+        DropdownMenuItem(value: '201-1000', child: Text('201-1000 employees')),
+        DropdownMenuItem(value: '1000+', child: Text('1000+ employees')),
+      ],
+      onChanged: (v) => setState(() => _selectedCompanySize = v),
+      validator: (v) => v == null ? 'Please select company size' : null,
+    );
+  }
+
   void _showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          'Logout',
+          style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: AppTheme.getBodyStyle(context),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
             onPressed: () async {
               await context.read<AuthController>().logout();
               Navigator.pushNamedAndRemoveUntil(
@@ -474,7 +726,14 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 (route) => false,
               );
             },
-            child: const Text('Logout'),
+            child: Text(
+              'Logout',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
