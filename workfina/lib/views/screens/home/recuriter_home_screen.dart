@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
@@ -44,7 +46,8 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
     return Scaffold(
       appBar: showAppBar
           ? AppBar(
-              title: Text('HR Dashboard - $fullName'),
+              title: Text('HR Dashboard - $fullName',
+                  style: AppTheme.getAppBarTextStyle()),
               automaticallyImplyLeading: false,
             )
           : null,
@@ -61,26 +64,70 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
       ),
       bottomNavigationBar: Container(
         color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20),
-          child: GNav(
-            backgroundColor: isDark
-                ? AppTheme.darkSurface
-                : AppTheme.lightSurface,
-            color: isDark ? Colors.grey : Colors.grey.shade600,
-            activeColor: Colors.white,
-            tabBackgroundColor: AppTheme.primaryGreen,
-            gap: 8,
-            padding: const EdgeInsets.all(16),
-            selectedIndex: _currentIndex,
-            onTabChange: (index) => setState(() => _currentIndex = index),
-            tabs: const [
-              GButton(icon: Icons.dashboard, text: 'Dashboard'),
-              GButton(icon: Icons.people, text: 'Candidates'),
-              GButton(icon: Icons.account_balance_wallet, text: 'Wallet'),
-              GButton(icon: Icons.person, text: 'Profile'),
+        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildCustomTab('assets/svgs/home.svg', 'Home', 0, isDark),
+            _buildCustomTab(
+              'assets/svgs/candidates.svg',
+              'Applicants',
+              1,
+              isDark,
+            ),
+            _buildCustomTab('assets/svgs/wallet.svg', 'Wallet', 2, isDark),
+            _buildCustomTab('assets/svgs/profile.svg', 'Profile', 3, isDark),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomTab(String svgPath, String text, int index, bool isDark) {
+    final isSelected = _currentIndex == index;
+
+    return InkWell(
+      onTap: () {
+        if (_currentIndex != index) {
+          HapticFeedback.mediumImpact();
+          setState(() => _currentIndex = index);
+        }
+      },
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        height: 48,
+        padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.primaryGreen : Colors.transparent,
+          borderRadius: BorderRadius.circular(50),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              svgPath,
+              width: 20,
+              height: 20,
+              colorFilter: ColorFilter.mode(
+                isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.grey : Colors.grey.shade600),
+                BlendMode.srcIn,
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors
@@ -23,9 +24,199 @@ class AppTheme {
   static const Color darkGradientStart = Color(0xFF1A1A1A);
   static const Color darkGradientEnd = Color(0xFF2D2D2D);
 
+  // Text Styles & Typography
+  static final TextTheme _baseTextTheme = GoogleFonts.jostTextTheme();
+
+  static TextTheme get lightTextTheme => _baseTextTheme.copyWith(
+    displayLarge: GoogleFonts.jost(
+      fontSize: 57,
+      fontWeight: FontWeight.w400,
+      letterSpacing: -0.25,
+      color: const Color(0xFF1C1B1F),
+    ),
+    displayMedium: GoogleFonts.jost(
+      fontSize: 45,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    displaySmall: GoogleFonts.jost(
+      fontSize: 36,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    headlineLarge: GoogleFonts.jost(
+      fontSize: 32,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    headlineMedium: GoogleFonts.jost(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    headlineSmall: GoogleFonts.jost(
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    titleLarge: GoogleFonts.jost(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+      color: const Color(0xFF1C1B1F),
+    ),
+    titleMedium: GoogleFonts.jost(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.15,
+      color: const Color(0xFF1C1B1F),
+    ),
+    titleSmall: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+      color: const Color(0xFF1C1B1F),
+    ),
+    bodyLarge: GoogleFonts.jost(
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.5,
+      color: const Color(0xFF1C1B1F),
+    ),
+    bodyMedium: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.25,
+      color: const Color(0xFF1C1B1F),
+    ),
+    bodySmall: GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.4,
+      color: const Color(0xFF1C1B1F),
+    ),
+    labelLarge: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+      color: const Color(0xFF1C1B1F),
+    ),
+    labelMedium: GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+      color: const Color(0xFF1C1B1F),
+    ),
+    labelSmall: GoogleFonts.jost(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+      color: const Color(0xFF1C1B1F),
+    ),
+  );
+
+  static TextTheme get darkTextTheme => _baseTextTheme.copyWith(
+    displayLarge: GoogleFonts.jost(
+      fontSize: 57,
+      fontWeight: FontWeight.w400,
+      letterSpacing: -0.25,
+      color: Colors.white,
+    ),
+    displayMedium: GoogleFonts.jost(
+      fontSize: 45,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    displaySmall: GoogleFonts.jost(
+      fontSize: 36,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    headlineLarge: GoogleFonts.jost(
+      fontSize: 32,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    headlineMedium: GoogleFonts.jost(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    headlineSmall: GoogleFonts.jost(
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    titleLarge: GoogleFonts.jost(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0,
+      color: Colors.white,
+    ),
+    titleMedium: GoogleFonts.jost(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.15,
+      color: Colors.white,
+    ),
+    titleSmall: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+      color: Colors.white,
+    ),
+    bodyLarge: GoogleFonts.jost(
+      fontSize: 16,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.5,
+      color: Colors.white,
+    ),
+    bodyMedium: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.25,
+      color: Colors.white,
+    ),
+    bodySmall: GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0.4,
+      color: Colors.white,
+    ),
+    labelLarge: GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+      color: Colors.white,
+    ),
+    labelMedium: GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+      color: Colors.white,
+    ),
+    labelSmall: GoogleFonts.jost(
+      fontSize: 11,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+      color: Colors.white,
+    ),
+  );
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
+    textTheme: lightTextTheme,
     colorScheme: const ColorScheme.light(
       primary: primaryGreen,
       secondary: secondaryBlue,
@@ -42,7 +233,7 @@ class AppTheme {
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.light,
     ),
-   
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryGreen,
@@ -71,6 +262,7 @@ class AppTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+    textTheme: darkTextTheme,
     colorScheme: const ColorScheme.dark(
       primary: primaryGreen,
       secondary: secondaryBlue,
@@ -87,7 +279,7 @@ class AppTheme {
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.light,
     ),
-    
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryGreen,
@@ -148,6 +340,133 @@ class AppTheme {
       color: isDark ? Colors.black54 : Colors.grey.withOpacity(0.1),
       blurRadius: 8,
       offset: const Offset(0, 2),
+    );
+  }
+
+  // Dynamic Text Style Helpers
+  static TextStyle getHeadlineStyle(
+    BuildContext context, {
+    Color? color,
+    FontWeight? fontWeight,
+    double? fontSize,
+  }) {
+    final theme = Theme.of(context);
+    return theme.textTheme.headlineMedium!.copyWith(
+      color: color ?? theme.textTheme.headlineMedium!.color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    );
+  }
+
+  static TextStyle getTitleStyle(
+    BuildContext context, {
+    Color? color,
+    FontWeight? fontWeight,
+    double? fontSize,
+  }) {
+    final theme = Theme.of(context);
+    return theme.textTheme.titleLarge!.copyWith(
+      color: color ?? theme.textTheme.titleLarge!.color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    );
+  }
+
+  static TextStyle getBodyStyle(
+    BuildContext context, {
+    Color? color,
+    FontWeight? fontWeight,
+    double? fontSize,
+  }) {
+    final theme = Theme.of(context);
+    return theme.textTheme.bodyMedium!.copyWith(
+      color: color ?? theme.textTheme.bodyMedium!.color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    );
+  }
+
+  static TextStyle getSubtitleStyle(
+    BuildContext context, {
+    Color? color,
+    FontWeight? fontWeight,
+    double? fontSize,
+  }) {
+    final theme = Theme.of(context);
+    return theme.textTheme.bodySmall!.copyWith(
+      color: color ?? theme.textTheme.bodySmall!.color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    );
+  }
+
+  static TextStyle getLabelStyle(
+    BuildContext context, {
+    Color? color,
+    FontWeight? fontWeight,
+    double? fontSize,
+  }) {
+    final theme = Theme.of(context);
+    return theme.textTheme.labelMedium!.copyWith(
+      color: color ?? theme.textTheme.labelMedium!.color,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+    );
+  }
+
+  // Custom Text Styles for Brand Specific Usage
+  static TextStyle getPrimaryButtonTextStyle(BuildContext context) {
+    return GoogleFonts.jost(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+  }
+
+  static TextStyle getCardTitleStyle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GoogleFonts.jost(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: isDark ? Colors.white : const Color(0xFF1C1B1F),
+    );
+  }
+
+  static TextStyle getCardSubtitleStyle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GoogleFonts.jost(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+    );
+  }
+
+  static TextStyle getTabBarTextStyle(BuildContext context, bool isActive) {
+    return GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+      color: isActive ? Colors.white : Colors.grey,
+    );
+  }
+
+  static TextStyle getAppBarTextStyle() {
+    return GoogleFonts.jost(fontSize: 20, fontWeight: FontWeight.w600);
+  }
+
+  static TextStyle getStatCardValueStyle(BuildContext context, Color color) {
+    return GoogleFonts.jost(
+      fontSize: 24,
+      fontWeight: FontWeight.w700,
+      color: color,
+    );
+  }
+
+  static TextStyle getStatCardLabelStyle(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GoogleFonts.jost(
+      fontSize: 12,
+      fontWeight: FontWeight.w500,
+      color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
     );
   }
 }

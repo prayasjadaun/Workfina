@@ -85,12 +85,20 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
         onError: (DioException e, handler) async {
           if (kDebugMode) {
             print('[DEBUG] API Error: ${e.message}');
+            print('[DEBUG] Error Type: ${e.type}');
             print(
               '[DEBUG] Request: ${e.requestOptions.method} ${e.requestOptions.path}',
             );
-            print('[DEBUG] Request Data: ${e.requestOptions.data}');
-            print('[DEBUG] Response: ${e.response?.data}');
             print('[DEBUG] Status Code: ${e.response?.statusCode}');
+          }
+
+          // Handle connection errors specifically
+          if (e.type == DioExceptionType.connectionError ||
+              e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.receiveTimeout) {
+            print('[DEBUG] Network connection error detected');
+            handler.next(e);
+            return;
           }
 
           if (e.response?.statusCode == 401 && !_isRefreshing) {
@@ -635,8 +643,96 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     }
   }
 
+  static Future<Map<String, dynamic>> getFilterOptions() async {
+    try {
+      final response = await _dio.get('/recruiters/filter-options/');
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load filter options',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSpecificFilterOptions({
+    required String type,
+    int page = 1,
+    int pageSize = 20,
+    String? search,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'type': type,
+        'page': page,
+        'page_size': pageSize,
+      };
+
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final response = await _dio.get(
+        '/recruiters/filter-options/',
+        queryParameters: queryParams,
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load filter options',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getFilteredCandidates({
+    String? role,
+    int? minExperience,
+    int? maxExperience,
+    int? minAge,
+    int? maxAge,
+    String? city,
+    String? state,
+    String? country,
+    String? religion,
+    String? education,
+    String? skills,
+    double? minCtc,
+    double? maxCtc,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (role != null) queryParams['role'] = role;
+      if (minExperience != null) queryParams['min_experience'] = minExperience;
+      if (maxExperience != null) queryParams['max_experience'] = maxExperience;
+      if (minAge != null) queryParams['min_age'] = minAge;
+      if (maxAge != null) queryParams['max_age'] = maxAge;
+      if (city != null) queryParams['city'] = city;
+      if (state != null) queryParams['state'] = state;
+      if (country != null) queryParams['country'] = country;
+      if (religion != null) queryParams['religion'] = religion;
+      if (education != null) queryParams['education'] = education;
+      if (skills != null) queryParams['skills'] = skills;
+      if (minCtc != null) queryParams['min_ctc'] = minCtc;
+      if (maxCtc != null) queryParams['max_ctc'] = maxCtc;
+      queryParams['page'] = page;
+      queryParams['page_size'] = pageSize;
+
+      final response = await _dio.get(
+        '/recruiters/candidates/filter/',
+        queryParameters: queryParams,
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load candidates',
+      };
+    }
+  }
+
   static Future<Map<String, dynamic>> registerRecruiter({
-    required String fullName, // ✅ ADD THIS LINE
+    required String fullName,
     required String companyName,
     required String designation,
     required String phone,
@@ -647,7 +743,7 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
       final response = await _dio.post(
         '/recruiters/register/',
         data: {
-          'full_name': fullName, // ✅ ADD THIS LINE
+          'full_name': fullName,
           'company_name': companyName,
           'designation': designation,
           'phone': phone,
@@ -672,6 +768,38 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateRecruiterProfile({
+    String? fullName,
+    String? companyName,
+    String? designation,
+    String? phone,
+    String? companyWebsite,
+    String? companySize,
+  }) async {
+    try {
+      final data = <String, dynamic>{};
+      if (fullName != null) data['full_name'] = fullName;
+      if (companyName != null) data['company_name'] = companyName;
+      if (designation != null) data['designation'] = designation;
+      if (phone != null) data['phone'] = phone;
+      if (companyWebsite != null) data['company_website'] = companyWebsite;
+      if (companySize != null) data['company_size'] = companySize;
+
+      final response = await _dio.patch(
+        '/recruiters/profile/update/',
+        data: data,
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Update Recruiter Profile Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      return {'error': e.response?.data['message'] ?? 'Update failed'};
     }
   }
 
@@ -786,37 +914,37 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
     }
   }
 
-  static Future<Map<String, dynamic>> updateRecruiterProfile({
-    String? fullName,
-    String? companyName,
-    String? designation,
-    String? phone,
-    String? companyWebsite,
-    String? companySize,
-  }) async {
-    try {
-      final data = <String, dynamic>{};
-      if (fullName != null) data['full_name'] = fullName;
-      if (companyName != null) data['company_name'] = companyName;
-      if (designation != null) data['designation'] = designation;
-      if (phone != null) data['phone'] = phone;
-      if (companyWebsite != null) data['company_website'] = companyWebsite;
-      if (companySize != null) data['company_size'] = companySize;
+  // static Future<Map<String, dynamic>> updateRecruiterProfile({
+  //   String? fullName,
+  //   String? companyName,
+  //   String? designation,
+  //   String? phone,
+  //   String? companyWebsite,
+  //   String? companySize,
+  // }) async {
+  //   try {
+  //     final data = <String, dynamic>{};
+  //     if (fullName != null) data['full_name'] = fullName;
+  //     if (companyName != null) data['company_name'] = companyName;
+  //     if (designation != null) data['designation'] = designation;
+  //     if (phone != null) data['phone'] = phone;
+  //     if (companyWebsite != null) data['company_website'] = companyWebsite;
+  //     if (companySize != null) data['company_size'] = companySize;
 
-      final response = await _dio.patch(
-        '/recruiters/profile/update/',
-        data: data,
-      );
+  //     final response = await _dio.patch(
+  //       '/recruiters/profile/update/',
+  //       data: data,
+  //     );
 
-      if (kDebugMode) {
-        print('[DEBUG] Update Recruiter Profile Response: ${response.data}');
-      }
+  //     if (kDebugMode) {
+  //       print('[DEBUG] Update Recruiter Profile Response: ${response.data}');
+  //     }
 
-      return response.data;
-    } on DioException catch (e) {
-      return {'error': e.response?.data['message'] ?? 'Update failed'};
-    }
-  }
+  //     return response.data;
+  //   } on DioException catch (e) {
+  //     return {'error': e.response?.data['message'] ?? 'Update failed'};
+  //   }
+  // }
 
   static Future<Map<String, dynamic>> unlockCandidate(String candidateId) async {
     try {
