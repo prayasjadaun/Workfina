@@ -3,26 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
+import 'package:workfina/theme/app_theme.dart';
 import 'dart:io';
 
 class CandidateSetupScreen extends StatefulWidget {
   const CandidateSetupScreen({super.key});
 
   @override
-  State<CandidateSetupScreen> createState() => _CandidateSetupScreenState();
+  State<CandidateSetupScreen> createState() =>
+      _CandidateSetupScreenSwipeableState();
 }
 
-class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
+class _CandidateSetupScreenSwipeableState
+    extends State<CandidateSetupScreen> {
+  final _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
-  int _currentStep = 0;
-  final int _totalSteps = 5;
-
-  // Form keys for each step
-  final GlobalKey<FormState> _step1FormKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _step2FormKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _step3FormKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _step4FormKey = GlobalKey<FormState>();
-  final GlobalKey<FormState> _step5FormKey = GlobalKey<FormState>();
+  int _currentPage = 0;
 
   // Controllers
   final TextEditingController _fullNameController = TextEditingController();
@@ -37,9 +33,11 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
   final TextEditingController _skillsController = TextEditingController();
 
   String _selectedRole = 'IT';
-  String _selectedReligion = 'HINDU';
+  String _selectedReligion = 'PREFER_NOT_TO_SAY';
   File? _resumeFile;
   String? _resumeFileName;
+  File? _videoIntroFile;
+  String? _videoIntroFileName;
 
   final List<Map<String, String>> _roles = [
     {'value': 'IT', 'label': 'Information Technology'},
@@ -63,56 +61,63 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
     {'value': 'PREFER_NOT_TO_SAY', 'label': 'Prefer not to say'},
   ];
 
-  void _nextStep() {
-    FocusScope.of(context).unfocus();
-    final currentFormKey = _getCurrentFormKey();
-    if (currentFormKey?.currentState?.validate() ?? false) {
-      // Check resume file on step 4 (resume upload step)
-      if (_currentStep == 3 && _resumeFile == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please upload your resume to continue'),
-            backgroundColor: Color(0xFFEF4444),
-          ),
-        );
-        return;
-      }
-
-      if (_currentStep < _totalSteps - 1) {
-        setState(() => _currentStep++);
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      }
-    }
-  }
-
-  void _previousStep() {
-    FocusScope.of(context).unfocus();
-    if (_currentStep > 0) {
-      setState(() => _currentStep--);
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
+  void _nextPage() {
+    if (_currentPage < 3) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
     }
   }
 
-  GlobalKey<FormState>? _getCurrentFormKey() {
-    switch (_currentStep) {
-      case 0:
-        return _step1FormKey;
-      case 1:
-        return _step2FormKey;
-      case 2:
-        return _step3FormKey;
-      case 3:
-        return _step4FormKey;
-      case 4:
-        return _step5FormKey;
-      default:
-        return null;
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  bool _validateCurrentPage() {
+  switch (_currentPage) {
+    case 0:
+      // Personal Information
+      return _fullNameController.text.isNotEmpty &&
+          _phoneController.text.length == 10 &&
+          _ageController.text.isNotEmpty &&
+          _experienceController.text.isNotEmpty;
+    case 1:
+      // Professional Information - Check graduation (required) and skills
+      final controller = Provider.of<CandidateController>(context, listen: false);
+      return controller.graduationController.text.isNotEmpty &&
+          controller.graduationUniversityController.text.isNotEmpty &&
+          controller.graduationYearController.text.isNotEmpty &&
+          _skillsController.text.isNotEmpty;
+    case 2:
+      // Compensation & Location
+      return _stateController.text.isNotEmpty &&
+          _cityController.text.isNotEmpty;
+    case 3:
+      // Documents (optional)
+      return true;
+    default:
+      return false;
+  }
+}
+
+
+
+  void _handleContinue() {
+    if (_validateCurrentPage()) {
+      _nextPage();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -120,7 +125,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
+        allowedExtensions: ['pdf'],
         allowMultiple: false,
       );
 
@@ -133,7 +138,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('File size should not exceed 5MB'),
-              backgroundColor: Color(0xFFEF4444),
+              backgroundColor: Colors.red,
             ),
           );
           return;
@@ -148,814 +153,53 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Error picking file. Please try again.'),
-          backgroundColor: Color(0xFFEF4444),
+          backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => CandidateController(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          title: const Text(
-            'Complete Your Profile',
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1A1A1A)),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            FocusScope.of(context).unfocus(); // ✅ keyboard close
-          },
-          child: Column(
-            children: [
-              // Progress Header
-              _buildProgressHeader(),
+  void _pickVideoFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+        allowMultiple: false,
+      );
 
-              // Step Content
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: [
-                    _buildStep1(),
-                    _buildStep2(),
-                    _buildStep3(),
-                    _buildStep4(),
-                    _buildStep5(),
-                  ],
-                ),
-              ),
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        final fileSizeInBytes = await file.length();
+        final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
-              // Navigation Buttons
-              _buildNavigationButtons(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProgressHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(_totalSteps, (index) {
-              final isActive = index == _currentStep;
-              final isCompleted = index < _currentStep;
-
-              return Expanded(
-                child: Container(
-                  margin: EdgeInsets.only(
-                    right: index < _totalSteps - 1 ? 8 : 0,
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          color: isCompleted || isActive
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFFE0E0E0),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isCompleted || isActive
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFFE0E0E0),
-                        ),
-                        child: Center(
-                          child: isCompleted
-                              ? const Icon(
-                                  Icons.check,
-                                  color: Colors.white,
-                                  size: 18,
-                                )
-                              : Text(
-                                  '${index + 1}',
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? Colors.white
-                                        : const Color(0xFF757575),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Step ${_currentStep + 1} of $_totalSteps',
-            style: const TextStyle(
-              color: Color(0xFF757575),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        if (fileSizeInMB > 50) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Video size should not exceed 50MB'),
+              backgroundColor: Colors.red,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep1() {
-    return _buildStepContainer(
-      title: 'Personal Information',
-      description: 'Let\'s start with your basic details',
-      icon: Icons.person_outline,
-      child: Form(
-        key: _step1FormKey,
-        child: Column(
-          children: [
-            _buildTextField(
-              controller: _fullNameController,
-              label: 'Full Name',
-              hintText: 'Enter your full name',
-              icon: Icons.person,
-              isRequired: true,
-              validator: (value) =>
-                  value?.isEmpty == true ? 'Full name is required' : null,
-            ),
-            const SizedBox(height: 20),
-            _buildTextField(
-              controller: _phoneController,
-              label: 'Phone Number',
-              hintText: '9876543210',
-              icon: Icons.phone,
-              isRequired: true,
-              keyboardType: TextInputType.number,
-              maxLength: 10,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (value) {
-                if (value?.isEmpty == true) return 'Phone number is required';
-                if (value!.length != 10) return 'Enter a valid 10-digit number';
-                return null;
-              },
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _ageController,
-                    label: 'Age',
-                    hintText: '25',
-                    icon: Icons.cake,
-                    isRequired: true,
-                    keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Age is required' : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _experienceController,
-                    label: 'Experience (Years)',
-                    hintText: '2',
-                    icon: Icons.work_history,
-                    isRequired: true,
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value?.isEmpty == true
-                        ? 'Experience is required'
-                        : null,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep2() {
-    return _buildStepContainer(
-      title: 'Professional Details',
-      description: 'Tell us about your professional background',
-      icon: Icons.work_outline,
-      child: Form(
-        key: _step2FormKey,
-        child: Column(
-          children: [
-            _buildDropdownField(
-              value: _selectedRole,
-              label: 'Role/Department',
-              icon: Icons.business_center,
-              items: _roles,
-              onChanged: (value) => setState(() => _selectedRole = value!),
-            ),
-            const SizedBox(height: 20),
-            _buildTextField(
-              controller: _educationController,
-              label: 'Education',
-              icon: Icons.school,
-              isRequired: true,
-              maxLines: 2,
-              hintText: 'e.g., B.Tech Computer Science',
-              validator: (value) =>
-                  value?.isEmpty == true ? 'Education is required' : null,
-            ),
-            const SizedBox(height: 20),
-            _buildTextField(
-              controller: _skillsController,
-              label: 'Skills',
-              icon: Icons.psychology,
-              isRequired: true,
-              maxLines: 3,
-              hintText: 'e.g., Python, Django, React (comma separated)',
-              validator: (value) =>
-                  value?.isEmpty == true ? 'Skills are required' : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep3() {
-    return _buildStepContainer(
-      title: 'Compensation & Location',
-      description: 'Share your expectations and location',
-      icon: Icons.location_on_outlined,
-      child: Form(
-        key: _step3FormKey,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _currentCtcController,
-                    label: 'Current CTC (₹)',
-                    icon: Icons.currency_rupee,
-                    keyboardType: TextInputType.number,
-                    hintText: 'Annual package',
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _expectedCtcController,
-                    label: 'Expected CTC (₹)',
-                    icon: Icons.trending_up,
-                    keyboardType: TextInputType.number,
-                    hintText: 'Expected package',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _stateController,
-                    label: 'State',
-                    icon: Icons.location_on,
-                    isRequired: true,
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'State is required' : null,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _cityController,
-                    label: 'City',
-                    icon: Icons.location_city,
-                    isRequired: true,
-                    textInputAction: TextInputAction.done,
-                    onDone: _nextStep,
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'City is required' : null,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildDropdownField(
-              value: _selectedReligion,
-              label: 'Religion (Optional)',
-              icon: Icons.account_circle,
-              items: _religions,
-              onChanged: (value) => setState(() => _selectedReligion = value!),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep4() {
-    return _buildStepContainer(
-      title: 'Resume Upload',
-      description: 'Upload your resume (PDF or DOC)',
-      icon: Icons.upload_file_outlined,
-      child: Form(
-        key: _step4FormKey,
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: const Color(0xFFE5E7EB),
-                  style: BorderStyle.solid,
-                  width: 2,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                color: const Color(0xFFF9FAFB),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    _resumeFile != null
-                        ? Icons.check_circle
-                        : Icons.cloud_upload_outlined,
-                    size: 64,
-                    color: _resumeFile != null
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFF6B7280),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _resumeFile != null ? 'Resume Uploaded' : 'Upload Resume',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _resumeFileName ?? 'PDF or DOC format only',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF6B7280),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    onPressed: _pickResumeFile,
-                    icon: Icon(
-                      _resumeFile != null ? Icons.refresh : Icons.upload_file,
-                    ),
-                    label: Text(
-                      _resumeFile != null ? 'Change Resume' : 'Choose File',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFF6B7280),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Accepted formats: PDF, DOC, DOCX\nMax file size: 5MB',
-                      style: const TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStep5() {
-    return _buildStepContainer(
-      title: 'Review & Submit',
-      description: 'Please review your information',
-      icon: Icons.check_circle_outline,
-      child: Form(
-        key: _step5FormKey,
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildReviewCard('Personal Info', [
-                'Name: ${_fullNameController.text}',
-                'Phone: ${_phoneController.text}',
-                'Age: ${_ageController.text} years',
-                'Experience: ${_experienceController.text} years',
-              ]),
-              const SizedBox(height: 16),
-              _buildReviewCard('Professional Info', [
-                'Role: ${_roles.firstWhere((r) => r['value'] == _selectedRole)['label']}',
-                'Education: ${_educationController.text}',
-                'Skills: ${_skillsController.text}',
-              ]),
-              const SizedBox(height: 16),
-              _buildReviewCard('Location & Compensation', [
-                'Location: ${_cityController.text}, ${_stateController.text}',
-                if (_currentCtcController.text.isNotEmpty)
-                  'Current CTC: ₹${_currentCtcController.text}',
-                if (_expectedCtcController.text.isNotEmpty)
-                  'Expected CTC: ₹${_expectedCtcController.text}',
-                'Religion: ${_religions.firstWhere((r) => r['value'] == _selectedReligion)['label']}',
-              ]),
-              const SizedBox(height: 16),
-              _buildReviewCard('Resume', [
-                _resumeFileName != null
-                    ? 'Resume: $_resumeFileName'
-                    : 'Resume: Not uploaded',
-              ]),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Color(0xFF6B7280),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'By submitting, you agree to our terms and conditions. Your profile will be reviewed within 24 hours.',
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStepContainer({
-    required String title,
-    required String description,
-    required IconData icon,
-    required Widget child,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4CAF50).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          Expanded(child: child),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool isRequired = false,
-    String? hintText,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-    int? maxLength,
-    TextInputAction textInputAction = TextInputAction.next,
-    VoidCallback? onDone,
-  }) {
-    return TextFormField(
-      controller: controller,
-      textInputAction: textInputAction, // ✅
-
-      onFieldSubmitted: (_) {
-        if (textInputAction == TextInputAction.done) {
-          FocusScope.of(context).unfocus(); // ✅ keyboard close
-          onDone?.call(); // optional submit
+          );
+          return;
         }
-      },
-      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
-      decoration: InputDecoration(
-        labelText: '$label${isRequired ? ' *' : ''}',
-        hintText: hintText,
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
-        hintStyle: const TextStyle(color: Color(0xFF374151), fontSize: 16),
-        labelStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
-        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+
+        setState(() {
+          _videoIntroFile = file;
+          _videoIntroFileName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error picking video. Please try again.'),
+          backgroundColor: Colors.red,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444)),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.all(16),
-        counterText: '',
-      ),
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      validator: validator,
-      maxLines: maxLines,
-      maxLength: maxLength,
-    );
+      );
+    }
   }
 
-  Widget _buildDropdownField({
-    required String value,
-    required String label,
-    required IconData icon,
-    required List<Map<String, String>> items,
-    required void Function(String?) onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 16),
-        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.all(16),
-      ),
-      items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item['value'],
-              child: Text(
-                item['label']!,
-                style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
-              ),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-    );
-  }
+  Future<void> _submitProfile() async {
+    final controller = context.read<CandidateController>();
 
-  Widget _buildReviewCard(String title, List<String> items) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(
-                item,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavigationButtons() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          if (_currentStep > 0)
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _previousStep,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
-                ),
-                child: const Text(
-                  'Previous',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-              ),
-            ),
-          if (_currentStep > 0) const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Consumer<CandidateController>(
-              builder: (context, candidateController, child) {
-                return ElevatedButton(
-                  onPressed: candidateController.isLoading
-                      ? null
-                      : () {
-                          if (_currentStep == _totalSteps - 1) {
-                            _submitProfile(candidateController);
-                          } else {
-                            _nextStep();
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: candidateController.isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          _currentStep == _totalSteps - 1
-                              ? 'Submit Profile'
-                              : 'Continue',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _submitProfile(CandidateController candidateController) async {
-    final success = await candidateController.registerCandidate(
+    final success = await controller.registerCandidate(
       fullName: _fullNameController.text,
       phone: _phoneController.text,
       age: int.parse(_ageController.text),
@@ -973,6 +217,7 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
       education: _educationController.text,
       skills: _skillsController.text,
       resumeFile: _resumeFile,
+      videoIntroFile: _videoIntroFile,
     );
 
     if (success) {
@@ -981,14 +226,912 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
         '/candidate-home',
         (route) => false,
       );
-    } else if (candidateController.error != null) {
+    } else if (controller.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(candidateController.error!),
-          backgroundColor: const Color(0xFFEF4444),
+          content: Text(controller.error!),
+          backgroundColor: Colors.red,
         ),
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: const Text('Complete Your Profile'),
+        backgroundColor: AppTheme.primaryGreen,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        leading: _currentPage > 0
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: _previousPage,
+              )
+            : null,
+      ),
+      body: Column(
+        children: [
+          // Progress Indicator
+          _buildProgressIndicator(),
+
+          // Page View
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(), // Disable manual swipe
+              onPageChanged: (page) {
+                setState(() {
+                  _currentPage = page;
+                });
+              },
+              children: [
+                _buildPersonalInfoPage(),
+                _buildProfessionalInfoPage(),
+                _buildLocationPage(),
+                _buildDocumentsPage(),
+              ],
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomButtons(),
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    return Container(
+      color: AppTheme.primaryGreen,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Step ${_currentPage + 1} of 4',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '${((_currentPage + 1) / 4 * 100).toInt()}% Complete',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(4, (index) {
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: index <= _currentPage
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    return Consumer<CandidateController>(
+      builder: (context, controller, child) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Row(
+              children: [
+                if (_currentPage > 0)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _previousPage,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: const BorderSide(color: AppTheme.primaryGreen),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Back',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryGreen,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_currentPage > 0) const SizedBox(width: 12),
+                Expanded(
+                  flex: _currentPage == 0 ? 1 : 2,
+                  child: ElevatedButton(
+                    onPressed: controller.isLoading
+                        ? null
+                        : _currentPage < 3
+                            ? _handleContinue
+                            : _submitProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: controller.isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            _currentPage < 3 ? 'Continue' : 'Submit Profile',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // PAGE 1: Personal Information
+  Widget _buildPersonalInfoPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageHeader(
+            icon: Icons.person_outline,
+            title: 'Personal Information',
+            subtitle: 'Tell us about yourself',
+          ),
+          const SizedBox(height: 32),
+          _buildTextField(
+            controller: _fullNameController,
+            label: 'Full Name',
+            icon: Icons.person,
+            isRequired: true,
+          ),
+          const SizedBox(height: 20),
+          _buildTextField(
+            controller: _phoneController,
+            label: 'Phone Number',
+            icon: Icons.phone,
+            isRequired: true,
+            keyboardType: TextInputType.phone,
+            maxLength: 10,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _ageController,
+                  label: 'Age',
+                  icon: Icons.cake,
+                  isRequired: true,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _experienceController,
+                  label: 'Experience (Years)',
+                  icon: Icons.work_history,
+                  isRequired: true,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // PAGE 2: Professional Information
+  Widget _buildProfessionalInfoPage() {
+      return Consumer<CandidateController>(
+    builder: (context, controller, child) {
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageHeader(
+            icon: Icons.work_outline,
+            title: 'Professional Information',
+            subtitle: 'Your career details',
+          ),
+          const SizedBox(height: 32),
+          _buildDropdownField(
+            value: _selectedRole,
+            label: 'Role/Department',
+            icon: Icons.business_center,
+            items: _roles,
+            onChanged: (value) => setState(() => _selectedRole = value!),
+          ),
+          const SizedBox(height: 20),
+          // Education Section Header
+const SizedBox(height: 24),
+
+Row(
+  children: [
+    const Icon(Icons.school, color: AppTheme.primaryGreen, size: 20),
+    const SizedBox(width: 8),
+    const Text(
+      'Education Details',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1A1A1A),
+      ),
+    ),
+  ],
+),
+const SizedBox(height: 4),
+Text(
+  'Add your educational qualifications',
+  style: TextStyle(
+    fontSize: 13,
+    color: Colors.grey[600],
+  ),
+),
+
+const SizedBox(height: 16),
+
+// 10th Standard
+_buildEducationCard(
+  controller: controller,
+  title: '10th Standard',
+  subtitle: controller.showClass10 ? 'Click to collapse' : 'Click to add details',
+  icon: Icons.school_outlined,
+  isExpanded: controller.showClass10,
+  hasData: controller.hasClass10Data(),
+  onTap: () => controller.toggleClass10(),
+  children: [
+    _buildTextField(
+      controller: controller.class10Controller,
+      label: 'School Name',
+      icon: Icons.location_city,
+      hintText: 'e.g., ABC High School',
+    ),
+    const SizedBox(height: 16),
+    Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: controller.class10BoardController,
+            label: 'Board',
+            icon: Icons.corporate_fare,
+            hintText: 'CBSE/ICSE/State',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: controller.class10YearController,
+            label: 'Year',
+            icon: Icons.calendar_today,
+            keyboardType: TextInputType.number,
+            hintText: '2020',
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(height: 16),
+    _buildTextField(
+      controller: controller.class10PercentageController,
+      label: 'Percentage/CGPA',
+      icon: Icons.grade,
+      keyboardType: TextInputType.number,
+      hintText: 'e.g., 85.5',
+    ),
+  ],
+),
+
+const SizedBox(height: 12),
+
+// 12th Standard
+_buildEducationCard(
+  controller: controller,
+  title: '12th Standard / Diploma',
+  subtitle: controller.showClass12 ? 'Click to collapse' : 'Click to add details',
+  icon: Icons.school_outlined,
+  isExpanded: controller.showClass12,
+  hasData: controller.hasClass12Data(),
+  onTap: () => controller.toggleClass12(),
+  children: [
+    _buildTextField(
+      controller: controller.class12Controller,
+      label: 'School/College Name',
+      icon: Icons.location_city,
+      hintText: 'e.g., XYZ Senior Secondary School',
+    ),
+    const SizedBox(height: 16),
+    Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: controller.class12BoardController,
+            label: 'Board/Stream',
+            icon: Icons.corporate_fare,
+            hintText: 'Science/Commerce/Arts',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: controller.class12YearController,
+            label: 'Year',
+            icon: Icons.calendar_today,
+            keyboardType: TextInputType.number,
+            hintText: '2022',
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(height: 16),
+    _buildTextField(
+      controller: controller.class12PercentageController,
+      label: 'Percentage/CGPA',
+      icon: Icons.grade,
+      keyboardType: TextInputType.number,
+      hintText: 'e.g., 90.2',
+    ),
+  ],
+),
+
+const SizedBox(height: 12),
+
+// Graduation (Required)
+_buildEducationCard(
+  controller: controller,
+  title: 'Graduation (Bachelor\'s Degree)',
+  subtitle: controller.showGraduation ? 'Click to collapse' : 'Click to add details',
+  icon: Icons.school,
+  isExpanded: controller.showGraduation,
+  hasData: controller.hasGraduationData(),
+  isRequired: true,
+  onTap: () => controller.toggleGraduation(),
+  children: [
+    _buildTextField(
+      controller: controller.graduationController,
+      label: 'Degree',
+      icon: Icons.workspace_premium,
+      hintText: 'e.g., B.Tech Computer Science',
+      isRequired: true,
+    ),
+    const SizedBox(height: 16),
+    _buildTextField(
+      controller: controller.graduationUniversityController,
+      label: 'University/College',
+      icon: Icons.account_balance,
+      hintText: 'e.g., Delhi University',
+      isRequired: true,
+    ),
+    const SizedBox(height: 16),
+    Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: controller.graduationYearController,
+            label: 'Year of Passing',
+            icon: Icons.calendar_today,
+            keyboardType: TextInputType.number,
+            hintText: '2024',
+            isRequired: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: controller.graduationPercentageController,
+            label: 'Percentage/CGPA',
+            icon: Icons.grade,
+            keyboardType: TextInputType.number,
+            hintText: 'e.g., 8.5',
+          ),
+        ),
+      ],
+    ),
+  ],
+),
+
+const SizedBox(height: 12),
+
+// Post Graduation
+_buildEducationCard(
+  controller: controller,
+  title: 'Post Graduation (Master\'s Degree)',
+  subtitle: controller.showPostGraduation ? 'Click to collapse' : 'Click to add details (Optional)',
+  icon: Icons.school,
+  isExpanded: controller.showPostGraduation,
+  hasData: controller.hasPostGraduationData(),
+  onTap: () => controller.togglePostGraduation(),
+  children: [
+    _buildTextField(
+      controller: controller.postGraduationController,
+      label: 'Degree',
+      icon: Icons.workspace_premium,
+      hintText: 'e.g., M.Tech, MBA, MCA',
+    ),
+    const SizedBox(height: 16),
+    _buildTextField(
+      controller: controller.postGraduationUniversityController,
+      label: 'University/College',
+      icon: Icons.account_balance,
+      hintText: 'e.g., IIT Delhi',
+    ),
+    const SizedBox(height: 16),
+    Row(
+      children: [
+        Expanded(
+          child: _buildTextField(
+            controller: controller.postGraduationYearController,
+            label: 'Year of Passing',
+            icon: Icons.calendar_today,
+            keyboardType: TextInputType.number,
+            hintText: '2026 or Pursuing',
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildTextField(
+            controller: controller.postGraduationPercentageController,
+            label: 'Percentage/CGPA',
+            icon: Icons.grade,
+            keyboardType: TextInputType.number,
+            hintText: 'e.g., 9.0',
+          ),
+        ),
+      ],
+    ),
+  ],
+),
+
+const SizedBox(height: 12),
+
+// Other Certifications
+_buildEducationCard(
+  controller: controller,
+  title: 'Other Certifications / Courses',
+  subtitle: controller.showOtherEducation ? 'Click to collapse' : 'Click to add additional qualifications',
+  icon: Icons.card_membership,
+  isExpanded: controller.showOtherEducation,
+  hasData: controller.hasOtherEducationData(),
+  onTap: () => controller.toggleOtherEducation(),
+  children: [
+    _buildTextField(
+      controller: controller.otherEducationController,
+      label: 'Additional Qualifications',
+      icon: Icons.emoji_events,
+      maxLines: 4,
+      hintText: 'e.g., AWS Certified, Google Analytics, Python Bootcamp',
+    ),
+  ],
+),
+
+const SizedBox(height: 32),
+
+// Skills Header
+Row(
+  children: [
+    const Icon(Icons.psychology, color: AppTheme.primaryGreen, size: 20),
+    const SizedBox(width: 8),
+    const Text(
+      'Skills',
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1A1A1A),
+      ),
+    ),
+  ],
+),
+const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          _buildTextField(
+            controller: _skillsController,
+            label: 'Skills',
+            icon: Icons.psychology,
+            isRequired: true,
+            maxLines: 4,
+            hintText: 'e.g., Python, Django, React (comma separated)',
+          ),
+        ],
+      ),
+    );
+    },
+      );
+  }
+
+  // PAGE 3: Compensation & Location
+  Widget _buildLocationPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageHeader(
+            icon: Icons.location_on_outlined,
+            title: 'Compensation & Location',
+            subtitle: 'Where you work and your expectations',
+          ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _currentCtcController,
+                  label: 'Current CTC (₹)',
+                  icon: Icons.currency_rupee,
+                  keyboardType: TextInputType.number,
+                  hintText: 'Annual package',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _expectedCtcController,
+                  label: 'Expected CTC (₹)',
+                  icon: Icons.trending_up,
+                  keyboardType: TextInputType.number,
+                  hintText: 'Expected package',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateController,
+                  label: 'State',
+                  icon: Icons.location_on,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _cityController,
+                  label: 'City',
+                  icon: Icons.location_city,
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildDropdownField(
+            value: _selectedReligion,
+            label: 'Religion (Optional)',
+            icon: Icons.account_circle,
+            items: _religions,
+            onChanged: (value) => setState(() => _selectedReligion = value!),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // PAGE 4: Documents
+  Widget _buildDocumentsPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPageHeader(
+            icon: Icons.upload_file_outlined,
+            title: 'Documents (Optional)',
+            subtitle: 'Upload your resume and video introduction',
+          ),
+          const SizedBox(height: 32),
+          _buildFileUploadCard(
+            title: 'Resume',
+            description: 'PDF format only (Max 5MB)',
+            icon: Icons.description_outlined,
+            file: _resumeFile,
+            fileName: _resumeFileName,
+            onTap: _pickResumeFile,
+          ),
+          const SizedBox(height: 20),
+          _buildFileUploadCard(
+            title: 'Video Introduction',
+            description: 'MP4, MOV, or AVI (Max 50MB)',
+            icon: Icons.videocam_outlined,
+            file: _videoIntroFile,
+            fileName: _videoIntroFileName,
+            onTap: _pickVideoFile,
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.blue.shade700,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Your profile will be reviewed within 24 hours. Make sure all information is accurate before submitting.',
+                    style: TextStyle(
+                      color: Colors.blue.shade900,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildPageHeader({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryGreen.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            icon,
+            color: AppTheme.primaryGreen,
+            size: 32,
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A1A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 15,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isRequired = false,
+    String? hintText,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int maxLines = 1,
+    int? maxLength,
+  }) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+      decoration: InputDecoration(
+        labelText: '$label${isRequired ? ' *' : ''}',
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+        labelStyle: const TextStyle(color: Color(0xFF6B7280)),
+        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(16),
+        counterText: '',
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLines: maxLines,
+      maxLength: maxLength,
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String value,
+    required String label,
+    required IconData icon,
+    required List<Map<String, String>> items,
+    required void Function(String?) onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      dropdownColor: Colors.white,
+      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFF6B7280)),
+        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.all(16),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem(
+              value: item['value'],
+              child: Text(item['label']!),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildFileUploadCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required File? file,
+    required String? fileName,
+    required VoidCallback onTap,
+  }) {
+    final bool hasFile = file != null;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: hasFile ? AppTheme.primaryGreen : Colors.grey[300]!,
+            width: hasFile ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: hasFile
+                    ? AppTheme.primaryGreen.withOpacity(0.1)
+                    : Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                hasFile ? Icons.check_circle : icon,
+                size: 32,
+                color: hasFile ? AppTheme.primaryGreen : Colors.grey[600],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    hasFile ? '$title Uploaded' : 'Upload $title',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: hasFile
+                          ? AppTheme.primaryGreen
+                          : const Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    fileName ?? description,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              hasFile ? Icons.refresh : Icons.upload_file,
+              color: hasFile ? AppTheme.primaryGreen : Colors.grey[600],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -1006,4 +1149,123 @@ class _CandidateSetupScreenState extends State<CandidateSetupScreen> {
     _skillsController.dispose();
     super.dispose();
   }
+
+  Widget _buildEducationCard({
+  required CandidateController controller,
+  required String title,
+  required String subtitle,
+  required IconData icon,
+  required bool isExpanded,
+  required bool hasData,
+  required VoidCallback onTap,
+  required List<Widget> children,
+  bool isRequired = false,
+}) {
+  return Container(
+    decoration: BoxDecoration(
+      border: Border.all(
+        color: hasData
+            ? AppTheme.primaryGreen
+            : isExpanded
+                ? AppTheme.primaryGreen.withOpacity(0.5)
+                : Colors.grey[300]!,
+        width: hasData ? 2 : 1,
+      ),
+      borderRadius: BorderRadius.circular(12),
+      color: Colors.white,
+    ),
+    child: Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: hasData
+                        ? AppTheme.primaryGreen.withOpacity(0.1)
+                        : Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    hasData ? Icons.check_circle : icon,
+                    color: hasData ? AppTheme.primaryGreen : Colors.grey[600],
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: hasData
+                                    ? AppTheme.primaryGreen
+                                    : const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                          ),
+                          if (isRequired)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Required',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red.shade700,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.grey[600],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isExpanded)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              children: children,
+            ),
+          ),
+      ],
+    ),
+  );
+}
 }

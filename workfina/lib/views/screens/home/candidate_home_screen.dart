@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
 import 'package:workfina/views/screens/candidates/candidate_dashboard.dart';
+import 'package:workfina/views/screens/candidates/candidate_jobs_screen.dart';
+import 'package:workfina/views/screens/candidates/candidate_applications_screen.dart';
 import 'package:workfina/views/screens/candidates/candidate_profile.dart';
+import 'package:workfina/theme/app_theme.dart';
 
 class CandidateHomeScreen extends StatefulWidget {
   const CandidateHomeScreen({super.key});
@@ -31,17 +34,36 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
       ),
       body: IndexedStack(
         index: _currentIndex,
-        children: const [CandidateDashboard(), CandidateProfileScreen()],
+        children: const [
+          CandidateDashboard(),
+          CandidateJobsScreen(),
+          CandidateApplicationsScreen(),
+          CandidateProfileScreen(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppTheme.primaryGreen,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline),
+            label: 'Jobs',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.description_outlined),
+            label: 'Applications',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
         ],
       ),
     );
