@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:workfina/services/api_service.dart';
 import 'dart:io';
@@ -73,14 +74,25 @@ class CandidateController extends ChangeNotifier {
       final response = await ApiService.getCandidateProfile();
 
       if (response.containsKey('error')) {
+        _error = response['error'];
         return false;
       }
 
       _candidateProfile = response;
       notifyListeners();
       return true;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout) {
+        _error =
+            'Unable to connect to server. Please check your internet connection.';
+      } else {
+        _error = 'Network error. Please try again.';
+      }
+      throw Exception(_error);
     } catch (e) {
-      return false;
+      _error = 'Failed to load profile';
+      throw Exception(_error);
     }
   }
 
