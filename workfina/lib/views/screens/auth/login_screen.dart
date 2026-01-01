@@ -15,152 +15,249 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
+  bool _isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_validateForm);
+    _passwordController.addListener(_validateForm);
+  }
 
   @override
   void dispose() {
+    _emailController.removeListener(_validateForm);
+    _passwordController.removeListener(_validateForm);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  void _validateForm() {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    
+    final isValid = email.isNotEmpty &&
+        password.isNotEmpty &&
+        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
+        password.length >= 6;
+    
+    if (_isFormValid != isValid) {
+      setState(() {
+        _isFormValid = isValid;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
-          'Login',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          'WorkFina',
+          style: TextStyle(
+            color: AppTheme.primaryGreen,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            fontSize: 20,
           ),
         ),
+        centerTitle: true,
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          FocusScope.of(context).unfocus(); // ✅ keyboard close
+          FocusScope.of(context).unfocus();
         },
-        child: Container(
-          height: double.infinity,
-          decoration: AppTheme.getGradientDecoration(context),
+        child: SafeArea(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.login, size: 80, color: AppTheme.primaryGreen),
-                    const SizedBox(height: 32),
-                    Text(
-                      'Welcome Back',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                    const SizedBox(height: 40),
+                    
+                    // Title
+                    const Text(
+                      'Welcome Back!',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                     const SizedBox(height: 8),
+                    
+                    // Subtitle
                     Text(
-                      'Login to your account',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                      'Login to continue your journey',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
                     ),
                     const SizedBox(height: 40),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Email Address',
-                        hintText: 'Enter your email',
-                        prefixIcon: Icon(Icons.email_outlined),
+                    
+                    // Email Input Label
+                    Text(
+                      'Email Address',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
                       ),
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) {
-                          return 'Please enter your email';
-                        }
-                        if (!RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(value!)) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) async {
-                        final authController = Provider.of<AuthController>(
-                          context,
-                          listen: false,
-                        );
-                        if (authController.isLoading) return;
-                        FocusScope.of(context).unfocus(); // keyboard close
-                        if (_formKey.currentState!.validate()) {
-                          final authController = Provider.of<AuthController>(
-                            context,
-                            listen: false,
-                          );
-
-                          final success = await authController.login(
-                            _emailController.text,
-                            _passwordController.text,
-                          );
-
-                          if (success && mounted) {
-                            final userRole = authController.user?['role'];
-
-                            if (userRole == 'candidate') {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/candidate-home',
-                                (route) => false,
-                              );
-                            } else if (userRole == 'hr') {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/hr-home',
-                                (route) => false,
-                              );
-                            } else {
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                '/role-selection',
-                                (route) => false,
-                              );
+                    const SizedBox(height: 12),
+                    
+                    // Email Input Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: 'example@email.com',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.normal,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                            color: Colors.grey[600],
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          errorStyle: const TextStyle(height: 0.5),
+                        ),
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) {
+                            return 'Please enter your email';
+                          }
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                              .hasMatch(value!)) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Password Input Label
+                    Text(
+                      'Password',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Password Input Field
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        onFieldSubmitted: (_) async {
+                          if (_isFormValid) {
+                            FocusScope.of(context).unfocus();
+                            final authController = Provider.of<AuthController>(
+                              context,
+                              listen: false,
+                            );
+                            if (!authController.isLoading) {
+                              _handleLogin(authController);
                             }
                           }
-                        }
-                      },
-
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Enter your password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Enter your password',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.normal,
                           ),
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
+                          prefixIcon: Icon(
+                            Icons.lock_outline,
+                            color: Colors.grey[600],
                           ),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Colors.grey[600],
+                            ),
+                            onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          errorStyle: const TextStyle(height: 0.5),
                         ),
+                        validator: (value) {
+                          if (value?.isEmpty ?? true) {
+                            return 'Please enter your password';
+                          }
+                          if (value!.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
                       ),
-                      validator: (value) {
-                        if (value?.isEmpty ?? true) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
                     ),
-
-                    const SizedBox(height: 32),
+                    
+                    const SizedBox(height: 20),
+                    
+        
+                    
+                    // const SizedBox(height: 40),
+                    
+                    // Login Button
                     Consumer<AuthController>(
                       builder: (context, authController, child) {
                         if (authController.error != null) {
@@ -170,6 +267,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 SnackBar(
                                   content: Text(authController.error!),
                                   backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               );
                               authController.clearError();
@@ -177,78 +278,131 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         }
 
-                        return SizedBox(
+                        final isButtonEnabled = _isFormValid && !authController.isLoading;
+
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
                           width: double.infinity,
                           height: 56,
-                          child: ElevatedButton(
-                            onPressed: authController.isLoading
-                                ? null
-                                : () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      final success = await authController
-                                          .login(
-                                            _emailController.text,
-                                            _passwordController.text,
-                                          );
-                                      if (success) {
-                                        final userRole =
-                                            authController.user?['role'];
-                                        if (userRole == 'candidate') {
-                                          Navigator.pushNamedAndRemoveUntil(
-                                            context,
-                                            '/candidate-home',
-                                            (route) => false,
-                                          );
-                                        } else if (userRole == 'hr') {
-                                          Navigator.pushNamedAndRemoveUntil(
-                                            context,
-                                            '/hr-home',
-                                            (route) => false,
-                                          );
-                                        } else {
-                                          Navigator.pushNamedAndRemoveUntil(
-                                            context,
-                                            '/role-selection',
-                                            (route) => false,
-                                          );
-                                        }
-                                      }
-                                    }
-                                  },
-                            child: authController.isLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: isButtonEnabled
+                                ? LinearGradient(
+                                    colors: [
+                                      AppTheme.primaryGreen,
+                                      AppTheme.primaryGreen.withOpacity(0.8),
+                                    ],
                                   )
-                                : const Text(
+                                : null,
+                            color: isButtonEnabled ? null : Colors.grey[300],
+                            boxShadow: isButtonEnabled
+                                ? [
+                                    BoxShadow(
+                                      color: AppTheme.primaryGreen.withOpacity(0.3),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: ElevatedButton(
+                            onPressed: isButtonEnabled
+                                ? () => _handleLogin(authController)
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              disabledBackgroundColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: authController.isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
                                     'Login',
-                                    style: TextStyle(fontSize: 16),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: isButtonEnabled 
+                                          ? Colors.white 
+                                          : Colors.grey[600],
+                                    ),
                                   ),
                           ),
                         );
                       },
                     ),
+                    
                     const SizedBox(height: 24),
+                    
+                    // Divider with OR
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Don\'t have an account? ',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        Expanded(
+                          child: Divider(
+                            color: Colors.grey[300],
+                            thickness: 1,
+                          ),
                         ),
-                        GestureDetector(
-                          onTap: () =>
-                              Navigator.pushReplacementNamed(context, '/email'),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'Sign Up',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            'OR',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: Colors.grey[300],
+                            thickness: 1,
                           ),
                         ),
                       ],
                     ),
+                    
+                    const SizedBox(height: 24),
+                    
+                    // Sign Up Link
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Don\'t have an account? ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                Navigator.pushReplacementNamed(context, '/email'),
+                            child: Text(
+                              'Sign Up',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.primaryGreen,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -257,5 +411,37 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLogin(AuthController authController) async {
+    if (_formKey.currentState!.validate()) {
+      final success = await authController.login(
+        _emailController.text,
+        _passwordController.text,
+      );
+      
+      if (success && mounted) {
+        final userRole = authController.user?['role'];
+        if (userRole == 'candidate') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/candidate-home',
+            (route) => false,
+          );
+        } else if (userRole == 'hr') {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/hr-home',
+            (route) => false,
+          );
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/role-selection',
+            (route) => false,
+          );
+        }
+      }
+    }
   }
 }
