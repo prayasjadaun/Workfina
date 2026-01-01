@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
@@ -16,16 +17,36 @@ class _OTPScreenState extends State<OTPScreen> {
     (index) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
+  bool _isOtpComplete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to track OTP completion
+    for (var controller in _otpControllers) {
+      controller.addListener(_checkOtpComplete);
+    }
+  }
 
   @override
   void dispose() {
     for (var controller in _otpControllers) {
+      controller.removeListener(_checkOtpComplete);
       controller.dispose();
     }
     for (var node in _focusNodes) {
       node.dispose();
     }
     super.dispose();
+  }
+
+  void _checkOtpComplete() {
+    final isComplete = _otpControllers.every((controller) => controller.text.isNotEmpty);
+    if (_isOtpComplete != isComplete) {
+      setState(() {
+        _isOtpComplete = isComplete;
+      });
+    }
   }
 
   String get otpCode =>
@@ -36,176 +57,284 @@ class _OTPScreenState extends State<OTPScreen> {
     final authController = context.watch<AuthController>();
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Text(
-          'Verify OTP',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+          'WorkFina',
+          style: TextStyle(
+            color: AppTheme.primaryGreen,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            fontSize: 20,
           ),
         ),
+        centerTitle: true,
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          FocusScope.of(context).unfocus(); // ✅ keyboard close
+          FocusScope.of(context).unfocus();
         },
-        child: Container(
-          height: double.infinity,
-          decoration: AppTheme.getGradientDecoration(context),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.verified_user_outlined,
-                    size: 80,
-                    color: AppTheme.primaryGreen,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                
+                // Title
+                const Text(
+                  'We just sent an SMS',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Enter Verification Code',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+                ),
+                const SizedBox(height: 12),
+                
+                // Subtitle with email/phone
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey[600],
+                    ),
+                    children: [
+                      const TextSpan(
+                        text: 'Enter the six digit security code we sent to ',
+                      ),
+                      TextSpan(
+                        text: authController.tempEmail ?? 'your email',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // Edit Number/Email Link
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Text(
+                    'Edit Email',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.orange[700],
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'We sent a 6-digit code to ${authController.tempEmail ?? "your email"}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(6, (index) {
-                      return SizedBox(
-                        width: 50,
-                        child: TextFormField(
-                          controller: _otpControllers[index],
-                          focusNode: _focusNodes[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          decoration: const InputDecoration(
-                            counterText: '',
-                            border: OutlineInputBorder(),
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // OTP Input Boxes
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(6, (index) {
+                    return SizedBox(
+                      width: 50,
+                      height: 60,
+                      child: TextFormField(
+                        controller: _otpControllers[index],
+                        focusNode: _focusNodes[index],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 1,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          counterText: '',
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.grey[300]!,
+                              width: 2,
+                            ),
                           ),
-                          onChanged: (value) async {
-                            if (value.isNotEmpty && index < 5) {
-                              _focusNodes[index + 1].requestFocus();
-                            } else if (value.isEmpty && index > 0) {
-                              _focusNodes[index - 1].requestFocus();
-                            }
-
-                            // ✅ AUTO SUBMIT WHEN OTP COMPLETE
-                            if (index == 5 && value.isNotEmpty) {
-                              FocusScope.of(context).unfocus(); // keyboard band
-
-                              final authController =
-                                  Provider.of<AuthController>(
-                                    context,
-                                    listen: false,
-                                  );
-
-                              if (otpCode.length == 6 &&
-                                  !authController.isLoading) {
-                                final success = await authController
-                                    .verifyOTPOnly(
-                                      email: authController.tempEmail!,
-                                      otp: otpCode,
-                                    );
-
-                                if (success && mounted) {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/create-account',
-                                  );
-                                }
-                              }
-                            }
-
-                            setState(() {});
-                          },
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: AppTheme.primaryGreen,
+                              width: 2,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
                         ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 32),
-                  Consumer<AuthController>(
-                    builder: (context, authController, child) {
-                      if (authController.error != null) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted && authController.error != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(authController.error!),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            authController.clearError();
+                        onChanged: (value) {
+                          if (value.isNotEmpty && index < 5) {
+                            _focusNodes[index + 1].requestFocus();
+                          } else if (value.isEmpty && index > 0) {
+                            _focusNodes[index - 1].requestFocus();
                           }
-                        });
-                      }
 
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed:
-                              authController.isLoading || otpCode.length != 6
-                              ? null
-                              : () async {
-                                  final success = await authController
-                                      .verifyOTPOnly(
-                                        email: authController.tempEmail!,
-                                        otp: otpCode,
-                                      );
-                                  if (success) {
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/create-account',
-                                    );
-                                  }
-                                },
-                          child: authController.isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Verify OTP',
-                                  style: TextStyle(fontSize: 16),
+                          // Auto submit when OTP complete
+                          if (index == 5 && value.isNotEmpty) {
+                            FocusScope.of(context).unfocus();
+
+                            if (otpCode.length == 6 && !authController.isLoading) {
+                              _verifyOtp(authController);
+                            }
+                          }
+                        },
+                      ),
+                    );
+                  }),
+                ),
+                
+                const SizedBox(height: 40),
+                
+                // Continue Button
+                Consumer<AuthController>(
+                  builder: (context, authController, child) {
+                    if (authController.error != null) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && authController.error != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(authController.error!),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
+                          authController.clearError();
+                        }
+                      });
+                    }
+
+                    final isButtonEnabled = _isOtpComplete && !authController.isLoading;
+
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        color: isButtonEnabled ? Colors.black : Colors.grey[300],
+                        boxShadow: isButtonEnabled
+                            ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ]
+                            : null,
+                      ),
+                      child: ElevatedButton(
+                        onPressed: isButtonEnabled
+                            ? () => _verifyOtp(authController)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          disabledBackgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
                         ),
-                      );
-                    },
+                        child: authController.isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : Text(
+                                'Continue',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isButtonEnabled 
+                                      ? Colors.white 
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                      ),
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Resend Code Link
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Didn\'t receive the code? ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () async {
+                          if (authController.tempEmail != null) {
+                            await authController.sendOTP(authController.tempEmail!);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('OTP sent again'),
+                                  backgroundColor: AppTheme.primaryGreen,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text(
+                          'Send Again',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  TextButton(
-                    onPressed: () async {
-                      if (authController.tempEmail != null) {
-                        await authController.sendOTP(authController.tempEmail!);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('OTP sent again')),
-                        );
-                      }
-                    },
-                    child: Text(
-                      'Resend OTP',
-                      style: TextStyle(color: AppTheme.primaryGreen),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                
+                const SizedBox(height: 20),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _verifyOtp(AuthController authController) async {
+    final success = await authController.verifyOTPOnly(
+      email: authController.tempEmail!,
+      otp: otpCode,
+    );
+
+    if (success && mounted) {
+      Navigator.pushNamed(context, '/create-account');
+    }
   }
 }
