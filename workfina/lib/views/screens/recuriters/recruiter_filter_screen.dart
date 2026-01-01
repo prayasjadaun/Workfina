@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:provider/provider.dart';
-import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/filter_candidate_screen.dart';
