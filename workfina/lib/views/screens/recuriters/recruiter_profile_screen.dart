@@ -199,7 +199,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SvgPicture.asset(
-                        'assets/svgs/check_circle.svg',
+                        'assets/svgs/check.svg',
                         width: 14,
                         height: 14,
                         colorFilter: const ColorFilter.mode(
@@ -282,14 +282,14 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 
                 // Profile Information
                 _buildProfileInfoItem(
-                  svgPath: 'assets/svgs/business.svg',
+                  svgPath: 'assets/svgs/company.svg',
                   title: 'Company Name',
                   value: profile['company_name'] ?? 'N/A',
                   isDark: isDark,
                 ),
                 _buildDivider(isDark),
                 _buildProfileInfoItem(
-                  svgPath: 'assets/svgs/badge.svg',
+                  svgPath: 'assets/svgs/badge1.svg',
                   title: 'Designation',
                   value: profile['designation'] ?? 'N/A',
                   isDark: isDark,
@@ -310,7 +310,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 ),
                 _buildDivider(isDark),
                 _buildProfileInfoItem(
-                  svgPath: 'assets/svgs/people.svg',
+                  svgPath: 'assets/svgs/users.svg',
                   title: 'Company Size',
                   value: profile['company_size'] ?? 'N/A',
                   isDark: isDark,
@@ -323,32 +323,38 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
           const SizedBox(height: 20),
           
           // Logout Card
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark 
-                    ? Colors.black26 
-                    : Colors.grey.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: _buildProfileInfoItem(
-                svgPath: 'assets/svgs/logout.svg',
-                title: 'Log Out',
-                value: 'Log out from your account',
-                isDark: isDark,
-                isLast: true,
-                titleColor: Colors.red,
-                iconColor: Colors.red,
+          Material(
+            color: Colors.transparent,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark 
+                      ? Colors.black26 
+                      : Colors.grey.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: InkWell(
                 onTap: () => _showLogoutDialog(context),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: _buildProfileInfoItem(
+                    svgPath: 'assets/svgs/logout.svg',
+                    title: 'Log Out',
+                    value: 'Log out from your account',
+                    isDark: isDark,
+                    isLast: true,
+                    titleColor: Colors.red,
+                    iconColor: Colors.red,
+                  ),
+                ),
               ),
             ),
           ),

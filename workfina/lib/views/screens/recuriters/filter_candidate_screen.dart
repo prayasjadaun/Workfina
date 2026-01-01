@@ -351,7 +351,7 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        candidate['role'] ?? 'N/A',
+                        candidate['role_name'] ?? 'N/A',
                         style: AppTheme.getCardSubtitleStyle(context),
                       ),
                     ],
@@ -376,7 +376,7 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
                 _buildInfoChip(
                   context,
                   Icons.location_on_outlined,
-                  candidate['city'] ?? 'N/A',
+                  candidate['city_name'] ?? 'N/A',
                   isDark,
                 ),
                 _buildInfoChip(
