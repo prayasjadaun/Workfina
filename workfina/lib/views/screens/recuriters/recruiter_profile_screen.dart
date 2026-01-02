@@ -83,37 +83,40 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      height: double.infinity,
-      color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
-      child: Consumer<RecruiterController>(
-        builder: (context, controller, child) {
-          if (controller.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppTheme.primary,
-              ),
-            );
-          }
-
-          final profile = controller.hrProfile;
-          if (profile == null) {
-            return Center(
-              child: Text(
-                'No profile data',
-                style: AppTheme.getBodyStyle(context),
-              ),
-            );
-          }
-
-          if (_fullNameController.text.isEmpty) {
-            _initializeControllers(profile);
-          }
-
-          return _isEditing
-              ? _buildEditForm(profile, isDark)
-              : _buildProfileView(profile, isDark);
-        },
+    return Scaffold(
+      appBar: AppBar(),
+      body: Container(
+        height: double.infinity,
+        color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+        child: Consumer<RecruiterController>(
+          builder: (context, controller, child) {
+            if (controller.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.primary,
+                ),
+              );
+            }
+      
+            final profile = controller.hrProfile;
+            if (profile == null) {
+              return Center(
+                child: Text(
+                  'No profile data',
+                  style: AppTheme.getBodyStyle(context),
+                ),
+              );
+            }
+      
+            if (_fullNameController.text.isEmpty) {
+              _initializeControllers(profile);
+            }
+      
+            return _isEditing
+                ? _buildEditForm(profile, isDark)
+                : _buildProfileView(profile, isDark);
+          },
+        ),
       ),
     );
   }

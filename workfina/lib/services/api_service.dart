@@ -5,14 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-//   static const String baseUrl =
-//       kDebugMode
-//           ? 'http://192.168.1.3:8000/api'
-//           :
-//       'http://localhost:8000/api';
+  //   static const String baseUrl =
+  //       kDebugMode
+  //           ? 'http://192.168.1.3:8000/api'
+  //           :
+  //       'http://localhost:8000/api';
 
-static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Simulator
-  
+  static const bool testingOnRealDevice =
+      false; // true = iPhone, false = Mac/Simulator
+
   static String get baseUrl {
     if (kDebugMode) {
       if (testingOnRealDevice) {
@@ -23,7 +24,6 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     }
     return 'http://localhost:8000/api'; // Production
   }
-
 
   static late Dio _dio;
   static bool _isRefreshing = false;
@@ -45,7 +45,6 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          
           if (!await isTokenValid()) {
             try {
               await refreshToken();
@@ -582,10 +581,8 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     required String education,
     required String skills,
     File? resumeFile,
-    File? videoIntroFile,  
-      File? profileImage,  
-
-
+    File? videoIntroFile,
+    File? profileImage,
   }) async {
     try {
       final token = await getAccessToken();
@@ -609,12 +606,11 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-          if (videoIntroFile != null)  // ✅ ADD THIS
-        'video_intro': await MultipartFile.fromFile(
-          videoIntroFile.path,
-          filename: videoIntroFile.path.split('/').last,
-        ),
-
+        if (videoIntroFile != null) // ✅ ADD THIS
+          'video_intro': await MultipartFile.fromFile(
+            videoIntroFile.path,
+            filename: videoIntroFile.path.split('/').last,
+          ),
       });
 
       if (kDebugMode) {
@@ -814,81 +810,77 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     }
   }
 
+  static Future<Map<String, dynamic>> updateCandidateProfile({
+    String? fullName,
+    String? phone,
+    int? age,
+    String? role,
+    int? experienceYears,
+    double? currentCtc,
+    double? expectedCtc,
+    String? religion,
+    String? state,
+    String? city,
+    String? education,
+    String? skills,
+    File? resumeFile,
+    File? videoIntroFile,
+    File? profileImage,
+  }) async {
+    try {
+      final token = await getAccessToken();
 
-static Future<Map<String, dynamic>> updateCandidateProfile({
-  String? fullName,
-  String? phone,
-  int? age,
-  String? role,
-  int? experienceYears,
-  double? currentCtc,
-  double? expectedCtc,
-  String? religion,
-  String? state,
-  String? city,
-  String? education,
-  String? skills,
-  File? resumeFile,
-  File? videoIntroFile, 
-  File? profileImage,  
+      FormData formData = FormData.fromMap({
+        if (fullName != null) 'full_name': fullName,
+        if (phone != null) 'phone': phone,
+        if (age != null) 'age': age,
+        if (role != null) 'role': role,
+        if (experienceYears != null) 'experience_years': experienceYears,
+        if (currentCtc != null) 'current_ctc': currentCtc,
+        if (expectedCtc != null) 'expected_ctc': expectedCtc,
+        if (religion != null) 'religion': religion,
+        if (state != null) 'state': state,
+        if (city != null) 'city': city,
+        if (education != null) 'education': education,
+        if (skills != null) 'skills': skills,
+        if (resumeFile != null)
+          'resume': await MultipartFile.fromFile(
+            resumeFile.path,
+            filename: resumeFile.path.split('/').last,
+          ),
+        if (videoIntroFile != null) // ✅ ADD THIS
+          'video_intro': await MultipartFile.fromFile(
+            videoIntroFile.path,
+            filename: videoIntroFile.path.split('/').last,
+          ),
+        if (profileImage != null) // ✅ ADD THIS
+          'profile_image': await MultipartFile.fromFile(
+            profileImage.path,
+            filename: profileImage.path.split('/').last,
+          ),
+      });
 
-}) async {
-  try {
-    final token = await getAccessToken();
-
-    FormData formData = FormData.fromMap({
-      if (fullName != null) 'full_name': fullName,
-      if (phone != null) 'phone': phone,
-      if (age != null) 'age': age,
-      if (role != null) 'role': role,
-      if (experienceYears != null) 'experience_years': experienceYears,
-      if (currentCtc != null) 'current_ctc': currentCtc,
-      if (expectedCtc != null) 'expected_ctc': expectedCtc,
-      if (religion != null) 'religion': religion,
-      if (state != null) 'state': state,
-      if (city != null) 'city': city,
-      if (education != null) 'education': education,
-      if (skills != null) 'skills': skills,
-      if (resumeFile != null)
-        'resume': await MultipartFile.fromFile(
-          resumeFile.path,
-          filename: resumeFile.path.split('/').last,
+      final response = await _dio.put(
+        '/candidates/profile/update/',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
         ),
-        if (videoIntroFile != null)  // ✅ ADD THIS
-        'video_intro': await MultipartFile.fromFile(
-          videoIntroFile.path,
-          filename: videoIntroFile.path.split('/').last,
-        ),
-        if (profileImage != null)  // ✅ ADD THIS
-        'profile_image': await MultipartFile.fromFile(
-          profileImage.path,
-          filename: profileImage.path.split('/').last,
-        ),
+      );
 
-
-    });
-
-    final response = await _dio.put(
-      '/candidates/profile/update/',
-      data: formData,
-      options: Options(
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'multipart/form-data',
-        },
-      ),
-    );
-
-    return response.data;
-  } on DioException catch (e) {
-    return {
-      'error': e.response?.data['message'] ?? 
-               e.response?.data['error'] ?? 
-               'Failed to update profile'
-    };
+      return response.data;
+    } on DioException catch (e) {
+      return {
+        'error':
+            e.response?.data['message'] ??
+            e.response?.data['error'] ??
+            'Failed to update profile',
+      };
+    }
   }
-}
-
 
   static Future<Map<String, dynamic>> getCandidatesList({
     String? role,
@@ -955,7 +947,9 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
   //   }
   // }
 
-  static Future<Map<String, dynamic>> unlockCandidate(String candidateId) async {
+  static Future<Map<String, dynamic>> unlockCandidate(
+    String candidateId,
+  ) async {
     try {
       final response = await _dio.post('/candidates/$candidateId/unlock/');
       if (kDebugMode) {
@@ -987,6 +981,111 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
       return response.data;
     } on DioException catch (e) {
       return {'error': e.response?.data['message'] ?? 'Failed to load wallet'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> addCandidateNote({
+    required String candidateId,
+    required String noteText,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('[DEBUG] Adding note for candidate: $candidateId');
+        print('[DEBUG] Note text: $noteText');
+      }
+
+      final response = await _dio.post(
+        '/candidates/$candidateId/note/',
+        data: {'note_text': noteText},
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Add Note Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Add Note Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to add note',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> addCandidateFollowup({
+    required String candidateId,
+    required String followupDate,
+    String? notes,
+    bool isCompleted = false,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('[DEBUG] Adding followup for candidate: $candidateId');
+        print('[DEBUG] Followup date: $followupDate');
+      }
+
+      final response = await _dio.post(
+        '/candidates/$candidateId/followup/',
+        data: {
+          'followup_date': followupDate,
+          if (notes != null) 'notes': notes,
+          'is_completed': isCompleted,
+        },
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Add Followup Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Add Followup Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to add followup',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getCandidateNotesFollowups(
+    String candidateId,
+  ) async {
+    try {
+      if (kDebugMode) {
+        print('[DEBUG] Loading notes/followups for candidate: $candidateId');
+      }
+
+      final response = await _dio.get(
+        '/candidates/$candidateId/notes-followups/',
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Notes/Followups Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Load Notes/Followups Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load notes and followups',
+      };
     }
   }
 

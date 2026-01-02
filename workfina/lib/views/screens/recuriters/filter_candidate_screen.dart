@@ -5,7 +5,7 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
-import 'package:workfina/views/widgets/candidate_card_widget.dart';
+import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
 
 class FilteredCandidatesScreen extends StatefulWidget {
   final String filterType;

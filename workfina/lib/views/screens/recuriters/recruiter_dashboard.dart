@@ -139,6 +139,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     }
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
+      
       child: Row(
         children: [
           // Profile Avatar
@@ -279,7 +280,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200.withOpacity(0.3),
+              color: Colors.grey.shade500.withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: SvgPicture.asset(
@@ -385,24 +386,42 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
         ),
         child: Row(
           children: [
-            // Avatar
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Center(
-                child: Text(
-                  fullName[0].toUpperCase(),
-                  style: AppTheme.getTitleStyle(
-                    context,
-                    // color: AppTheme.secondary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child:
+                    candidate['profile_image_url'] != null &&
+                        candidate['profile_image_url'].toString().isNotEmpty
+                    ? Image.network(
+                        _getFullImageUrl(candidate['profile_image_url']),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            _buildInitialAvatar(fullName),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : _buildInitialAvatar(fullName),
               ),
             ),
 
@@ -453,6 +472,38 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Add this helper method:
+  String _getFullImageUrl(String imageUrl) {
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    return 'http://localhost:8000$imageUrl';
+  }
+
+  Widget _buildInitialAvatar(String fullName) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade400, Colors.purple.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Text(
+          fullName[0].toUpperCase(),
+          style: AppTheme.getTitleStyle(
+            context,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
       ),
     );
