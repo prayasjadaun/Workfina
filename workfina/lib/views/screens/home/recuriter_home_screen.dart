@@ -44,13 +44,13 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
     final showAppBar = _currentIndex == 3;
 
     return Scaffold(
-      appBar: showAppBar
-          ? AppBar(
-              title: Text('HR Dashboard - $fullName',
-                  style: AppTheme.getAppBarTextStyle()),
-              automaticallyImplyLeading: false,
-            )
-          : null,
+      // appBar: showAppBar
+      //     ? AppBar(
+      //         title: Text('HR Dashboard - $fullName',
+      //             style: AppTheme.getAppBarTextStyle()),
+      //         automaticallyImplyLeading: false,
+      //       )
+      //     : null,
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -98,7 +98,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         height: 48,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryDark : Colors.transparent,
+          color: isSelected ? AppTheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(

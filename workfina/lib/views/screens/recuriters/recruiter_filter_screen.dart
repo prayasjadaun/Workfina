@@ -285,12 +285,14 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
 
   Widget _buildFilterCategories(bool isDark) {
     // Build categories dynamically from API response
-    final categories = _filterOverview.entries.map((entry) {
+    final categories = _filterOverview.entries
+        .where((entry) => ((entry.value as Map<String, dynamic>)['locked_count'] ?? 0) > 0)
+        .map((entry) {
       return {
         'key': entry.key,
         'title': _getDisplayName(entry.key),
         'svg': _getSvgPath(entry.key),
-        'count': (entry.value as Map<String, dynamic>)['total_count'] ?? 0,
+        'count': (entry.value as Map<String, dynamic>)['locked_count'] ?? 0,
       };
     }).toList();
 
@@ -499,105 +501,139 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                     }
                     return false;
                   },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 2.0,
-                          ),
-                      itemCount:
-                          _currentFilterData.length + (_isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _currentFilterData.length) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: CircularProgressIndicator(
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        }
-
-                        final option = _currentFilterData[index];
-                        final isSelected =
-                            _selectedSubFilter == option['value'];
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade100)
-                                : (isDark
-                                      ? AppTheme.darkCardBackground
-                                      : Colors.white),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? (isDark
-                                        ? Colors.white
-                                        : Colors.grey.shade400)
-                                  : (isDark
-                                        ? Colors.grey.shade800
-                                        : Colors.grey.shade200),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _onSubFilterTap(option['value']),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      option['label'],
-                                      style: AppTheme.getBodyStyle(
-                                        context,
-                                        fontSize: 14,
-                                        fontWeight: isSelected
-                                            ? FontWeight.w600
-                                            : FontWeight.w400,
-                                        color: isSelected
-                                            ? (isDark
-                                                  ? Colors.white
-                                                  : Colors.black87)
-                                            : (isDark
-                                                  ? Colors.grey.shade300
-                                                  : Colors.grey.shade700),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (option['count'] != null) ...[
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${option['count']} candidates',
-                                        style: AppTheme.getBodyStyle(
-                                          context,
-                                          fontSize: 11,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ],
+                  child: Builder(
+                    builder: (context) {
+                      // Filter out options with zero locked_count
+                      final filteredData = _currentFilterData.where((option) => (option['locked_count'] ?? 0) > 0).toList();
+                      
+                      if (filteredData.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/svgs/empty.svg',
+                                width: 80,
+                                height: 80,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.grey.shade400,
+                                  BlendMode.srcIn,
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No locked candidates found',
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
                           ),
                         );
-                      },
-                    ),
+                      }
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 2.0,
+                              ),
+                          itemCount:
+                              filteredData.length + (_isLoadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == filteredData.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: CircularProgressIndicator(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final option = filteredData[index];
+                            final isSelected =
+                                _selectedSubFilter == option['value'];
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? (isDark
+                                          ? Colors.grey.shade800
+                                          : Colors.grey.shade100)
+                                    : (isDark
+                                          ? AppTheme.darkCardBackground
+                                          : Colors.white),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? (isDark
+                                            ? Colors.white
+                                            : Colors.grey.shade400)
+                                      : (isDark
+                                            ? Colors.grey.shade800
+                                            : Colors.grey.shade200),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _onSubFilterTap(option['value']),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          option['label'],
+                                          style: AppTheme.getBodyStyle(
+                                            context,
+                                            fontSize: 14,
+                                            fontWeight: isSelected
+                                                ? FontWeight.w600
+                                                : FontWeight.w400,
+                                            color: isSelected
+                                                ? (isDark
+                                                      ? Colors.white
+                                                      : Colors.black87)
+                                                : (isDark
+                                                      ? Colors.grey.shade300
+                                                      : Colors.grey.shade700),
+                                          ),
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (option['locked_count'] != null) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${option['locked_count']} candidates',
+                                            style: AppTheme.getBodyStyle(
+                                              context,
+                                              fontSize: 11,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ),
         ),

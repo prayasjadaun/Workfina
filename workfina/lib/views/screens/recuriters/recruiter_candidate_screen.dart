@@ -4,7 +4,7 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_filter_screen.dart';
-import 'package:workfina/views/widgets/candidate_card_widget.dart';
+import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
 
 class RecruiterCandidate extends StatefulWidget {
   final ValueChanged<int>? onSwitchToWallet;
@@ -41,7 +41,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppTheme.primaryDark,
+        backgroundColor: AppTheme.primary,
         title: Text('Candidates', style: AppTheme.getAppBarTextStyle()),
         actions: [
           IconButton(
@@ -62,7 +62,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
           child: Container(
-            color: AppTheme.primaryDark,
+            color: AppTheme.primary,
             child: TabBar(
               controller: _tabController,
               labelColor: Colors.white,
@@ -129,7 +129,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           itemCount: lockedCandidates.length,
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
@@ -178,7 +178,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         }
 
         return ListView.separated(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           itemCount: unlockedCandidates.length,
           separatorBuilder: (context, index) => const SizedBox(height: 16),
           itemBuilder: (context, index) {
