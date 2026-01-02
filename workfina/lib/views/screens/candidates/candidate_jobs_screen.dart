@@ -13,7 +13,7 @@ class CandidateJobsScreen extends StatelessWidget {
           SliverAppBar(
             floating: true,
             snap: true,
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.primary,
             title: const Text('Browse Jobs'),
             actions: [
               IconButton(
@@ -56,12 +56,12 @@ class CandidateJobsScreen extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withOpacity(0.1),
+                    color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.business,
-                    color: AppTheme.primaryGreen,
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -107,7 +107,7 @@ class CandidateJobsScreen extends StatelessWidget {
                       // TODO: Save job
                     },
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryGreen),
+                      side: BorderSide(color: AppTheme.primary),
                     ),
                     child: const Text('Save'),
                   ),
@@ -134,19 +134,19 @@ class CandidateJobsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.primaryGreen.withOpacity(0.1),
+        color: AppTheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppTheme.primaryGreen),
+          Icon(icon, size: 16, color: AppTheme.primary),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.primaryGreen,
+              color: AppTheme.primary,
               fontWeight: FontWeight.w500,
             ),
           ),

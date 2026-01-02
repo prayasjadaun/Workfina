@@ -68,7 +68,7 @@ class _OTPScreenState extends State<OTPScreen> {
         title: Text(
           'WorkFina',
           style: TextStyle(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -168,7 +168,7 @@ class _OTPScreenState extends State<OTPScreen> {
                           ),
                           focusedBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.primary,
                               width: 2,
                             ),
                           ),
@@ -295,7 +295,7 @@ class _OTPScreenState extends State<OTPScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: const Text('OTP sent again'),
-                                  backgroundColor: AppTheme.primaryGreen,
+                                  backgroundColor: AppTheme.primary,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),

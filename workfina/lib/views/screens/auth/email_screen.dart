@@ -34,7 +34,7 @@ class _EmailScreenState extends State<EmailScreen> {
         title: Text(
           'WorkFina',
           style: TextStyle(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -184,8 +184,8 @@ class _EmailScreenState extends State<EmailScreen> {
                               ? null
                               : LinearGradient(
                                   colors: [
-                                    AppTheme.primaryGreen,
-                                    AppTheme.primaryGreen.withOpacity(0.8),
+                                    AppTheme.primary,
+                                    AppTheme.primary.withOpacity(0.8),
                                   ],
                                 ),
                           color: authController.isLoading ? Colors.grey[300] : null,
@@ -193,7 +193,7 @@ class _EmailScreenState extends State<EmailScreen> {
                               ? null
                               : [
                                   BoxShadow(
-                                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                                    color: AppTheme.primary.withOpacity(0.3),
                                     blurRadius: 12,
                                     offset: const Offset(0, 4),
                                   ),
@@ -262,7 +262,7 @@ class _EmailScreenState extends State<EmailScreen> {
                             'Login',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

@@ -91,7 +91,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
           if (controller.isLoading) {
             return const Center(
               child: CircularProgressIndicator(
-                color: AppTheme.primaryGreen,
+                color: AppTheme.primary,
               ),
             );
           }
@@ -149,7 +149,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen,
+                    color: AppTheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -189,10 +189,10 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withOpacity(0.1),
+                    color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppTheme.primaryGreen.withOpacity(0.3),
+                      color: AppTheme.primary.withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -203,7 +203,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                         width: 14,
                         height: 14,
                         colorFilter: const ColorFilter.mode(
-                          AppTheme.primaryGreen,
+                          AppTheme.primary,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -212,7 +212,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                         'Verified',
                         style: AppTheme.getLabelStyle(
                           context,
-                          color: AppTheme.primaryGreen,
+                          color: AppTheme.primary,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -262,7 +262,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen.withOpacity(0.1),
+                            color: AppTheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: SvgPicture.asset(
@@ -270,7 +270,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                             width: 16,
                             height: 16,
                             colorFilter: const ColorFilter.mode(
-                              AppTheme.primaryGreen,
+                              AppTheme.primary,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -390,7 +390,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: (iconColor ?? AppTheme.primaryGreen).withOpacity(0.1),
+                color: (iconColor ?? AppTheme.primary).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
@@ -399,7 +399,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                   width: 20,
                   height: 20,
                   colorFilter: ColorFilter.mode(
-                    iconColor ?? AppTheme.primaryGreen,
+                    iconColor ?? AppTheme.primary,
                     BlendMode.srcIn,
                   ),
                 ),
@@ -553,7 +553,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     child: ElevatedButton(
                       onPressed: _saveProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryGreen,
+                        backgroundColor: AppTheme.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -610,7 +610,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             width: 2,
           ),
         ),
@@ -657,7 +657,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             width: 2,
           ),
         ),

@@ -40,8 +40,8 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         .join(' ');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Show AppBar only for Dashboard (index 0) and Profile (index 3)
-    final showAppBar = _currentIndex == 0 || _currentIndex == 3;
+    // Show AppBar only for Profile (index 3)
+    final showAppBar = _currentIndex == 3;
 
     return Scaffold(
       appBar: showAppBar
@@ -98,7 +98,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         height: 48,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryGreen : Colors.transparent,
+          color: isSelected ? AppTheme.primaryDark : Colors.transparent,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(
@@ -112,7 +112,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
               colorFilter: ColorFilter.mode(
                 isSelected
                     ? Colors.white
-                    : (isDark ? Colors.grey : Colors.grey.shade600),
+                    : (isDark ? Colors.white : Colors.grey.shade600),
                 BlendMode.srcIn,
               ),
             ),

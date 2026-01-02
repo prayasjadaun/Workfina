@@ -166,12 +166,16 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
     required String education,
     required String skills,
     File? resumeFile,
-    File? videoIntroFile,  // ✅ ADD THIS
+    File? videoIntroFile,  
+    File? profileImage,  
+
 
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
+
+    
 
     try {
       final response = await ApiService.registerCandidate(
@@ -189,9 +193,13 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
         education: combineEducationData(),
         skills: skills,
         resumeFile: resumeFile,
-        videoIntroFile: videoIntroFile,  // ✅ ADD THIS
+        videoIntroFile: videoIntroFile,  
+        profileImage: profileImage,  
+
 
       );
+
+      
 
       if (response.containsKey('error')) {
         _error = response['error'];
@@ -210,6 +218,8 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
       notifyListeners();
       return false;
     }
+    
+    
   }
 
   Future<bool> checkProfileExists() async {
@@ -264,6 +274,8 @@ Future<bool> updateProfile({
   String? skills,
   File? resumeFile,
   File? videoIntroFile,
+  File? profileImage,  
+
 }) async {
   _isLoading = true;
   _error = null;
@@ -281,9 +293,11 @@ Future<bool> updateProfile({
       religion: religion,
       state: state,
       city: city,
-      education: education,
+      education: combineEducationData(),
       skills: skills,
       resumeFile: resumeFile,
+      profileImage: profileImage,  // ✅ ADD THIS
+
     );
 
     if (response.containsKey('error')) {

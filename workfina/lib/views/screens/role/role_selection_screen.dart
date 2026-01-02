@@ -25,7 +25,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_pin, size: 80, color: AppTheme.primaryGreen),
+              Icon(Icons.person_pin, size: 80, color: AppTheme.primary),
               const SizedBox(height: 32),
               Text(
                 'Welcome, ${user?['username'] ?? 'User'}!',
@@ -104,7 +104,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppTheme.primaryGreen
+                ? AppTheme.primary
                 : Colors.grey.withOpacity(0.3),
             width: 2,
           ),
@@ -116,7 +116,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.primaryGreen
+                    ? AppTheme.primary
                     : Colors.grey.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -135,7 +135,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                     title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? AppTheme.primaryGreen : null,
+                      color: isSelected ? AppTheme.primary : null,
                     ),
                   ),
                   Text(
@@ -148,7 +148,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 24),
+              Icon(Icons.check_circle, color: AppTheme.primary, size: 24),
           ],
         ),
       ),

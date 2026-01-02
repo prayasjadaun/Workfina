@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_filter_screen.dart';
+import 'package:workfina/views/widgets/candidate_card_widget.dart';
 
 class RecruiterCandidate extends StatefulWidget {
   final ValueChanged<int>? onSwitchToWallet;
@@ -41,7 +41,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primaryDark,
         title: Text('Candidates', style: AppTheme.getAppBarTextStyle()),
         actions: [
           IconButton(
@@ -62,7 +62,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
           child: Container(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primaryDark,
             child: TabBar(
               controller: _tabController,
               labelColor: Colors.white,
@@ -92,7 +92,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       builder: (context, hrController, child) {
         if (hrController.isLoading) {
           return const Center(
-            child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+            child: CircularProgressIndicator(color: AppTheme.primary),
           );
         }
 
@@ -146,7 +146,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       builder: (context, hrController, child) {
         if (hrController.isLoading) {
           return const Center(
-            child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+            child: CircularProgressIndicator(color: AppTheme.primary),
           );
         }
 
@@ -206,13 +206,13 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.accentOrange.withOpacity(0.1),
+                color: AppTheme.accentPrimary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.hourglass_empty_outlined,
                 size: 48,
-                color: AppTheme.accentOrange,
+                color: AppTheme.accentPrimary,
               ),
             ),
             const SizedBox(height: 24),
@@ -238,7 +238,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
               textAlign: TextAlign.center,
               style: AppTheme.getLabelStyle(
                 context,
-                color: AppTheme.accentOrange,
+                color: AppTheme.accentPrimary,
               ),
             ),
           ],
@@ -300,7 +300,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                   ),
                   prefixIcon: Icon(
                     Icons.search_outlined,
-                    color: AppTheme.primaryGreen,
                   ),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -331,7 +330,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryGreen,
+                    backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -360,419 +359,22 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
     final isUnlocked = hrController.isCandidateUnlocked(candidate['id']);
     final canAffordUnlock = hrController.canUnlockCandidate();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [AppTheme.getCardShadow(context)],
-        border: isUnlocked
-            ? Border.all(
-                color: AppTheme.primaryGreen.withOpacity(0.3),
-                width: 1,
-              )
-            : null,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: isUnlocked
-                        ? AppTheme.primaryGreen.withOpacity(0.1)
-                        : Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(16),
-                    border: isUnlocked
-                        ? Border.all(
-                            color: AppTheme.primaryGreen.withOpacity(0.3),
-                          )
-                        : null,
-                  ),
-                  child: Center(
-                    child: Text(
-                      (candidate['masked_name']?.substring(0, 1) ?? 'C')
-                          .toUpperCase(),
-                      style: AppTheme.getHeadlineStyle(
-                        context,
-                        color: isUnlocked
-                            ? AppTheme.primaryGreen
-                            : Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              isUnlocked
-                                  ? (candidate['full_name'] ??
-                                        candidate['masked_name'] ??
-                                        'Unknown')
-                                  : (candidate['masked_name'] ?? 'Unknown'),
-                              style: AppTheme.getCardTitleStyle(context),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (isUnlocked)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryGreen.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: AppTheme.primaryGreen.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                'UNLOCKED',
-                                style: AppTheme.getLabelStyle(
-                                  context,
-                                  color: AppTheme.primaryGreen,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        candidate['role_name'] ?? 'N/A',
-                        style: AppTheme.getCardSubtitleStyle(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Info chips
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildInfoChip(
-                  context,
-                  Icons.work_outline,
-                  '${candidate['experience_years']} years',
-                  AppTheme.secondaryBlue,
-                ),
-                _buildInfoChip(
-                  context,
-                  Icons.location_on_outlined,
-                  candidate['city_name'] ?? 'N/A',
-                  AppTheme.accentOrange,
-                ),
-                _buildInfoChip(
-                  context,
-                  Icons.person_outline,
-                  '${candidate['age']} years old',
-                  AppTheme.accentPurple,
-                ),
-              ],
-            ),
-
-            if (isUnlocked &&
-                (candidate['phone'] != null || candidate['email'] != null)) ...[
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.primaryGreen.withOpacity(0.1),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (candidate['phone'] != null)
-                      _buildContactInfo(
-                        context,
-                        Icons.phone_outlined,
-                        candidate['phone'],
-                      ),
-                    if (candidate['phone'] != null &&
-                        candidate['email'] != null)
-                      const SizedBox(height: 4),
-                    if (candidate['email'] != null)
-                      _buildContactInfo(
-                        context,
-                        Icons.email_outlined,
-                        candidate['email'],
-                      ),
-                  ],
-                ),
-              ),
-            ],
-
-            if (candidate['skills'] != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Skills',
-                style: AppTheme.getLabelStyle(
-                  context,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              () {
-                final allSkills = candidate['skills'].split(',');
-                final displaySkills = allSkills.take(3).toList();
-                final remainingCount = allSkills.length - 3;
-
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    ...displaySkills.map<Widget>(
-                      (skill) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.primaryGreen.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          skill.trim(),
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (remainingCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.secondaryBlue.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          '+$remainingCount more',
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color:AppTheme.secondaryBlue,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              }(),
-            ],
-
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (!isUnlocked)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: canAffordUnlock
-                          ? AppTheme.accentOrange.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: canAffordUnlock
-                            ? AppTheme.accentOrange.withOpacity(0.3)
-                            : Colors.red.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.stars_outlined,
-                          size: 16,
-                          color: canAffordUnlock
-                              ? AppTheme.accentOrange
-                              : Colors.red,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '10 credits to unlock',
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color: canAffordUnlock
-                                ? AppTheme.accentOrange
-                                : Colors.red,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.primaryGreen.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/svgs/unlock.svg',
-                          width: 16,
-                          height: 16,
-                          color: AppTheme.primaryGreen,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Profile unlocked',
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                ElevatedButton(
-                  onPressed: isUnlocked
-                      ? () => _navigateToDetail(context, candidate, true)
-                      : canAffordUnlock
-                      ? () => _unlockCandidate(context, candidate, hrController)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isUnlocked
-                        ? AppTheme.secondaryBlue
-                        : canAffordUnlock
-                        ? AppTheme.primaryGreen
-                        : Colors.grey.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset(
-                        isUnlocked
-                            ? 'assets/svgs/eye.svg'
-                            : 'assets/svgs/lock.svg',
-                        width: 16,
-                        height: 16,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isUnlocked ? 'View Profile' : 'Unlock Profile',
-                        style: AppTheme.getPrimaryButtonTextStyle(
-                          context,
-                        ).copyWith(fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return CandidateCardWidget(
+      candidate: candidate,
+      isUnlocked: isUnlocked,
+      canAffordUnlock: canAffordUnlock,
+      onUnlock: () => _unlockCandidate(context, candidate, hrController),
+      onViewProfile: () => _navigateToDetail(context, candidate, true),
     );
   }
 
-  Widget _buildInfoChip(
-    BuildContext context,
-    IconData icon,
-    String text,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        // color: color.withOpacity(0.1),
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: Colors.black),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: AppTheme.getLabelStyle(
-              context,
-              color: Colors.black,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildContactInfo(BuildContext context, IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: AppTheme.primaryGreen),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTheme.getBodyStyle(
-              context,
-              color: AppTheme.primaryGreen,
-              fontWeight: FontWeight.w500,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
+
+  void _filterCandidates() {
+    final hrController = context.read<RecruiterController>();
+    hrController.loadCandidates(
+      role: _selectedRole == 'All' ? null : _selectedRole,
+      skills: _searchController.text.isEmpty ? null : _searchController.text,
     );
   }
 
@@ -841,7 +443,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryGreen,
+                backgroundColor: AppTheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -864,7 +466,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(Icons.lock_open_outlined, color: AppTheme.primaryGreen),
+            Icon(Icons.lock_open_outlined, color: AppTheme.primary),
             const SizedBox(width: 12),
             Text(
               'Unlock Profile',
@@ -887,17 +489,17 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.2),
+                  color: AppTheme.primary.withOpacity(0.2),
                 ),
               ),
               child: Row(
                 children: [
                   Icon(
                     Icons.account_balance_wallet,
-                    color: AppTheme.primaryGreen,
+                    color: AppTheme.primary,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -905,7 +507,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                     'Current balance: ${hrController.walletBalance} credits',
                     style: AppTheme.getLabelStyle(
                       context,
-                      color: AppTheme.primaryGreen,
+                      color: AppTheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -944,7 +546,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                         'Profile unlocked! ${result['credits_used']} credits deducted.',
                         style: const TextStyle(color: Colors.white),
                       ),
-                      backgroundColor: AppTheme.primaryGreen,
+                      backgroundColor: AppTheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -969,7 +571,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryGreen,
+              // backgroundColor: AppTheme.primary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -981,14 +583,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
           ),
         ],
       ),
-    );
-  }
-
-  void _filterCandidates() {
-    final hrController = context.read<RecruiterController>();
-    hrController.loadCandidates(
-      role: _selectedRole == 'All' ? null : _selectedRole,
-      skills: _searchController.text.isEmpty ? null : _searchController.text,
     );
   }
 }

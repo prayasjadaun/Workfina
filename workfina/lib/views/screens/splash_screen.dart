@@ -160,7 +160,7 @@ class _SplashScreenState extends State<SplashScreen>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen,
+                  color: AppTheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.work, size: 60, color: Colors.white),
@@ -170,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen>
                 'Workfina',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryGreen,
+                  color: AppTheme.primary,
                 ),
               ),
             ],

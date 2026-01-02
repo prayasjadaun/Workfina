@@ -54,7 +54,7 @@ class CandidateDetailScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(
                 Icons.visibility,
-                color: AppTheme.primaryGreen,
+                color: AppTheme.primary,
               ),
               title: const Text('View Resume'),
               onTap: () {
@@ -68,7 +68,7 @@ class CandidateDetailScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.download, color: AppTheme.primaryGreen),
+              leading: const Icon(Icons.download, color: AppTheme.primary),
               title: const Text('Download Resume'),
               onTap: () {
                 Navigator.pop(context);
@@ -110,7 +110,7 @@ class CandidateDetailScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(
                 Icons.play_arrow,
-                color: AppTheme.primaryGreen,
+                color: AppTheme.primary,
               ),
               title: const Text('Play Video'),
               subtitle: const Text('Open in external player'),
@@ -143,7 +143,7 @@ class CandidateDetailScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Starting download...'),
-          backgroundColor: AppTheme.primaryGreen,
+          backgroundColor: AppTheme.primary,
         ),
       );
 
@@ -165,7 +165,7 @@ class CandidateDetailScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Downloaded: $fileName'),
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.primary,
             action: SnackBarAction(
               label: 'Open',
               textColor: Colors.white,
@@ -200,7 +200,7 @@ class CandidateDetailScreen extends StatelessWidget {
           style: AppTheme.getAppBarTextStyle(),
         ),
         elevation: 0,
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         iconTheme: IconThemeData(color: Colors.white),
         surfaceTintColor: Colors.transparent,
@@ -667,7 +667,7 @@ class CandidateDetailScreen extends StatelessWidget {
               width: 24,
               height: 24,
               colorFilter: const ColorFilter.mode(
-                AppTheme.primaryGreen,
+                AppTheme.primary,
                 BlendMode.srcIn,
               ),
             ),
@@ -731,7 +731,7 @@ class CandidateDetailScreen extends StatelessWidget {
               width: 24,
               height: 24,
               colorFilter: const ColorFilter.mode(
-                AppTheme.primaryGreen,
+                AppTheme.primary,
                 BlendMode.srcIn,
               ),
             ),
