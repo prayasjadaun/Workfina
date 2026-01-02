@@ -582,7 +582,9 @@ static const bool testingOnRealDevice = false; // true = iPhone, false = Mac/Sim
     required String education,
     required String skills,
     File? resumeFile,
-    File? videoIntroFile,  // ✅ ADD THIS
+    File? videoIntroFile,  
+      File? profileImage,  
+
 
   }) async {
     try {
@@ -828,6 +830,7 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
   String? skills,
   File? resumeFile,
   File? videoIntroFile, 
+  File? profileImage,  
 
 }) async {
   try {
@@ -856,6 +859,12 @@ static Future<Map<String, dynamic>> updateCandidateProfile({
           videoIntroFile.path,
           filename: videoIntroFile.path.split('/').last,
         ),
+        if (profileImage != null)  // ✅ ADD THIS
+        'profile_image': await MultipartFile.fromFile(
+          profileImage.path,
+          filename: profileImage.path.split('/').last,
+        ),
+
 
     });
 

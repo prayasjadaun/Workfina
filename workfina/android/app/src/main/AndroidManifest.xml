@@ -1,7 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ✅ Camera Permission -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    
+    <!-- ✅ Storage Permissions for Android 12 and below -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    
+    <!-- ✅ For Android 13+ (API 33+) - Granular Media Permissions -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    
+    <!-- ✅ Camera Features (optional but recommended) -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
-<uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Network Permissions -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    
     <application
         android:label="workfina"
         android:name="${applicationName}"
