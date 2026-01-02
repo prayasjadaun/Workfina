@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class CandidateSetupScreen extends StatefulWidget {
   const CandidateSetupScreen({super.key});
@@ -38,6 +40,8 @@ class _CandidateSetupScreenSwipeableState
   String? _resumeFileName;
   File? _videoIntroFile;
   String? _videoIntroFileName;
+  File? _profileImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final List<Map<String, String>> _roles = [
     {'value': 'IT', 'label': 'Information Technology'},
@@ -196,6 +200,253 @@ class _CandidateSetupScreenSwipeableState
     }
   }
 
+  // âœ… Image Picker Methods
+  Future<void> _pickImageFromCamera() async {
+    try {
+      // Request camera permission
+      final status = await Permission.camera.request();
+      
+      if (status.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Camera permission is required to take photos'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+      
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          _showPermissionDialog(
+            'Camera Permission',
+            'Camera access is required to take photos. Please enable it in app settings.',
+          );
+        }
+        return;
+      }
+
+      if (!status.isGranted) {
+        return;
+      }
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        final fileSizeInBytes = await file.length();
+        final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+
+        if (fileSizeInMB > 5) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image size should not exceed 5MB'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        setState(() {
+          _profileImage = file;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error capturing image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      PermissionStatus status;
+      
+      // Check Android version for appropriate permission
+      if (await Permission.photos.isPermanentlyDenied || 
+          await Permission.storage.isPermanentlyDenied) {
+        if (mounted) {
+          _showPermissionDialog(
+            'Gallery Permission',
+            'Gallery access is required to select photos. Please enable it in app settings.',
+          );
+        }
+        return;
+      }
+      
+      // Request photos permission (Android 13+) or storage (Android 12 and below)
+      status = await Permission.photos.request();
+      
+      // Fallback to storage permission for older Android versions
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+      }
+      
+      if (status.isDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gallery permission is required to select photos'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+      
+      if (status.isPermanentlyDenied) {
+        if (mounted) {
+          _showPermissionDialog(
+            'Gallery Permission',
+            'Gallery access is required to select photos. Please enable it in app settings.',
+          );
+        }
+        return;
+      }
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final file = File(image.path);
+        final fileSizeInBytes = await file.length();
+        final fileSizeInMB = fileSizeInBytes / (1024 * 1024);
+
+        if (fileSizeInMB > 5) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Image size should not exceed 5MB'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+
+        setState(() {
+          _profileImage = file;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting image: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showPermissionDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+            ),
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImageSourceBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Choose Profile Picture',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppTheme.primary,
+              ),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImageFromCamera();
+              },
+            ),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppTheme.primary,
+              ),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImageFromGallery();
+              },
+            ),
+            if (_profileImage != null)
+              ListTile(
+                leading: const Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
+                title: const Text('Remove Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _profileImage = null;
+                  });
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _submitProfile() async {
     final controller = context.read<CandidateController>();
 
@@ -218,6 +469,7 @@ class _CandidateSetupScreenSwipeableState
       skills: _skillsController.text,
       resumeFile: _resumeFile,
       videoIntroFile: _videoIntroFile,
+      profileImage: _profileImage,  // âœ… Added
     );
 
     if (success) {
@@ -425,6 +677,77 @@ class _CandidateSetupScreenSwipeableState
             subtitle: 'Tell us about yourself',
           ),
           const SizedBox(height: 32),
+          
+          // âœ… Profile Picture Section
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _showImageSourceBottomSheet,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[200],
+                          border: Border.all(
+                            color: AppTheme.primary,
+                            width: 3,
+                          ),
+                        ),
+                        child: _profileImage != null
+                            ? ClipOval(
+                                child: Image.file(
+                                  _profileImage!,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.grey[400],
+                              ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _profileImage != null
+                      ? 'Tap to change photo'
+                      : 'Tap to add photo (Optional)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+          
           _buildTextField(
             controller: _fullNameController,
             label: 'Full Name',
@@ -806,7 +1129,7 @@ const SizedBox(height: 16),
               Expanded(
                 child: _buildTextField(
                   controller: _currentCtcController,
-                  label: 'Current CTC (₹)',
+                  label: 'Current CTC (Ã¢â€šÂ¹)',
                   icon: Icons.currency_rupee,
                   keyboardType: TextInputType.number,
                   hintText: 'Annual package',
@@ -816,7 +1139,7 @@ const SizedBox(height: 16),
               Expanded(
                 child: _buildTextField(
                   controller: _expectedCtcController,
-                  label: 'Expected CTC (₹)',
+                  label: 'Expected CTC (Ã¢â€šÂ¹)',
                   icon: Icons.trending_up,
                   keyboardType: TextInputType.number,
                   hintText: 'Expected package',
