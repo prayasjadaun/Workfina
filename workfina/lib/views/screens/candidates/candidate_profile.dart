@@ -179,7 +179,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
                       context,
                       icon: Icons.school,
                       title: 'Education',
-                      subtitle: profileData['education'] ?? 'Not provided',
+                      subtitle: profileData['education_name'] ?? 'Not provided',
                       onTap: () => _showEducationDetails(context, profileData),
                     ),
 
@@ -235,10 +235,15 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           CircleAvatar(
             radius: 50,
             backgroundColor: AppTheme.primaryGreen,
-            child: Text(
-              (profileData['full_name']?[0] ?? 'C').toUpperCase(),
-              style: const TextStyle(fontSize: 36, color: Colors.white),
-            ),
+            backgroundImage: profileData['profile_image_url'] != null
+                ? NetworkImage(profileData['profile_image_url'])
+                : null,
+            child: profileData['profile_image_url'] == null
+                ? Text(
+                    (profileData['full_name']?[0] ?? 'C').toUpperCase(),
+                    style: const TextStyle(fontSize: 36, color: Colors.white),
+                  )
+                : null,
           ),
           const SizedBox(height: 16),
           Text(
@@ -261,11 +266,11 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildInfoChip(Icons.work, _formatRole(profileData['role'])),
+              _buildInfoChip(Icons.work, _formatRole(profileData['role_name'])),
               const SizedBox(width: 8),
               _buildInfoChip(
                 Icons.location_city,
-                '${profileData['city'] ?? 'N/A'}',
+                '${profileData['city_name'] ?? 'N/A'}',
               ),
             ],
           ),
@@ -481,7 +486,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Role', _formatRole(profileData['role'])),
+            _buildDetailRow('Role', _formatRole(profileData['role_name'])),
             _buildDetailRow(
               'Years',
               '${profileData['experience_years'] ?? 0} years',
@@ -489,12 +494,12 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
             if (profileData['current_ctc'] != null)
               _buildDetailRow(
                 'Current CTC',
-                'â‚¹${profileData['current_ctc']} LPA',
+                'Ã¢â€šÂ¹${profileData['current_ctc']} LPA',
               ),
             if (profileData['expected_ctc'] != null)
               _buildDetailRow(
                 'Expected CTC',
-                'â‚¹${profileData['expected_ctc']} LPA',
+                'Ã¢â€šÂ¹${profileData['expected_ctc']} LPA',
               ),
           ],
         ),
@@ -517,7 +522,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Education'),
         content: Text(
-          profileData['education'] ?? 'Not provided',
+          profileData['education_name'] ?? 'Not provided',
           style: const TextStyle(fontSize: 16, height: 1.5),
         ),
         actions: [
@@ -629,7 +634,7 @@ class _EditProfileSheet extends StatelessWidget {
           _buildInfoRow(
             Icons.location_city,
             'Location',
-            '${profileData['city'] ?? 'N/A'}, ${profileData['state'] ?? 'N/A'}',
+            '${profileData['city_name'] ?? 'N/A'}, ${profileData['state_name'] ?? 'N/A'}',
           ),
           const SizedBox(height: 24),
           SizedBox(
