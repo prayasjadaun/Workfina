@@ -13,7 +13,7 @@ class CandidateApplicationsScreen extends StatelessWidget {
           SliverAppBar(
             floating: true,
             snap: true,
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.primary,
             title: const Text('My Applications'),
           ),
           SliverPadding(
@@ -120,7 +120,7 @@ class CandidateApplicationsScreen extends StatelessWidget {
                     icon: const Icon(Icons.visibility, size: 18),
                     label: const Text('View Details'),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: AppTheme.primaryGreen),
+                      side: BorderSide(color: AppTheme.primary),
                     ),
                   ),
                 ),

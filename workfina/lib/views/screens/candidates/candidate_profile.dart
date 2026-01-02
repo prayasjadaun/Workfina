@@ -34,7 +34,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           // Show loading indicator
           if (profileController.isLoading) {
             return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+              child: CircularProgressIndicator(color: AppTheme.primary),
             );
           }
 
@@ -109,7 +109,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           // Display profile with real data
           return RefreshIndicator(
             onRefresh: () => profileController.checkProfileExists(),
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
@@ -159,7 +159,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
                               profileData['resume_url'].toString().isNotEmpty
                           ? const Icon(
                               Icons.download,
-                              color: AppTheme.primaryGreen,
+                              color: AppTheme.primary,
                             )
                           : null,
                     ),
@@ -234,7 +234,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: AppTheme.primaryGreen,
+            backgroundColor: AppTheme.primary,
             child: Text(
               (profileData['full_name']?[0] ?? 'C').toUpperCase(),
               style: const TextStyle(fontSize: 36, color: Colors.white),
@@ -278,19 +278,19 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.primaryGreen.withOpacity(0.1),
+        color: AppTheme.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.primaryGreen),
+        border: Border.all(color: AppTheme.primary),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppTheme.primaryGreen),
+          Icon(icon, size: 16, color: AppTheme.primary),
           const SizedBox(width: 4),
           Text(
             label,
             style: const TextStyle(
-              color: AppTheme.primaryGreen,
+              color: AppTheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 12,
             ),
@@ -323,10 +323,10 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppTheme.primaryGreen),
+                child: Icon(icon, color: AppTheme.primary),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -408,7 +408,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile refreshed successfully!'),
-          backgroundColor: AppTheme.primaryGreen,
+          backgroundColor: AppTheme.primary,
           duration: Duration(seconds: 2),
         ),
       );
@@ -446,7 +446,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
             ListTile(
               leading: const Icon(
                 Icons.visibility,
-                color: AppTheme.primaryGreen,
+                color: AppTheme.primary,
               ),
               title: const Text('View Resume'),
               onTap: () {
@@ -455,7 +455,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.download, color: AppTheme.primaryGreen),
+              leading: const Icon(Icons.download, color: AppTheme.primary),
               title: const Text('Download Resume'),
               onTap: () {
                 Navigator.pop(context);
@@ -548,8 +548,8 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
                 children: skillsList.map((skill) {
                   return Chip(
                     label: Text(skill.toString()),
-                    backgroundColor: AppTheme.primaryGreen.withOpacity(0.1),
-                    side: const BorderSide(color: AppTheme.primaryGreen),
+                    backgroundColor: AppTheme.primary.withOpacity(0.1),
+                    side: const BorderSide(color: AppTheme.primary),
                   );
                 }).toList(),
               ),
@@ -661,7 +661,7 @@ class _EditProfileSheet extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppTheme.primaryGreen),
+          Icon(icon, size: 20, color: AppTheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

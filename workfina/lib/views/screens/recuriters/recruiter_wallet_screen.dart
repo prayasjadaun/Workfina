@@ -35,7 +35,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               SliverAppBar(
                 expandedHeight: 230,
                 pinned: true,
-                backgroundColor: AppTheme.primaryGreen,
+                backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
                 flexibleSpace: LayoutBuilder(
                   builder: (context, constraints) {
@@ -60,8 +60,8 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppTheme.primaryGreen,
-                              AppTheme.primaryGreenDark,
+                              AppTheme.primary,
+                              AppTheme.primaryDark,
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -156,7 +156,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
-                                    foregroundColor: AppTheme.primaryGreen,
+                                    foregroundColor: AppTheme.primary,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 24,
                                       vertical: 12,
@@ -178,7 +178,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                         width: 24,
                                         height: 24,
                                         colorFilter: ColorFilter.mode(
-                                          AppTheme.primaryGreen,
+                                          AppTheme.primary,
                                           BlendMode.srcIn,
                                         ),
                                       ),
@@ -223,7 +223,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                           'Unlocked',
                           '${hrController.unlockedCandidateIds.length}',
                           "assets/svgs/unlock.svg",
-                          AppTheme.primaryGreen,
+                          AppTheme.primary,
                           isDark,
                         ),
                       ),
@@ -323,7 +323,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
           final hrController = context.read<RecruiterController>();
           _showAddCreditsBottomSheet(context, hrController);
         },
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primary,
         child: SvgPicture.asset(
           'assets/svgs/add.svg',
           width: 30,
@@ -392,7 +392,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
     bool isDark,
   ) {
     final isRecharge = transaction['transaction_type'] == 'RECHARGE';
-    final color = isRecharge ? AppTheme.primaryGreen : const Color(0xFFEF5350);
+    final color = isRecharge ? AppTheme.primary : const Color(0xFFEF5350);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -559,14 +559,14 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? AppTheme.primaryGreen
+                              ? AppTheme.primary
                               : isDark
                               ? Colors.grey[800]
                               : Colors.grey[200],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected
-                                ? AppTheme.primaryGreen
+                                ? AppTheme.primary
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -633,7 +633,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(
-                        color: AppTheme.primaryGreen,
+                        color: AppTheme.primary,
                         width: 2,
                       ),
                     ),
@@ -644,7 +644,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryGreen,
+                      backgroundColor: AppTheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -692,7 +692,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                             content: Text(
                               '$amount credits added successfully!',
                             ),
-                            backgroundColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.primary,
                           ),
                         );
                       } else {

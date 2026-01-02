@@ -81,7 +81,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       Icon(
                         Icons.person_add_outlined,
                         size: 80,
-                        color: AppTheme.primaryGreen,
+                        color: AppTheme.primary,
                       ),
                       const SizedBox(height: 32),
                       Text(
@@ -294,7 +294,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               'Login',
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                    color: AppTheme.primaryGreen,
+                                    color: AppTheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),

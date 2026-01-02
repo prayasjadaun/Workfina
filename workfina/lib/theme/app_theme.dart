@@ -4,14 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors
-  static const Color primaryGreen = Color(0xFF4F8F74);
-  static const Color primaryGreenDark = Color(0xFF3A6B5C);
-  static const Color secondaryBlue = Color(0xFF6BA3D6);
-  static const Color accentOrange = Color(0xFFF39C12);
-  static const Color accentPurple = Color(0xFF8E44AD);
+  static const Color primary = Color.fromARGB(255, 36, 39, 38);
+  static const Color primaryDark = Color.fromARGB(255, 51, 132, 105);
+  static const Color secondary = Color.fromARGB(255, 38, 45, 52);
+  // static const Color secondary = Color(0xFF6BA3D6);
+  static const Color accentPrimary = Color(0xFFF39C12);
+  static const Color accentSecondary = Color(0xFF8E44AD);
 
   // Light Theme Colors
-  static const Color lightBackground = Color(0xFFFAFAFA);
+  static const Color lightBackground = Color.fromARGB(255, 250, 250, 250);
   static const Color lightSurface = Colors.white;
   static const Color lightCardBackground = Colors.white;
   static const Color lightGradientStart = Color(0xFFF7F1E3);
@@ -218,8 +219,8 @@ class AppTheme {
     brightness: Brightness.light,
     textTheme: lightTextTheme,
     colorScheme: const ColorScheme.light(
-      primary: primaryGreen,
-      secondary: secondaryBlue,
+      primary: primary,
+      secondary: secondary,
       surface: lightSurface,
       background: lightBackground,
       onPrimary: Colors.white,
@@ -228,7 +229,7 @@ class AppTheme {
       onBackground: Color(0xFF1C1B1F),
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: primaryGreen,
+      backgroundColor: primary,
       foregroundColor: Colors.white,
       elevation: 0,
       systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -236,7 +237,7 @@ class AppTheme {
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryGreen,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -252,7 +253,7 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      selectedItemColor: primaryGreen,
+      selectedItemColor: primary,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       backgroundColor: lightSurface,
@@ -264,8 +265,8 @@ class AppTheme {
     brightness: Brightness.dark,
     textTheme: darkTextTheme,
     colorScheme: const ColorScheme.dark(
-      primary: primaryGreen,
-      secondary: secondaryBlue,
+      primary: primary,
+      secondary: secondary,
       surface: darkSurface,
       background: darkBackground,
       onPrimary: Colors.white,
@@ -282,7 +283,7 @@ class AppTheme {
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        backgroundColor: primaryGreen,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -298,7 +299,7 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      selectedItemColor: primaryGreen,
+      selectedItemColor: primary,
       unselectedItemColor: Colors.grey,
       type: BottomNavigationBarType.fixed,
       backgroundColor: darkSurface,
@@ -322,7 +323,7 @@ class AppTheme {
   static BoxDecoration getPrimaryGradientDecoration() {
     return const BoxDecoration(
       gradient: LinearGradient(
-        colors: [primaryGreen, primaryGreenDark],
+        colors: [primary, primaryDark],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),

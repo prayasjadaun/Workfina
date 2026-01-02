@@ -28,12 +28,12 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           : const Color(0xFFF5F5F5),
       body: RefreshIndicator(
         onRefresh: () => context.read<CandidateController>().checkProfileExists(),
-        color: AppTheme.primaryGreen,
+        color: AppTheme.primary,
         child: Consumer<CandidateController>(
           builder: (context, controller, child) {
             if (controller.isLoading) {
               return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+                child: CircularProgressIndicator(color: AppTheme.primary),
               );
             }
 
@@ -160,13 +160,13 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.person_add_alt_1_rounded,
                 size: 56,
-                color: AppTheme.primaryGreen,
+                color: AppTheme.primary,
               ),
             ),
             const SizedBox(height: 32),
@@ -197,7 +197,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   Navigator.pushNamed(context, '/candidate-setup');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
+                  backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -400,7 +400,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               child: ElevatedButton(
                 onPressed: () => _navigateToEditProfile(context, profileData),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
+                  backgroundColor: AppTheme.primary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -676,10 +676,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppTheme.primaryGreen, size: 24),
+              child: Icon(icon, color: AppTheme.primary, size: 24),
             ),
             const SizedBox(width: 16),
             Expanded(

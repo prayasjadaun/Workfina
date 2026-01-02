@@ -45,7 +45,7 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primaryGreen,
+        selectedItemColor: AppTheme.primary,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(

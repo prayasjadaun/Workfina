@@ -5,6 +5,7 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
+import 'package:workfina/views/widgets/candidate_card_widget.dart';
 
 class FilteredCandidatesScreen extends StatefulWidget {
   final String filterType;
@@ -102,7 +103,7 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
           : AppTheme.lightBackground,
       appBar: AppBar(
         title: Text(widget.filterValue, style: AppTheme.getAppBarTextStyle()),
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -137,11 +138,11 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
             itemCount: lockedCandidates.length,
             itemBuilder: (context, index) {
               final candidate = lockedCandidates[index];
-              return _buildCandidateCard(
-                context,
-                candidate,
-                hrController,
-                isDark,
+              return CandidateCardWidget(
+                candidate: candidate,
+                isUnlocked: false,
+                canAffordUnlock: hrController.canUnlockCandidate(),
+                onUnlock: () => _unlockCandidate(context, candidate, hrController),
               );
             },
           );
@@ -293,310 +294,9 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
     );
   }
 
-  Widget _buildCandidateCard(
-    BuildContext context,
-    Map<String, dynamic> candidate,
-    RecruiterController hrController,
-    bool isDark,
-  ) {
-    final canAffordUnlock = hrController.canUnlockCandidate();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardBackground : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with avatar and name
-            Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.grey.shade700 : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text(
-                      candidate['masked_name']?.substring(0, 1).toUpperCase() ??
-                          'C',
-                      style: AppTheme.getHeadlineStyle(
-                        context,
-                        color: isDark ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        candidate['masked_name'] ?? 'Unknown',
-                        style: AppTheme.getCardTitleStyle(context),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        candidate['role_name'] ?? 'N/A',
-                        style: AppTheme.getCardSubtitleStyle(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
 
-            const SizedBox(height: 16),
 
-            // Info chips
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildInfoChip(
-                  context,
-                  Icons.work_outline,
-                  '${candidate['experience_years']} years',
-                  isDark,
-                ),
-                _buildInfoChip(
-                  context,
-                  Icons.location_on_outlined,
-                  candidate['city_name'] ?? 'N/A',
-                  isDark,
-                ),
-                _buildInfoChip(
-                  context,
-                  Icons.person_outline,
-                  '${candidate['age']} years old',
-                  isDark,
-                ),
-              ],
-            ),
-
-            if (candidate['skills'] != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Skills',
-                style: AppTheme.getLabelStyle(
-                  context,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              () {
-                final allSkills = candidate['skills'].split(',');
-                final displaySkills = allSkills.take(3).toList();
-                final remainingCount = allSkills.length - 3;
-
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    ...displaySkills.map<Widget>(
-                      (skill) => Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.primaryGreen.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          skill.trim(),
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (remainingCount > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: AppTheme.secondaryBlue.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Text(
-                          '+$remainingCount more',
-                          style: AppTheme.getLabelStyle(
-                            context,
-                            color: AppTheme.secondaryBlue,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              }(),
-            ],
-
-            const SizedBox(height: 20),
-
-            // Footer with price and unlock button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: canAffordUnlock
-                        ? AppTheme.accentOrange.withOpacity(0.1)
-                        : Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: canAffordUnlock
-                          ? AppTheme.accentOrange.withOpacity(0.3)
-                          : Colors.red.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.stars_outlined,
-                        size: 16,
-                        color: canAffordUnlock
-                            ? AppTheme.accentOrange
-                            : Colors.red,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '10 credits to unlock',
-                        style: AppTheme.getLabelStyle(
-                          context,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                ElevatedButton(
-                  onPressed: canAffordUnlock
-                      ? () => _unlockCandidate(context, candidate, hrController)
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: canAffordUnlock
-                        ? (isDark ? Colors.white : Colors.black)
-                        : (isDark
-                              ? Colors.grey.shade700
-                              : Colors.grey.shade300),
-                    foregroundColor: canAffordUnlock
-                        ? (isDark ? Colors.black : Colors.white)
-                        : (isDark
-                              ? Colors.grey.shade500
-                              : Colors.grey.shade500),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/svgs/lock.svg',
-                        width: 16,
-                        height: 16,
-                        colorFilter: ColorFilter.mode(
-                          canAffordUnlock
-                              ? (isDark ? Colors.black : Colors.white)
-                              : (isDark
-                                    ? Colors.grey.shade500
-                                    : Colors.grey.shade500),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Unlock Profile',
-                        style: AppTheme.getPrimaryButtonTextStyle(context)
-                            .copyWith(
-                              fontSize: 14,
-                              color: canAffordUnlock
-                                  ? (isDark ? Colors.black : Colors.white)
-                                  : (isDark
-                                        ? Colors.grey.shade500
-                                        : Colors.grey.shade500),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoChip(
-    BuildContext context,
-    IconData icon,
-    String text,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey.shade800 : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: AppTheme.getLabelStyle(
-              context,
-              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _unlockCandidate(
     BuildContext context,

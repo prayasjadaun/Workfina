@@ -184,7 +184,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
           _selectedFilterType ?? 'Filter Candidates',
           style: AppTheme.getAppBarTextStyle(),
         ),
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primary,
         foregroundColor: isDark ? Colors.white : Colors.white,
         elevation: 0,
 
@@ -631,9 +631,9 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     final svgPaths = {
       'department': 'assets/svgs/candidates.svg',
       'religion': 'assets/svgs/profile.svg', 
-      'city': 'assets/svgs/location.svg',
-      'state': 'assets/svgs/location.svg',
-      'country': 'assets/svgs/location.svg',
+      'city': 'assets/svgs/city.svg',
+      'state': 'assets/svgs/state.svg',
+      'country': 'assets/svgs/country.svg',
       'education': 'assets/svgs/docs.svg',
       // Add more mappings as needed
     };

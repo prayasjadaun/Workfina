@@ -225,7 +225,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile updated successfully!'),
-          backgroundColor: AppTheme.primaryGreen,
+          backgroundColor: AppTheme.primary,
         ),
       );
       // Go back to profile screen
@@ -246,7 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Edit Profile'),
-        backgroundColor: AppTheme.primaryGreen,
+        backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
       ),
       body: Consumer<CandidateController>(
@@ -442,7 +442,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : Icons.cloud_upload_outlined,
                           size: 48,
                           color: _resumeFile != null
-                              ? AppTheme.primaryGreen
+                              ? AppTheme.primary
                               : Colors.grey,
                         ),
                         const SizedBox(height: 12),
@@ -479,7 +479,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             _resumeFile != null ? 'Change File' : 'Choose File',
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.primary,
                           ),
                         ),
                       ],
@@ -505,7 +505,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               : Icons.videocam_outlined,
                           size: 48,
                           color: _videoIntroFile != null
-                              ? AppTheme.primaryGreen
+                              ? AppTheme.primary
                               : Colors.grey,
                         ),
                         const SizedBox(height: 12),
@@ -542,7 +542,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             _videoIntroFile != null ? 'Change Video' : 'Choose Video',
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryGreen,
+                            backgroundColor: AppTheme.primary,
                           ),
                         ),
                       ],
@@ -557,7 +557,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: ElevatedButton(
                       onPressed: controller.isLoading ? null : _updateProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryGreen,
+                        backgroundColor: AppTheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -635,7 +635,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         filled: true,
         fillColor: Colors.white,
@@ -675,7 +675,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primaryGreen, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         filled: true,
         fillColor: Colors.white,

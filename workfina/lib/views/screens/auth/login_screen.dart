@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: Text(
           'WorkFina',
           style: TextStyle(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -289,8 +289,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             gradient: isButtonEnabled
                                 ? LinearGradient(
                                     colors: [
-                                      AppTheme.primaryGreen,
-                                      AppTheme.primaryGreen.withOpacity(0.8),
+                                      AppTheme.primary,
+                                      AppTheme.primary.withOpacity(0.8),
                                     ],
                                   )
                                 : null,
@@ -298,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             boxShadow: isButtonEnabled
                                 ? [
                                     BoxShadow(
-                                      color: AppTheme.primaryGreen.withOpacity(0.3),
+                                      color: AppTheme.primary.withOpacity(0.3),
                                       blurRadius: 12,
                                       offset: const Offset(0, 4),
                                     ),
@@ -393,7 +393,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Sign Up',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppTheme.primaryGreen,
+                                color: AppTheme.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
