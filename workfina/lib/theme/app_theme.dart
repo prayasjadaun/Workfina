@@ -338,7 +338,7 @@ class AppTheme {
   static BoxShadow getCardShadow(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxShadow(
-      color: isDark ? Colors.black54 : Colors.grey.withOpacity(0.1),
+      color: isDark ? Colors.black54 : Colors.grey.withOpacity(0.2),
       blurRadius: 8,
       offset: const Offset(0, 2),
     );

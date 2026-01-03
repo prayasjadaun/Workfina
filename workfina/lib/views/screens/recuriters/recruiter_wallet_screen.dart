@@ -58,14 +58,15 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                       titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                       background: Container(
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primary,
-                              AppTheme.primaryDark,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: AppTheme.primary
+                          // gradient: LinearGradient(
+                          //   colors: [
+                          //     AppTheme.primary,
+                          //     AppTheme.primaryDark,
+                          //   ],
+                          //   begin: Alignment.topLeft,
+                          //   end: Alignment.bottomRight,
+                          // ),
                         ),
                         child: SafeArea(
                           child: Padding(

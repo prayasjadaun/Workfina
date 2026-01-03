@@ -26,23 +26,29 @@ class CandidateCardWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+        color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark 
+            ? Colors.grey.withOpacity(0.2)
+            : Colors.grey.withOpacity(0.08),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: isDark 
-              ? Colors.black.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.15),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
+              ? Colors.black.withOpacity(0.4)
+              : Colors.grey.withOpacity(0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
           ),
           if (!isDark)
             BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 1),
-              spreadRadius: 0,
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+              spreadRadius: 1,
             ),
         ],
       ),
@@ -240,13 +246,13 @@ class CandidateCardWidget extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 8,
+                      vertical: 11,
                     ),
                     decoration: BoxDecoration(
                       color: canAffordUnlock
                           ? AppTheme.accentPrimary.withOpacity(0.1)
                           : Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(22),
                       border: Border.all(
                         color: canAffordUnlock
                             ? AppTheme.accentPrimary.withOpacity(0.3)
@@ -364,26 +370,25 @@ class CandidateCardWidget extends StatelessWidget {
         .map((s) => s.trim())
         .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          'Skills',
+          'Skills: ',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: isDark ? Colors.white : Colors.black,
           ),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ...allSkills
-                .take(3)
-                .map<Widget>(
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ...allSkills.map<Widget>(
                   (skill) => Container(
+                    margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
@@ -391,7 +396,7 @@ class CandidateCardWidget extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isDark 
                         ? const Color(0xFF2D2D2D) 
-                        : const Color(0xFFF8F9FA),
+                        : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -414,26 +419,9 @@ class CandidateCardWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-            if (allSkills.length > 4)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '+${allSkills.length - 4}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ],
     );

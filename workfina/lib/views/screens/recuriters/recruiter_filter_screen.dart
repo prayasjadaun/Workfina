@@ -5,7 +5,8 @@ import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/filter_candidate_screen.dart';
 
 class RecruiterFilterScreen extends StatefulWidget {
-  const RecruiterFilterScreen({super.key});
+  final bool showUnlockedOnly;
+  const RecruiterFilterScreen({super.key, this.showUnlockedOnly = false});
 
   @override
   State<RecruiterFilterScreen> createState() => _RecruiterFilterScreenState();
@@ -166,6 +167,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
         builder: (context) => FilteredCandidatesScreen(
           filterType: _selectedFilterType!,
           filterValue: subFilter,
+          showUnlockedOnly: widget.showUnlockedOnly,
         ),
       ),
     );
@@ -181,7 +183,10 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
           : AppTheme.lightBackground,
       appBar: AppBar(
         title: Text(
-          _selectedFilterType ?? 'Filter Candidates',
+          _selectedFilterType ??
+              (widget.showUnlockedOnly
+                  ? 'Filter Unlocked Profiles'
+                  : 'Filter Candidates'),
           style: AppTheme.getAppBarTextStyle(),
         ),
         backgroundColor: AppTheme.primary,
@@ -284,106 +289,179 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
   }
 
   Widget _buildFilterCategories(bool isDark) {
-    // Build categories dynamically from API response
     final categories = _filterOverview.entries
-        .where((entry) => ((entry.value as Map<String, dynamic>)['locked_count'] ?? 0) > 0)
+        .where((entry) {
+          final count = widget.showUnlockedOnly
+              ? (entry.value as Map<String, dynamic>)['unlocked_count'] ?? 0
+              : (entry.value as Map<String, dynamic>)['locked_count'] ?? 0;
+          return count > 0;
+        })
         .map((entry) {
-      return {
-        'key': entry.key,
-        'title': _getDisplayName(entry.key),
-        'svg': _getSvgPath(entry.key),
-        'count': (entry.value as Map<String, dynamic>)['locked_count'] ?? 0,
-      };
-    }).toList();
+          return {
+            'key': entry.key,
+            'title': _getDisplayName(entry.key),
+            'svg': _getSvgPath(entry.key),
+            'count': widget.showUnlockedOnly
+                ? (entry.value as Map<String, dynamic>)['unlocked_count'] ?? 0
+                : (entry.value as Map<String, dynamic>)['locked_count'] ?? 0,
+          };
+        })
+        .toList();
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(15, 10, 15, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filter Categories',
+            'Discover Talent',
             style: AppTheme.getHeadlineStyle(
               context,
-              fontSize: 24,
+              fontSize: 30,
               fontWeight: FontWeight.w600,
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Select a category to filter candidates',
+            'Filter candidates by your preferred criteria',
             style: AppTheme.getBodyStyle(context, color: Colors.grey.shade600),
           ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(0, 16, 24, 0),
+            child: Text(
+              'Find your perfect\ncandidate match',
+              style: AppTheme.getHeadlineStyle(
+                context,
+                fontWeight: FontWeight.w700,
+                fontSize: 24,
               ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: ListView.builder(
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
                 final count = category['count'] ?? 0;
 
                 return Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkCardBackground : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.grey.shade800
-                          : Colors.grey.shade200,
-                      width: 1,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  height: 150,
+                  child: CustomPaint(
+                    painter: FilterCardPainter(
+                      isDark: isDark,
+                      gradientColors: [
+                        AppTheme.primary.withOpacity(0.1),
+                        AppTheme.primary.withOpacity(0.05),
+                      ],
                     ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () =>
-                          _onFilterCategoryTap(category['title'] as String),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              category['svg'] as String,
-                              width: 32,
-                              height: 32,
-                              colorFilter: ColorFilter.mode(
-                                isDark
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade700,
-                                BlendMode.srcIn,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () =>
+                            _onFilterCategoryTap(category['title'] as String),
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primary.withOpacity(
+                                          0.1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: AppTheme.primary.withOpacity(
+                                            0.3,
+                                          ),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        'Available Now',
+                                        style: AppTheme.getBodyStyle(
+                                          context,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      category['title'] as String,
+                                      style: AppTheme.getTitleStyle(
+                                        context,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 4,
+                                          height: 4,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.shade400,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '$count qualified candidates',
+                                          style: AppTheme.getBodyStyle(
+                                            context,
+                                            fontSize: 13,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              category['title'] as String,
-                              style: AppTheme.getTitleStyle(
-                                context,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.white : Colors.black87,
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: AppTheme.primary.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Center(
+                                  child: SvgPicture.asset(
+                                    category['svg'] as String,
+                                    width: 32,
+                                    height: 32,
+                                    colorFilter: ColorFilter.mode(
+                                      AppTheme.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$count options',
-                              style: AppTheme.getBodyStyle(
-                                context,
-                                fontSize: 12,
-                                color: Colors.grey.shade500,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -503,9 +581,14 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                   },
                   child: Builder(
                     builder: (context) {
-                      // Filter out options with zero locked_count
-                      final filteredData = _currentFilterData.where((option) => (option['locked_count'] ?? 0) > 0).toList();
-                      
+                      // Filter out options with zero count based on unlocked status
+                      final filteredData = _currentFilterData.where((option) {
+                        final count = widget.showUnlockedOnly
+                            ? (option['unlocked_count'] ?? 0)
+                            : (option['locked_count'] ?? 0);
+                        return count > 0;
+                      }).toList();
+
                       if (filteredData.isEmpty) {
                         return Center(
                           child: Column(
@@ -590,7 +673,8 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(16),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           option['label'],
@@ -612,10 +696,12 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (option['locked_count'] != null) ...[
+                                        if (option['locked_count'] != null ||
+                                            option['unlocked_count'] !=
+                                                null) ...[
                                           const SizedBox(height: 4),
                                           Text(
-                                            '${option['locked_count']} candidates',
+                                            '${widget.showUnlockedOnly ? (option['unlocked_count'] ?? 0) : (option['locked_count'] ?? 0)} candidates',
                                             style: AppTheme.getBodyStyle(
                                               context,
                                               fontSize: 11,
@@ -666,7 +752,7 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     // Map API keys to SVG icons
     final svgPaths = {
       'department': 'assets/svgs/candidates.svg',
-      'religion': 'assets/svgs/profile.svg', 
+      'religion': 'assets/svgs/profile.svg',
       'city': 'assets/svgs/city.svg',
       'state': 'assets/svgs/state.svg',
       'country': 'assets/svgs/country.svg',
@@ -689,4 +775,53 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     // Fallback: convert display name back to likely API key format
     return filterType.toLowerCase().replaceAll(' ', '_');
   }
+}
+
+class FilterCardPainter extends CustomPainter {
+  final bool isDark;
+  final List<Color> gradientColors;
+
+  FilterCardPainter({required this.isDark, required this.gradientColors});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: gradientColors,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(20),
+        ),
+      );
+
+    canvas.drawPath(path, paint);
+
+    final borderPaint = Paint()
+      ..color = isDark ? Colors.grey.shade800 : Colors.grey.shade200
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawPath(path, borderPaint);
+
+    final accentPaint = Paint()
+      ..color = AppTheme.primary.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+
+    final accentPath = Path()
+      ..moveTo(size.width * 0.7, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height * 0.3)
+      ..close();
+
+    canvas.drawPath(accentPath, accentPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -15,7 +15,7 @@ class RecruiterController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, dynamic>? get hrProfile => _hrProfile;
-  List<dynamic> get candidates => _candidates;
+  List<Map<String, dynamic>> get candidates => _candidates.cast<Map<String, dynamic>>();
   Map<String, dynamic>? get wallet => _wallet;
   List<dynamic> get transactions => _transactions;
   Set<String> get unlockedCandidateIds => _unlockedCandidateIds;
@@ -26,7 +26,7 @@ class RecruiterController extends ChangeNotifier {
   }
 
   Future<bool> registerHR({
-    required String fullName, // âœ… ADD THIS LINE
+    required String fullName, // Ã¢Å“â€¦ ADD THIS LINE
     required String companyName,
     required String designation,
     required String phone,
@@ -39,7 +39,7 @@ class RecruiterController extends ChangeNotifier {
 
     try {
       final response = await ApiService.registerRecruiter(
-        fullName: fullName, // âœ… ADD THIS LINE
+        fullName: fullName, // Ã¢Å“â€¦ ADD THIS LINE
         companyName: companyName,
         designation: designation,
         phone: phone,

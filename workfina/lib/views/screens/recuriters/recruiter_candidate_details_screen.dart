@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
@@ -45,16 +46,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
 
   Future<void> _sendNote() async {
     if (_notesController.text.trim().isEmpty) return;
-    
+
     setState(() => _isLoadingNotes = true);
-    
+
     final result = await ApiService.addCandidateNote(
       candidateId: widget.candidate['id'],
       noteText: _notesController.text.trim(),
     );
-    
+
     setState(() => _isLoadingNotes = false);
-    
+
     if (result.containsKey('error')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
@@ -66,14 +67,19 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       _notesController.clear();
       _notesFocusNode.unfocus();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Note added successfully'), backgroundColor: AppTheme.primary),
+        const SnackBar(
+          content: Text('Note added successfully'),
+          backgroundColor: AppTheme.primary,
+        ),
       );
     }
   }
 
   Future<void> _loadNotesAndFollowups() async {
-    final result = await ApiService.getCandidateNotesFollowups(widget.candidate['id']);
-    
+    final result = await ApiService.getCandidateNotesFollowups(
+      widget.candidate['id'],
+    );
+
     if (!result.containsKey('error')) {
       setState(() {
         notes = List<Map<String, dynamic>>.from(result['notes'] ?? []);
@@ -88,7 +94,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       followupDate: selectedDateTime.toIso8601String(),
       notes: notes,
     );
-    
+
     if (result.containsKey('error')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
@@ -97,9 +103,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       setState(() {
         followups.add(result['followup']);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Follow-up reminder added')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Follow-up reminder added')));
     }
   }
 
@@ -158,7 +164,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
                   viewUrl = '$baseUrl$viewUrl';
                 }
-                _launchURL(viewUrl);
+                _launchURL(viewUrl, mode: LaunchMode.inAppWebView);
               },
             ),
             ListTile(
@@ -202,53 +208,18 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       return;
     }
 
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Video Introduction',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade500.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: SvgPicture.asset(
-                  "assets/svgs/play.svg",
-                  color: Colors.black,
-                ),
-              ),
-              title: const Text('Play Video'),
-              subtitle: const Text('Open in external player'),
-              onTap: () {
-                Navigator.pop(context);
-                String playUrl = videoUrl.toString();
-                if (!playUrl.startsWith('http')) {
-                  final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
-                  playUrl = '$baseUrl$playUrl';
-                }
-                _launchURL(playUrl);
-              },
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
+    String playUrl = videoUrl.toString();
+    if (!playUrl.startsWith('http')) {
+      final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+      playUrl = '$baseUrl$playUrl';
+    }
+    _launchURL(playUrl, mode: LaunchMode.inAppWebView);
   }
 
-  void _launchURL(String url) async {
+  void _launchURL(String url, {LaunchMode? mode}) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(uri, mode: mode ?? LaunchMode.externalApplication);
     }
   }
 
@@ -306,8 +277,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        // backgroundColor: Theme.of(context).colorScheme.background,
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.background,
+        // backgroundColor: Colors.transparent,
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -330,65 +301,39 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   ),
                 ),
               ),
-              actions: [
-                GestureDetector(
-                  onTap: () => _openWhatsApp(widget.candidate['phone']),
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    margin: const EdgeInsets.all(8),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: SvgPicture.asset(
-                      "assets/svgs/whatsapp.svg",
-                      color: Colors.white,
-                      // width: 16,
-                      // height: 16,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () =>
-                      _handlePhoneCall(context, widget.candidate['phone']),
-                  child: Container(
-                    padding: EdgeInsets.all(8),
-                    margin: const EdgeInsets.all(8),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: SvgPicture.asset(
-                      "assets/svgs/phone.svg",
-                      color: Colors.white,
-                      // width: 30,
-                      // height: 30,
-                    ),
-                  ),
-                ),
-                // GestureDetector(
-                //   onTap: () {},
-                //   child: Container(
-                //     margin: const EdgeInsets.all(8),
-                //     width: 40,
-                //     height: 40,
-                //     decoration: BoxDecoration(
-                //       color: Colors.white.withOpacity(0.2),
-                //       borderRadius: BorderRadius.circular(12),
-                //     ),
-                //     child: const Icon(
-                //       Icons.more_vert,
-                //       color: Colors.white,
-                //       size: 20,
-                //     ),
-                //   ),
-                // ),
-              ],
+
               flexibleSpace: FlexibleSpaceBar(
+                title: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final collapsed =
+                        constraints.biggest.height <=
+                        kToolbarHeight + MediaQuery.of(context).padding.top;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      transform: Matrix4.translationValues(
+                        0,
+                        collapsed ? 0 : 30,
+                        0,
+                      ),
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 300),
+                        opacity: collapsed ? 1.0 : 0.0,
+                        child: Text(
+                          widget.candidate['full_name'] ??
+                              widget.candidate['masked_name'] ??
+                              'Unknown',
+                          style: AppTheme.getAppBarTextStyle().copyWith(
+                            fontSize: collapsed ? 18 : 0,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 background: Container(
                   decoration: BoxDecoration(
                     image: widget.candidate['profile_image_url'] != null
@@ -421,10 +366,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
+                  // borderRadius: const BorderRadius.only(
+                  //   topLeft: Radius.circular(24),
+                  //   topRight: Radius.circular(24),
+                  // ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -433,11 +378,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     children: [
                       _buildProfileHeader(context),
                       const SizedBox(height: 24),
+                      _buildVideoIntroSection(context),
+                      const SizedBox(height: 24),
                       if (widget.candidate['skills'] != null) ...[
                         _buildSkillsSection(context),
                         const SizedBox(height: 24),
                       ],
-                      _buildContactInfo(context),
+                      _buildPersonalInfoSection(context),
+                      const SizedBox(height: 24),
+
+                      _buildEducationSection(context),
                       const SizedBox(height: 24),
                       _buildFollowupsSection(context),
                       const SizedBox(height: 24),
@@ -466,66 +416,121 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           child: SafeArea(
             child: Row(
               children: [
+                // Left side - Contact buttons
                 Expanded(
+                  flex: 3,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _handlePhoneCall(
+                            context,
+                            widget.candidate['phone'],
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primary.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  "assets/svg/call.svg",
+                                  color: AppTheme.primary,
+                                  width: 20,
+                                  height: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _openWhatsApp(widget.candidate['phone']),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primary.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: SvgPicture.asset(
+                              "assets/svg/whatsapp.svg",
+                              color: AppTheme.primary,
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final email = widget.candidate['email'];
+                            if (email != null && email.isNotEmpty) {
+                              final uri = Uri.parse('mailto:$email');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              }
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Email not available'),
+                                ),
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primary.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: SvgPicture.asset(
+                              "assets/svg/email.svg",
+                              color: AppTheme.primary,
+                              width: 20,
+                              height: 20,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Right side - Resume button
+                Expanded(
+                  flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: () =>
                         _handleResumeClick(context, widget.candidate),
                     icon: Container(
-                      padding: const EdgeInsets.all(5),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade500.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: SvgPicture.asset(
-                        "assets/svgs/docs.svg",
-                        width: 18,
-                        height: 18,
-                        colorFilter: ColorFilter.mode(
-                          AppTheme.primary,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    label: Text(
-                      'View Resume',
-                      style: AppTheme.getBodyStyle(
-                        context,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surface,
-                      foregroundColor: Theme.of(context).colorScheme.onSurface,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.outline.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _handleVideoClick(context, widget.candidate),
-                    icon: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade500.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SvgPicture.asset(
-                        "assets/svgs/play.svg",
-                        width: 18,
-                        height: 18,
+                        "assets/svg/docs.svg",
+                        width: 16,
+                        height: 16,
                         colorFilter: const ColorFilter.mode(
                           Colors.white,
                           BlendMode.srcIn,
@@ -533,19 +538,19 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       ),
                     ),
                     label: Text(
-                      'Watch Video',
+                      'Resume',
                       style: AppTheme.getBodyStyle(
                         context,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
-                        fontSize: 15,
+                        fontSize: 14,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -617,37 +622,86 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          widget.candidate['role_name'] ?? 'Role not specified',
-          style: AppTheme.getBodyStyle(
-            context,
-            fontSize: 20,
-            color: Colors.grey.shade700,
-            fontWeight: FontWeight.w800
-          ),
-        ),
-        const SizedBox(height: 16),
         Row(
           children: [
-            Icon(Icons.circle, size: 8, color: Colors.grey.shade400),
+            Icon(Icons.location_on, color: AppTheme.primary, size: 20),
             const SizedBox(width: 8),
-            Text(
-              '${widget.candidate['city_name'] ?? ''}, ${widget.candidate['state_name'] ?? ''}',
-              style: AppTheme.getSubtitleStyle(
-                context,
-                fontSize: 17,
-                color: Colors.grey.shade600,
+            Expanded(
+              child: Text(
+                '${widget.candidate['city_name'] ?? ''}, ${widget.candidate['state_name'] ?? ''}',
+                style: AppTheme.getBodyStyle(
+                  context,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Experience & Role box
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [AppTheme.getCardShadow(context)],
+                ),
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      "assets/svg/work.svg",
+                      color: AppTheme.primary,
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.candidate['role_name'] ?? 'Role not specified',
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(width: 12),
-            Icon(Icons.circle, size: 8, color: Colors.grey.shade400),
-            const SizedBox(width: 8),
-            Text(
-              '${widget.candidate['experience_years'] ?? 0} yrs exp',
-              style: AppTheme.getSubtitleStyle(
-                context,
-                fontSize: 17,
-                color: Colors.grey.shade600,
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.getCardColor(context),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [AppTheme.getCardShadow(context)],
+                ),
+                child: Row(
+                  children: [
+                    SvgPicture.asset(
+                      "assets/svg/schedule.svg",
+                      color: AppTheme.primary,
+                      width: 20,
+                      height: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${widget.candidate['experience_years'] ?? 0} yrs exp',
+                        style: AppTheme.getSubtitleStyle(context, fontSize: 18),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -659,26 +713,56 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   Widget _buildSkillsSection(BuildContext context) {
     final skills = widget.candidate['skills']?.split(',') ?? [];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: skills.map<Widget>((skill) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              width: 1,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.getCardShadow(context)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Skills',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          child: Text(
-            skill.trim(),
-            style: AppTheme.getLabelStyle(context, fontWeight: FontWeight.w500),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: skills.map<Widget>((skill) {
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppTheme.primary.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  skill.trim(),
+                  style: AppTheme.getLabelStyle(
+                    context,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              );
+            }).toList(),
           ),
-        );
-      }).toList(),
+        ],
+      ),
     );
   }
 
@@ -697,21 +781,27 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         const SizedBox(height: 12),
         // Display existing notes
         if (notes.isNotEmpty) ...[
-          ...notes.map((note) => Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.getCardColor(context),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
-            child: Text(
-              note['note_text'] ?? '',
-              style: AppTheme.getBodyStyle(context, fontSize: 14),
-            ),
-          )).toList(),
+          ...notes
+              .map(
+                (note) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.outline.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Text(
+                    note['note_text'] ?? '',
+                    style: AppTheme.getBodyStyle(context, fontSize: 14),
+                  ),
+                ),
+              )
+              .toList(),
           const SizedBox(height: 12),
         ],
         Row(
@@ -762,7 +852,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               ),
               child: IconButton(
                 onPressed: _isLoadingNotes ? null : _sendNote,
-                icon: _isLoadingNotes 
+                icon: _isLoadingNotes
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -858,8 +948,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
             DateTime followupDateTime;
             try {
               // Handle API response format
-              final dateStr = followup['followup_date']?.toString() ?? 
-                             followup['date']?.toString() ?? '';
+              final dateStr =
+                  followup['followup_date']?.toString() ??
+                  followup['date']?.toString() ??
+                  '';
               if (dateStr.contains('/') && dateStr.contains(' ')) {
                 followupDateTime = DateFormat(
                   'dd/MM/yyyy hh:mm a',
@@ -873,9 +965,11 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
 
             final isCompleted = followup['is_completed'] ?? false;
             final isPast = followupDateTime.isBefore(DateTime.now());
-            
+
             // Format the date for display - adjust for IST timezone
-            final displayDate = DateFormat('dd/MM/yyyy hh:mm a').format(followupDateTime.toLocal());
+            final displayDate = DateFormat(
+              'dd/MM/yyyy hh:mm a',
+            ).format(followupDateTime.toLocal());
 
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -962,7 +1056,116 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     );
   }
 
-  Widget _buildContactInfo(BuildContext context) {
+  Widget _buildVideoIntroSection(BuildContext context) {
+    final videoUrl = widget.candidate['video_intro_url'];
+
+    if (videoUrl == null || videoUrl.toString().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    String fullVideoUrl = videoUrl.toString();
+    if (!fullVideoUrl.startsWith('http')) {
+      final baseUrl = ApiService.baseUrl.replaceAll('/api', '');
+      fullVideoUrl = '$baseUrl$fullVideoUrl';
+    }
+
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.getCardShadow(context)],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage('$fullVideoUrl#t=0.1'),
+                  fit: BoxFit.cover,
+                  onError: (exception, stackTrace) {},
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.grey.shade400, Colors.grey.shade600],
+                  ),
+                ),
+                child: Icon(
+                  Icons.videocam,
+                  size: 50,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+              ),
+            ),
+            Container(color: Colors.black.withOpacity(0.3)),
+            Center(
+              child: GestureDetector(
+                onTap: () => _handleVideoClick(context, widget.candidate),
+                child: Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 15,
+                        spreadRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.play_arrow,
+                    color: AppTheme.primary,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEducationSection(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.getCardShadow(context)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Education',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            widget.candidate['education_details'] ?? 'Not Available',
+            style: AppTheme.getBodyStyle(context, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonalInfoSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -971,7 +1174,17 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Personal Information',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
           _buildContactInfoRow(
             context,
             'Email',
@@ -988,12 +1201,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
             context,
             'Current CTC',
             _formatCurrency(widget.candidate['current_ctc']),
-          ),
-          const SizedBox(height: 16),
-          _buildContactInfoRow(
-            context,
-            'Expected CTC',
-            _formatCurrency(widget.candidate['expected_ctc']),
           ),
         ],
       ),

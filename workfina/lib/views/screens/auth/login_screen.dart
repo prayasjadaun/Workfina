@@ -36,12 +36,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void _validateForm() {
     final email = _emailController.text;
     final password = _passwordController.text;
-    
-    final isValid = email.isNotEmpty &&
+
+    final isValid =
+        email.isNotEmpty &&
         password.isNotEmpty &&
         RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
         password.length >= 6;
-    
+
     if (_isFormValid != isValid) {
       setState(() {
         _isFormValid = isValid;
@@ -56,10 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+
         title: Text(
           'WorkFina',
           style: TextStyle(
@@ -85,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 40),
-                    
+
                     // Title
                     const Text(
                       'Welcome Back!',
@@ -96,17 +94,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Subtitle
                     Text(
                       'Login to continue your journey',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 40),
-                    
+
                     // Email Input Label
                     Text(
                       'Email Address',
@@ -117,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Email Input Field
                     Container(
                       decoration: BoxDecoration(
@@ -158,17 +153,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value?.isEmpty ?? true) {
                             return 'Please enter your email';
                           }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(value!)) {
+                          if (!RegExp(
+                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                          ).hasMatch(value!)) {
                             return 'Please enter a valid email';
                           }
                           return null;
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // Password Input Label
                     Text(
                       'Password',
@@ -179,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Password Input Field
                     Container(
                       decoration: BoxDecoration(
@@ -250,13 +246,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                     ),
-                    
+
                     const SizedBox(height: 20),
-                    
-        
-                    
+
                     // const SizedBox(height: 40),
-                    
+
                     // Login Button
                     Consumer<AuthController>(
                       builder: (context, authController, child) {
@@ -278,7 +272,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         }
 
-                        final isButtonEnabled = _isFormValid && !authController.isLoading;
+                        final isButtonEnabled =
+                            _isFormValid && !authController.isLoading;
 
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -331,8 +326,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: isButtonEnabled 
-                                          ? Colors.white 
+                                      color: isButtonEnabled
+                                          ? Colors.white
                                           : Colors.grey[600],
                                     ),
                                   ),
@@ -340,17 +335,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         );
                       },
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Divider with OR
                     Row(
                       children: [
                         Expanded(
-                          child: Divider(
-                            color: Colors.grey[300],
-                            thickness: 1,
-                          ),
+                          child: Divider(color: Colors.grey[300], thickness: 1),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -364,16 +356,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         Expanded(
-                          child: Divider(
-                            color: Colors.grey[300],
-                            thickness: 1,
-                          ),
+                          child: Divider(color: Colors.grey[300], thickness: 1),
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Sign Up Link
                     Center(
                       child: Row(
@@ -387,8 +376,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () =>
-                                Navigator.pushReplacementNamed(context, '/email'),
+                            onTap: () => Navigator.pushReplacementNamed(
+                              context,
+                              '/email',
+                            ),
                             child: Text(
                               'Sign Up',
                               style: TextStyle(
@@ -401,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -419,7 +410,7 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text,
         _passwordController.text,
       );
-      
+
       if (success && mounted) {
         final userRole = authController.user?['role'];
         if (userRole == 'candidate') {

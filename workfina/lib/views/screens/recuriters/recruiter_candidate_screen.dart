@@ -8,7 +8,12 @@ import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
 
 class RecruiterCandidate extends StatefulWidget {
   final ValueChanged<int>? onSwitchToWallet;
-  const RecruiterCandidate({super.key, this.onSwitchToWallet});
+  final bool showOnlyUnlocked;
+  const RecruiterCandidate({
+    super.key,
+    this.onSwitchToWallet,
+    this.showOnlyUnlocked = false,
+  });
 
   @override
   State<RecruiterCandidate> createState() => _RecruiterCandidateState();
@@ -18,6 +23,10 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   String _selectedRole = 'All';
+  String _selectedLocation = 'All';
+  String _selectedExperience = 'All';
+  String _selectedEducation = 'All';
+  String _selectedReligion = 'All';
   late TabController _tabController;
 
   @override
@@ -38,11 +47,39 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      // backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppTheme.darkBackground
+          : Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: AppTheme.primary,
-        title: Text('Candidates', style: AppTheme.getAppBarTextStyle()),
+        title: Row(
+          children: [
+            Text(
+              widget.showOnlyUnlocked ? 'Unlocked Profiles' : 'Candidates',
+              style: AppTheme.getAppBarTextStyle(),
+            ),
+            if (_hasActiveFilters()) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Filtered',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search_outlined, color: Colors.white),
@@ -53,37 +90,49 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const RecruiterFilterScreen(),
+                builder: (context) => RecruiterFilterScreen(
+                  showUnlockedOnly: widget.showOnlyUnlocked,
+                ),
               ),
             ),
           ),
           const SizedBox(width: 8),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            color: AppTheme.primary,
-            child: TabBar(
+        bottom: !widget.showOnlyUnlocked
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(50),
+                child: Container(
+                  color: AppTheme.primary,
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white60,
+                    indicatorColor: Colors.white,
+                    indicatorWeight: 2,
+                    labelStyle: AppTheme.getTabBarTextStyle(context, true),
+                    unselectedLabelStyle: AppTheme.getTabBarTextStyle(
+                      context,
+                      false,
+                    ),
+                    dividerColor: Colors.transparent,
+                    tabs: const [
+                      Tab(text: 'Available'),
+                      Tab(text: 'Unlocked'),
+                    ],
+                  ),
+                ),
+              )
+            : null,
+      ),
+      body: widget.showOnlyUnlocked
+          ? _buildUnlockedCandidatesScreen()
+          : TabBarView(
               controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white60,
-              indicatorColor: Colors.white,
-              indicatorWeight: 2,
-              labelStyle: AppTheme.getTabBarTextStyle(context, true),
-              unselectedLabelStyle: AppTheme.getTabBarTextStyle(context, false),
-              dividerColor: Colors.transparent,
-              tabs: const [
-                Tab(text: 'Available'),
-                Tab(text: 'Unlocked'),
+              children: [
+                _buildLockedCandidatesTab(),
+                _buildUnlockedCandidatesTab(),
               ],
             ),
-          ),
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildLockedCandidatesTab(), _buildUnlockedCandidatesTab()],
-      ),
     );
   }
 
@@ -101,9 +150,13 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
           return _buildVerificationPending(context);
         }
 
-        final lockedCandidates = hrController.candidates
-            .where((c) => !hrController.isCandidateUnlocked(c['id'].toString()))
-            .toList();
+        final lockedCandidates = _getFilteredCandidates(
+          hrController.candidates
+              .where(
+                (c) => !hrController.isCandidateUnlocked(c['id'].toString()),
+              )
+              .toList(),
+        );
 
         if (lockedCandidates.isEmpty) {
           return Center(
@@ -150,9 +203,11 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
           );
         }
 
-        final unlockedCandidates = hrController.candidates
-            .where((c) => hrController.isCandidateUnlocked(c['id']))
-            .toList();
+        final unlockedCandidates = _getFilteredCandidates(
+          hrController.candidates
+              .where((c) => hrController.isCandidateUnlocked(c['id']))
+              .toList(),
+        );
 
         if (unlockedCandidates.isEmpty) {
           return Center(
@@ -188,6 +243,74 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         );
       },
     );
+  }
+
+  Widget _buildUnlockedCandidatesScreen() {
+    return Consumer<RecruiterController>(
+      builder: (context, hrController, child) {
+        if (hrController.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.primary),
+          );
+        }
+
+        final unlockedCandidates = _getFilteredCandidates(
+          hrController.candidates
+              .where((c) => hrController.isCandidateUnlocked(c['id']))
+              .toList(),
+        );
+
+        if (unlockedCandidates.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_open_outlined,
+                  size: 64,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No unlocked profiles yet',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Visit Filters tab to discover candidates',
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: unlockedCandidates.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            final candidate = unlockedCandidates[index];
+            return _buildCandidateCard(context, candidate, hrController);
+          },
+        );
+      },
+    );
+  }
+
+  bool _hasActiveFilters() {
+    return _selectedRole != 'All' ||
+        _selectedLocation != 'All' ||
+        _selectedExperience != 'All' ||
+        _selectedEducation != 'All' ||
+        _selectedReligion != 'All' ||
+        _searchController.text.isNotEmpty;
   }
 
   Widget _buildVerificationPending(BuildContext context) {
@@ -298,9 +421,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                     context,
                     color: Colors.grey.shade500,
                   ),
-                  prefixIcon: Icon(
-                    Icons.search_outlined,
-                  ),
+                  prefixIcon: Icon(Icons.search_outlined),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
@@ -351,6 +472,69 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
     );
   }
 
+  List<Map<String, dynamic>> _getFilteredCandidates(
+    List<Map<String, dynamic>> candidates,
+  ) {
+    return candidates.where((candidate) {
+      // Role filter
+      if (_selectedRole != 'All' && candidate['role_name'] != _selectedRole) {
+        return false;
+      }
+
+      // Location filter
+      if (_selectedLocation != 'All' &&
+          candidate['city'] != _selectedLocation) {
+        return false;
+      }
+
+      // Education filter
+      if (_selectedEducation != 'All' &&
+          candidate['education'] != _selectedEducation) {
+        return false;
+      }
+
+      // Religion filter
+      if (_selectedReligion != 'All' &&
+          candidate['religion'] != _selectedReligion) {
+        return false;
+      }
+
+      // Experience filter
+      if (_selectedExperience != 'All') {
+        final expYears = candidate['experience_years'] ?? 0;
+        switch (_selectedExperience) {
+          case '0-1 Years':
+            if (expYears > 1) return false;
+            break;
+          case '2-5 Years':
+            if (expYears < 2 || expYears > 5) return false;
+            break;
+          case '5+ Years':
+            if (expYears <= 5) return false;
+            break;
+        }
+      }
+
+      // Search filter
+      if (_searchController.text.isNotEmpty) {
+        final query = _searchController.text.toLowerCase();
+        final name = (candidate['masked_name'] ?? '').toLowerCase();
+        final role = (candidate['role_name'] ?? '').toLowerCase();
+        final skills = (candidate['skills'] ?? '').toLowerCase();
+        final education = (candidate['education'] ?? '').toLowerCase();
+
+        if (!name.contains(query) &&
+            !role.contains(query) &&
+            !skills.contains(query) &&
+            !education.contains(query)) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
   Widget _buildCandidateCard(
     BuildContext context,
     Map<String, dynamic> candidate,
@@ -367,8 +551,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       onViewProfile: () => _navigateToDetail(context, candidate, true),
     );
   }
-
-
 
   void _filterCandidates() {
     final hrController = context.read<RecruiterController>();
@@ -439,7 +621,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
               onPressed: () {
                 Navigator.pop(context);
                 if (widget.onSwitchToWallet != null) {
-                  widget.onSwitchToWallet!(2);
+                  widget.onSwitchToWallet!(3); // Updated wallet index
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -491,9 +673,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
               decoration: BoxDecoration(
                 color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primary.withOpacity(0.2),
-                ),
+                border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
@@ -585,4 +765,11 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       ),
     );
   }
+
+  // bool _hasActiveFilters() {
+  //   return _selectedRole != 'All' ||
+  //          _selectedLocation != 'All' ||
+  //          _selectedExperience != 'All' ||
+  //          _searchController.text.isNotEmpty;
+  // }
 }

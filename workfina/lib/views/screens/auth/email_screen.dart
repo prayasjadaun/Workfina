@@ -27,10 +27,7 @@ class _EmailScreenState extends State<EmailScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+
         title: Text(
           'WorkFina',
           style: TextStyle(
@@ -55,7 +52,7 @@ class _EmailScreenState extends State<EmailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-                  
+
                   // Title
                   const Text(
                     'Welcome Back!',
@@ -66,17 +63,14 @@ class _EmailScreenState extends State<EmailScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Subtitle
                   Text(
                     'Access your account through your email',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   // Email Input Label
                   Text(
                     'Enter Your Email',
@@ -87,7 +81,7 @@ class _EmailScreenState extends State<EmailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Email Input Field
                   Container(
                     decoration: BoxDecoration(
@@ -128,8 +122,9 @@ class _EmailScreenState extends State<EmailScreen> {
                         if (value?.isEmpty ?? true) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(value!)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value!)) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -151,9 +146,9 @@ class _EmailScreenState extends State<EmailScreen> {
                       },
                     ),
                   ),
-                  
+
                   const SizedBox(height: 25),
-                  
+
                   // Continue Button
                   Consumer<AuthController>(
                     builder: (context, authController, child) {
@@ -188,7 +183,9 @@ class _EmailScreenState extends State<EmailScreen> {
                                     AppTheme.primary.withOpacity(0.8),
                                   ],
                                 ),
-                          color: authController.isLoading ? Colors.grey[300] : null,
+                          color: authController.isLoading
+                              ? Colors.grey[300]
+                              : null,
                           boxShadow: authController.isLoading
                               ? null
                               : [
@@ -204,9 +201,8 @@ class _EmailScreenState extends State<EmailScreen> {
                               ? null
                               : () async {
                                   if (_formKey.currentState!.validate()) {
-                                    final success = await authController.sendOTP(
-                                      _emailController.text,
-                                    );
+                                    final success = await authController
+                                        .sendOTP(_emailController.text);
                                     if (success && mounted) {
                                       Navigator.pushNamed(context, '/otp');
                                     }
@@ -240,9 +236,9 @@ class _EmailScreenState extends State<EmailScreen> {
                       );
                     },
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Sign Up Link
                   Center(
                     child: Row(
@@ -270,7 +266,7 @@ class _EmailScreenState extends State<EmailScreen> {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
                 ],
               ),

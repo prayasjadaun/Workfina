@@ -7,6 +7,7 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_dashboard.dart';
+import 'package:workfina/views/screens/recuriters/recruiter_filter_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_profile_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_wallet_screen.dart';
 
@@ -28,6 +29,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
       controller.loadHRProfile();
       controller.loadWalletBalance();
       controller.loadUnlockedCandidates();
+      controller.loadCandidates();
     });
   }
 
@@ -55,8 +57,11 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         index: _currentIndex,
         children: [
           const RecruiterDashboard(),
+          const RecruiterFilterScreen(showUnlockedOnly: false),
           RecruiterCandidate(
-            onSwitchToWallet: (index) => setState(() => _currentIndex = index),
+            onSwitchToWallet: (index) =>
+                setState(() => _currentIndex = 3), // Updated index for wallet
+            showOnlyUnlocked: true,
           ),
           const RecruiterWalletScreen(),
           const RecruiterProfileScreen(),
@@ -68,15 +73,11 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildCustomTab('assets/svgs/home.svg', 'Home', 0, isDark),
-            _buildCustomTab(
-              'assets/svgs/candidates.svg',
-              'Applicants',
-              1,
-              isDark,
-            ),
-            _buildCustomTab('assets/svgs/wallet.svg', 'Wallet', 2, isDark),
-            _buildCustomTab('assets/svgs/profile.svg', 'Profile', 3, isDark),
+            _buildCustomTab('assets/svg/home.svg', 'Home', 0, isDark),
+            _buildCustomTab('assets/svg/filter.svg', 'Filters', 1, isDark),
+            _buildCustomTab('assets/svg/unlock.svg', 'Unlocked', 2, isDark),
+            _buildCustomTab('assets/svg/wallet.svg', 'Wallet', 3, isDark),
+            _buildCustomTab('assets/svg/profile.svg', 'Profile', 4, isDark),
           ],
         ),
       ),
@@ -98,7 +99,9 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         height: 48,
         padding: EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : Colors.transparent,
+          color: isSelected
+              ? (isDark ? Colors.white : AppTheme.primary)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Row(
@@ -107,12 +110,12 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
           children: [
             SvgPicture.asset(
               svgPath,
-              width: 20,
+              width: 22,
               height: 20,
               colorFilter: ColorFilter.mode(
                 isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white : Colors.grey.shade600),
+                    ? (isDark ? Colors.black : Colors.white)
+                    : (isDark ? Colors.white : Colors.black),
                 BlendMode.srcIn,
               ),
             ),
@@ -120,8 +123,8 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
               const SizedBox(width: 8),
               Text(
                 text,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isDark ? Colors.black : Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),

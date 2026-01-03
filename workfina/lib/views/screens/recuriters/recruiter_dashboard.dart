@@ -199,7 +199,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: SvgPicture.asset(
-              'assets/svgs/notification.svg',
+              'assets/svg/bell.svg',
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(

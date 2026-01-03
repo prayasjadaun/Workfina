@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
+import 'package:workfina/theme/app_theme.dart';
 
 class RecruiterSetupScreen extends StatefulWidget {
   const RecruiterSetupScreen({super.key});
@@ -77,36 +78,34 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return ChangeNotifierProvider(
       create: (_) => RecruiterController(),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: theme.colorScheme.background,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: Colors.transparent,
-          title: const Text(
+          backgroundColor: theme.colorScheme.surface,
+          title: Text(
             'Company Setup',
-            style: TextStyle(
-              color: Color(0xFF1A1A1A),
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTheme.getHeadlineStyle(context, fontSize: 18),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF1A1A1A)),
+            icon: Icon(Icons.arrow_back_ios, color: theme.colorScheme.onSurface),
             onPressed: () => Navigator.pop(context),
           ),
+          systemOverlayStyle: isDark 
+              ? SystemUiOverlayStyle.light 
+              : SystemUiOverlayStyle.dark,
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () {
-            FocusScope.of(context).unfocus(); // ✅ keyboard close
-          },
+          onTap: () => FocusScope.of(context).unfocus(),
           child: Column(
             children: [
-              // Progress Header
               _buildProgressHeader(),
-
-              // Step Content
               Expanded(
                 child: PageView(
                   controller: _pageController,
@@ -114,8 +113,6 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                   children: [_buildStep1(), _buildStep2(), _buildStep3()],
                 ),
               ),
-
-              // Navigation Buttons
               _buildNavigationButtons(),
             ],
           ),
@@ -125,17 +122,13 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   }
 
   Widget _buildProgressHeader() {
+    final theme = Theme.of(context);
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Column(
         children: [
@@ -157,8 +150,8 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
                           color: isCompleted || isActive
-                              ? const Color(0xFF2196F3)
-                              : const Color(0xFFE0E0E0),
+                              ? AppTheme.primary
+                              : theme.dividerColor,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -168,24 +161,21 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isCompleted || isActive
-                              ? const Color(0xFF2196F3)
-                              : const Color(0xFFE0E0E0),
+                              ? AppTheme.primary
+                              : theme.dividerColor,
                         ),
                         child: Center(
                           child: isCompleted
                               ? const Icon(
                                   Icons.check,
                                   color: Colors.white,
-                                  size: 18,
+                                  size: 16,
                                 )
                               : Text(
                                   '${index + 1}',
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? Colors.white
-                                        : const Color(0xFF757575),
+                                  style: AppTheme.getLabelStyle(context,
+                                    color: isActive ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.5),
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 14,
                                   ),
                                 ),
                         ),
@@ -199,11 +189,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
           const SizedBox(height: 16),
           Text(
             'Step ${_currentStep + 1} of $_totalSteps',
-            style: const TextStyle(
-              color: Color(0xFF757575),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppTheme.getSubtitleStyle(context),
           ),
         ],
       ),
@@ -219,35 +205,21 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
         key: _step1FormKey,
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.business_center,
-                size: 48,
-                color: Color(0xFF2196F3),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             _buildTextField(
               controller: _fullNameController,
               label: 'Full Name',
-              icon: Icons.person,
+              icon: Icons.person_outline,
               isRequired: true,
-              hintText: 'e.g., John Doe',
+              hintText: 'Full Name',
               validator: (value) =>
                   value?.isEmpty == true ? 'Full name is required' : null,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             _buildTextField(
               controller: _companyNameController,
               label: 'Company Name',
-              icon: Icons.business,
+              icon: Icons.business_outlined,
               isRequired: true,
               hintText: 'e.g., TechCorp Solutions',
               validator: (value) =>
@@ -257,7 +229,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
             _buildTextField(
               controller: _designationController,
               label: 'Your Designation',
-              icon: Icons.person_pin,
+              icon: Icons.person_pin_outlined,
               isRequired: true,
               hintText: 'e.g., HR Manager, Talent Acquisition Lead',
               validator: (value) =>
@@ -267,7 +239,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
             _buildDropdownField(
               value: _selectedCompanySize,
               label: 'Company Size',
-              icon: Icons.groups,
+              icon: Icons.groups_outlined,
               items: _companySizes,
               onChanged: (value) =>
                   setState(() => _selectedCompanySize = value!),
@@ -287,25 +259,11 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
         key: _step2FormKey,
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: const Color(0xFF2196F3).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.phone,
-                size: 48,
-                color: Color(0xFF2196F3),
-              ),
-            ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             _buildTextField(
               controller: _phoneController,
               label: 'Phone Number',
-              icon: Icons.phone,
+              icon: Icons.phone_outlined,
               isRequired: true,
               keyboardType: TextInputType.number,
               maxLength: 10,
@@ -321,7 +279,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
             _buildTextField(
               controller: _websiteController,
               label: 'Company Website',
-              icon: Icons.web,
+              icon: Icons.web_outlined,
               hintText: 'https://yourcompany.com',
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.done,
@@ -343,21 +301,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 20),
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  size: 48,
-                  color: Color(0xFF4CAF50),
-                ),
-              ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
               _buildReviewCard('Company Details', [
                 'Name: ${_fullNameController.text}',  
                 'Company: ${_companyNameController.text}',
@@ -371,94 +315,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                   'Website: ${_websiteController.text}',
               ]),
               const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF2196F3).withOpacity(0.1),
-                      const Color(0xFF1976D2).withOpacity(0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: const Color(0xFF2196F3).withOpacity(0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2196F3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.info,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'What happens next?',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '• Your company profile will be reviewed within 24 hours\n'
-                      '• Once approved, you\'ll receive credits to unlock candidate profiles\n'
-                      '• Start browsing our talent pool immediately after setup',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.verified_user,
-                      color: Color(0xFF6B7280),
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'By completing setup, you agree to our terms of service and privacy policy.',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildInfoCard(),
             ],
           ),
         ),
@@ -472,44 +329,44 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required IconData icon,
     required Widget child,
   }) {
+    final theme = Theme.of(context);
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF2196F3).withOpacity(0.1),
+              color: AppTheme.getCardColor(context),
               borderRadius: BorderRadius.circular(16),
+              boxShadow: [AppTheme.getCardShadow(context)],
             ),
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3),
+                    color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, color: Colors.white, size: 32),
+                  child: Icon(
+                    icon, 
+                    color: AppTheme.primary, 
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
+                  style: AppTheme.getHeadlineStyle(context, fontSize: 20),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   description,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF6B7280),
-                  ),
+                  style: AppTheme.getSubtitleStyle(context),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -536,41 +393,42 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     TextInputAction textInputAction = TextInputAction.next,
     VoidCallback? onDone,
   }) {
+    final theme = Theme.of(context);
+    
     return TextFormField(
       controller: controller,
       textInputAction: textInputAction,
-
       onFieldSubmitted: (_) {
         if (textInputAction == TextInputAction.done) {
-          FocusScope.of(context).unfocus(); // ✅ keyboard close
+          FocusScope.of(context).unfocus();
           onDone?.call();
         }
       },
-      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+      style: AppTheme.getBodyStyle(context),
       decoration: InputDecoration(
         labelText: '$label${isRequired ? ' *' : ''}',
         hintText: hintText,
-        floatingLabelBehavior: FloatingLabelBehavior.always,
-        hintStyle: const TextStyle(color: Color(0xFF374151)),
-        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
+        labelStyle: AppTheme.getLabelStyle(context),
+        hintStyle: AppTheme.getSubtitleStyle(context),
+        prefixIcon: Icon(icon, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        filled: true,
+        fillColor: AppTheme.getCardColor(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFEF4444)),
+          borderSide: BorderSide(color: theme.colorScheme.error),
         ),
-        filled: true,
-        fillColor: Colors.white,
         contentPadding: const EdgeInsets.all(16),
         counterText: '',
       ),
@@ -589,59 +447,62 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required List<Map<String, String>> items,
     required void Function(String?) onChanged,
   }) {
+    final theme = Theme.of(context);
+    
     return DropdownButtonFormField<String>(
       value: value,
-      style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+      style: AppTheme.getBodyStyle(context),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
+        labelStyle: AppTheme.getLabelStyle(context),
+        prefixIcon: Icon(icon, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        filled: true,
+        fillColor: AppTheme.getCardColor(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
-        filled: true,
-        fillColor: Colors.white,
         contentPadding: const EdgeInsets.all(16),
       ),
       items: items
-          .map(
-            (item) => DropdownMenuItem(
-              value: item['value'],
-              child: Text(item['label']!),
-            ),
-          )
+          .map((item) => DropdownMenuItem(
+                value: item['value'],
+                child: Text(
+                  item['label']!,
+                  style: AppTheme.getBodyStyle(context),
+                ),
+              ))
           .toList(),
       onChanged: onChanged,
     );
   }
 
   Widget _buildReviewCard(String title, List<String> items) {
+    final theme = Theme.of(context);
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: theme.dividerColor),
+        boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A1A1A),
-            ),
+            style: AppTheme.getTitleStyle(context, fontSize: 16),
           ),
           const SizedBox(height: 12),
           ...items.map(
@@ -653,18 +514,15 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                     width: 4,
                     height: 4,
                     decoration: const BoxDecoration(
-                      color: Color(0xFF2196F3),
+                      color: AppTheme.primary,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       item,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                      ),
+                      style: AppTheme.getBodyStyle(context),
                     ),
                   ),
                 ],
@@ -676,18 +534,84 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     );
   }
 
-  Widget _buildNavigationButtons() {
+  Widget _buildInfoCard() {
+    final theme = Theme.of(context);
+    
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, -2),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.primary.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'What happens next?',
+                style: AppTheme.getTitleStyle(context, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '• Your company profile will be reviewed within 24 hours\n'
+            '• Once approved, you\'ll receive credits to unlock candidate profiles\n'
+            '• Start browsing our talent pool immediately after setup',
+            style: AppTheme.getBodyStyle(context, 
+              color: theme.colorScheme.onSurface.withOpacity(0.7)),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'By completing setup, you agree to our terms of service and privacy policy.',
+                    style: AppTheme.getSubtitleStyle(context, fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    final theme = Theme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Row(
         children: [
@@ -696,19 +620,15 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
               child: OutlinedButton(
                 onPressed: _previousStep,
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  side: const BorderSide(color: Color(0xFFE5E7EB)),
+                  side: BorderSide(color: theme.dividerColor),
                 ),
-                child: const Text(
+                child: Text(
                   'Previous',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B7280),
-                  ),
+                  style: AppTheme.getBodyStyle(context, fontWeight: FontWeight.w500),
                 ),
               ),
             ),
@@ -728,8 +648,9 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2196F3),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -737,8 +658,8 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                   ),
                   child: hrController.isLoading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
+                          height: 18,
+                          width: 18,
                           child: CircularProgressIndicator(
                             color: Colors.white,
                             strokeWidth: 2,
@@ -748,11 +669,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                           _currentStep == _totalSteps - 1
                               ? 'Complete Setup'
                               : 'Continue',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                          style: AppTheme.getPrimaryButtonTextStyle(context),
                         ),
                 );
               },
@@ -781,7 +698,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(hrController.error!),
-          backgroundColor: const Color(0xFFEF4444),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }

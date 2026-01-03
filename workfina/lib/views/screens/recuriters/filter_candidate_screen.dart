@@ -10,11 +10,13 @@ import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
 class FilteredCandidatesScreen extends StatefulWidget {
   final String filterType;
   final String filterValue;
+  final bool showUnlockedOnly;
 
   const FilteredCandidatesScreen({
     super.key,
     required this.filterType,
     required this.filterValue,
+    this.showUnlockedOnly = false,
   });
 
   @override
@@ -98,11 +100,16 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? AppTheme.darkBackground
-          : AppTheme.lightBackground,
+          : Colors.white,
       appBar: AppBar(
-        title: Text(widget.filterValue, style: AppTheme.getAppBarTextStyle()),
+        title: Text(
+          widget.showUnlockedOnly
+              ? "${widget.filterValue} (Unlocked)"
+              : widget.filterValue,
+          style: AppTheme.getAppBarTextStyle(),
+        ),
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -123,11 +130,19 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
             return _buildErrorState(isDark);
           }
 
-          final lockedCandidates = _filteredCandidates
-              .where(
-                (c) => !hrController.isCandidateUnlocked(c['id'].toString()),
-              )
-              .toList();
+          final lockedCandidates = widget.showUnlockedOnly
+              ? _filteredCandidates
+                    .where(
+                      (c) =>
+                          hrController.isCandidateUnlocked(c['id'].toString()),
+                    )
+                    .toList()
+              : _filteredCandidates
+                    .where(
+                      (c) =>
+                          !hrController.isCandidateUnlocked(c['id'].toString()),
+                    )
+                    .toList();
 
           if (lockedCandidates.isEmpty) {
             return _buildEmptyState(isDark);
@@ -140,9 +155,22 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
               final candidate = lockedCandidates[index];
               return CandidateCardWidget(
                 candidate: candidate,
-                isUnlocked: false,
+                isUnlocked: widget.showUnlockedOnly,
                 canAffordUnlock: hrController.canUnlockCandidate(),
-                onUnlock: () => _unlockCandidate(context, candidate, hrController),
+                onUnlock: widget.showUnlockedOnly
+                    ? null
+                    : () => _unlockCandidate(context, candidate, hrController),
+                onViewProfile: widget.showUnlockedOnly
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CandidateDetailScreen(
+                            candidate: candidate,
+                            isAlreadyUnlocked: true,
+                          ),
+                        ),
+                      )
+                    : null,
               );
             },
           );
@@ -293,10 +321,6 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
       ),
     );
   }
-
-
-
-
 
   void _unlockCandidate(
     BuildContext context,
