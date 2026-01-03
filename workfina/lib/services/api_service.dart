@@ -611,7 +611,7 @@ class ApiService {
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-        if (videoIntroFile != null) // ✅ ADD THIS
+        if (videoIntroFile != null) // âœ… ADD THIS
           'video_intro': await MultipartFile.fromFile(
             videoIntroFile.path,
             filename: videoIntroFile.path.split('/').last,
@@ -853,17 +853,22 @@ class ApiService {
         if (city != null) 'city': city,
         if (education != null) 'education': education,
         if (skills != null) 'skills': skills,
+        if (languages != null) 'languages': languages,
+        if (streetAddress != null) 'street_address': streetAddress,
+        if (willingToRelocate != null) 'willing_to_relocate': willingToRelocate,
+        if (workExperience != null) 'work_experience': workExperience,
+        if (careerObjective != null) 'career_objective': careerObjective,
         if (resumeFile != null)
           'resume': await MultipartFile.fromFile(
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-        if (videoIntroFile != null) // ✅ ADD THIS
+        if (videoIntroFile != null)
           'video_intro': await MultipartFile.fromFile(
             videoIntroFile.path,
             filename: videoIntroFile.path.split('/').last,
           ),
-        if (profileImage != null) // ✅ ADD THIS
+        if (profileImage != null)
           'profile_image': await MultipartFile.fromFile(
             profileImage.path,
             filename: profileImage.path.split('/').last,

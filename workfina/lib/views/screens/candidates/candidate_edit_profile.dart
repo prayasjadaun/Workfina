@@ -218,7 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // Ã¢Å“â€¦ Added video picker method
+  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Added video picker method
   void _pickVideoFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -256,7 +256,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // âœ… Image Picker Methods
+  // Ã¢Å“â€¦ Image Picker Methods
   Future<void> _pickImageFromCamera() async {
     try {
       final status = await Permission.camera.request();
@@ -490,7 +490,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-//     
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -527,11 +526,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       resumeFile: _resumeFile,
       videoIntroFile: _videoIntroFile,
       profileImage: _profileImage,
-      languages: _languagesController.text,
-      streetAddress: _streetAddressController.text,
+      languages: _languagesController.text.isEmpty ? null : _languagesController.text,
+      streetAddress: _streetAddressController.text.isEmpty ? null : _streetAddressController.text,
       willingToRelocate: _willingToRelocate,
-      workExperience: buildWorkExperience(),
-      careerObjective: _careerObjectiveController.text,
+      workExperience: buildWorkExperience().isEmpty ? null : buildWorkExperience(),
+      careerObjective: _careerObjectiveController.text.isEmpty ? null : _careerObjectiveController.text,
     );
 
     if (success) {
@@ -570,7 +569,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // âœ… Profile Picture Section
+                  // Ã¢Å“â€¦ Profile Picture Section
                   Center(
                     child: Column(
                       children: [
@@ -924,7 +923,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Documents Section - Ã¢Å“â€¦ Updated with both Resume and Video
+                  // Documents Section - ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Updated with both Resume and Video
                   _buildSectionTitle('Documents (Optional)'),
                   const SizedBox(height: 16),
 
@@ -993,7 +992,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Ã¢Å“â€¦ Video Intro Upload Section
+                  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Video Intro Upload Section
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),

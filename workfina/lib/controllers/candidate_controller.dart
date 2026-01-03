@@ -304,10 +304,16 @@ class CandidateController extends ChangeNotifier {
         religion: religion,
         state: state,
         city: city,
-        education: combineEducationData(),
+        education: education, // Use passed education instead of combineEducationData()
         skills: skills,
         resumeFile: resumeFile,
-        profileImage: profileImage, // ✅ ADD THIS
+        videoIntroFile: videoIntroFile,
+        profileImage: profileImage,
+        languages: languages,
+        streetAddress: streetAddress,
+        willingToRelocate: willingToRelocate,
+        workExperience: workExperience,
+        careerObjective: careerObjective,
       );
 
       if (response.containsKey('error')) {
