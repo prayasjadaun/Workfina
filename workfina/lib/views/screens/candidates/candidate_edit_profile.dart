@@ -19,7 +19,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers
   late TextEditingController _fullNameController;
   late TextEditingController _phoneController;
@@ -32,14 +32,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _educationController;
   late TextEditingController _skillsController;
 
+  late TextEditingController _languagesController;
+  late TextEditingController _streetAddressController;
+  late TextEditingController _careerObjectiveController;
+  late TextEditingController _companyNameController;
+  late TextEditingController _jobRoleController;
+  late TextEditingController _workDurationController;
+
   late String _selectedRole;
   late String _selectedReligion;
   File? _resumeFile;
   String? _resumeFileName;
-  File? _videoIntroFile;  // âœ… Added
-  String? _videoIntroFileName;  // âœ… Added
-  File? _profileImage;  // âœ… Added for profile image
-  final ImagePicker _imagePicker = ImagePicker();  // âœ… Added
+  File? _videoIntroFile;
+  String? _videoIntroFileName;
+  File? _profileImage;
+  final ImagePicker _imagePicker = ImagePicker();
+
+  bool _willingToRelocate = false;
 
   final List<Map<String, String>> _roles = [
     {'value': 'IT', 'label': 'Information Technology'},
@@ -66,7 +75,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize controllers with existing data
     _fullNameController = TextEditingController(
       text: widget.profileData['full_name'] ?? '',
@@ -95,15 +104,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _educationController = TextEditingController(
       text: widget.profileData['education_name'] ?? '',
     );
-    
+
+    _languagesController = TextEditingController(
+      text: widget.profileData['languages'] ?? '',
+    );
+    _streetAddressController = TextEditingController(
+      text: widget.profileData['street_address'] ?? '',
+    );
+    _careerObjectiveController = TextEditingController(
+      text: widget.profileData['career_objective'] ?? '',
+    );
+
     // Convert skills list to comma-separated string
     final skillsList = widget.profileData['skills_list'] as List<dynamic>?;
     _skillsController = TextEditingController(
       text: skillsList?.join(', ') ?? widget.profileData['skills'] ?? '',
     );
 
+    // Parse work experience if it exists
+    String workExp = widget.profileData['work_experience'] ?? '';
+    if (workExp.isNotEmpty) {
+      // Simple parsing - you can make this more sophisticated
+      _companyNameController = TextEditingController(text: '');
+      _jobRoleController = TextEditingController(text: '');
+      _workDurationController = TextEditingController(text: '');
+
+      // Try to parse the work experience string
+      if (workExp.contains('Company:')) {
+        final parts = workExp.split(', ');
+        for (var part in parts) {
+          if (part.startsWith('Company:')) {
+            _companyNameController.text = part
+                .replaceFirst('Company: ', '')
+                .trim();
+          } else if (part.startsWith('Role:')) {
+            _jobRoleController.text = part.replaceFirst('Role: ', '').trim();
+          } else if (part.startsWith('Duration:')) {
+            _workDurationController.text = part
+                .replaceFirst('Duration: ', '')
+                .trim();
+          }
+        }
+      }
+    } else {
+      _companyNameController = TextEditingController();
+      _jobRoleController = TextEditingController();
+      _workDurationController = TextEditingController();
+    }
+
+    _willingToRelocate = widget.profileData['willing_to_relocate'] ?? false;
+
     _selectedRole = widget.profileData['role_name'] ?? 'IT';
-    _selectedReligion = widget.profileData['religion_name'] ?? 'PREFER_NOT_TO_SAY';
+    _selectedReligion =
+        widget.profileData['religion_name'] ?? 'PREFER_NOT_TO_SAY';
   }
 
   @override
@@ -118,6 +171,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityController.dispose();
     _educationController.dispose();
     _skillsController.dispose();
+    _languagesController.dispose();
+    _streetAddressController.dispose();
+    _careerObjectiveController.dispose();
+    _companyNameController.dispose();
+    _jobRoleController.dispose();
+    _workDurationController.dispose();
     super.dispose();
   }
 
@@ -201,7 +260,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _pickImageFromCamera() async {
     try {
       final status = await Permission.camera.request();
-      
+
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -214,7 +273,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
         return;
       }
-      
+
       if (status.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -272,9 +331,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _pickImageFromGallery() async {
     try {
       PermissionStatus status;
-      
+
       // Check Android version for appropriate permission
-      if (await Permission.photos.isPermanentlyDenied || 
+      if (await Permission.photos.isPermanentlyDenied ||
           await Permission.storage.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -284,15 +343,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
         return;
       }
-      
+
       // Request photos permission (Android 13+) or storage (Android 12 and below)
       status = await Permission.photos.request();
-      
+
       // Fallback to storage permission for older Android versions
       if (!status.isGranted) {
         status = await Permission.storage.request();
       }
-      
+
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -305,7 +364,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
         return;
       }
-      
+
       if (status.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -372,9 +431,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Navigator.pop(context);
               openAppSettings();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
             child: const Text('Open Settings'),
           ),
         ],
@@ -395,17 +452,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           children: [
             const Text(
               'Choose Profile Picture',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(
-                Icons.camera_alt,
-                color: AppTheme.primary,
-              ),
+              leading: const Icon(Icons.camera_alt, color: AppTheme.primary),
               title: const Text('Take Photo'),
               onTap: () {
                 Navigator.pop(context);
@@ -413,22 +464,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.photo_library,
-                color: AppTheme.primary,
-              ),
+              leading: const Icon(Icons.photo_library, color: AppTheme.primary),
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
                 _pickImageFromGallery();
               },
             ),
-            if (_profileImage != null || widget.profileData['profile_image_url'] != null)
+            if (_profileImage != null ||
+                widget.profileData['profile_image_url'] != null)
               ListTile(
-                leading: const Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                ),
+                leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Remove Photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -444,11 +490,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
+//     
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     final controller = context.read<CandidateController>();
+    String buildWorkExperience() {
+      if (_companyNameController.text.isEmpty &&
+          _jobRoleController.text.isEmpty &&
+          _workDurationController.text.isEmpty) {
+        return '';
+      }
+      return 'Company: ${_companyNameController.text}, '
+          'Role: ${_jobRoleController.text}, '
+          'Duration: ${_workDurationController.text}';
+    }
 
     final success = await controller.updateProfile(
       fullName: _fullNameController.text,
@@ -456,11 +513,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       age: int.tryParse(_ageController.text),
       role: _selectedRole,
       experienceYears: int.tryParse(_experienceController.text),
-      currentCtc: _currentCtcController.text.isEmpty 
-          ? null 
+      currentCtc: _currentCtcController.text.isEmpty
+          ? null
           : double.tryParse(_currentCtcController.text),
-      expectedCtc: _expectedCtcController.text.isEmpty 
-          ? null 
+      expectedCtc: _expectedCtcController.text.isEmpty
+          ? null
           : double.tryParse(_expectedCtcController.text),
       religion: _selectedReligion,
       state: _stateController.text,
@@ -468,8 +525,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       education: _educationController.text,
       skills: _skillsController.text,
       resumeFile: _resumeFile,
-      videoIntroFile: _videoIntroFile,  // âœ… Added
-      profileImage: _profileImage,  // âœ… Added for profile image
+      videoIntroFile: _videoIntroFile,
+      profileImage: _profileImage,
+      languages: _languagesController.text,
+      streetAddress: _streetAddressController.text,
+      willingToRelocate: _willingToRelocate,
+      workExperience: buildWorkExperience(),
+      careerObjective: _careerObjectiveController.text,
     );
 
     if (success) {
@@ -479,8 +541,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           backgroundColor: AppTheme.primary,
         ),
       );
-      // Go back to profile screen
-      Navigator.pop(context, true); // Pass true to indicate update success
+      Navigator.pop(context, true); 
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -535,25 +596,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fit: BoxFit.cover,
                                         ),
                                       )
-                                    : widget.profileData['profile_image_url'] != null
-                                        ? ClipOval(
-                                            child: Image.network(
-                                              widget.profileData['profile_image_url'],
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
+                                    : widget.profileData['profile_image_url'] !=
+                                          null
+                                    ? ClipOval(
+                                        child: Image.network(
+                                          widget
+                                              .profileData['profile_image_url'],
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
                                                 return Icon(
                                                   Icons.person,
                                                   size: 60,
                                                   color: Colors.grey[400],
                                                 );
                                               },
-                                            ),
-                                          )
-                                        : Icon(
-                                            Icons.person,
-                                            size: 60,
-                                            color: Colors.grey[400],
-                                          ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.grey[400],
+                                      ),
                               ),
                               Positioned(
                                 bottom: 0,
@@ -592,11 +656,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Personal Information Section
                   _buildSectionTitle('Personal Information'),
                   const SizedBox(height: 16),
-                  
+
                   _buildTextField(
                     controller: _fullNameController,
                     label: 'Full Name',
@@ -606,7 +670,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         value?.isEmpty == true ? 'Name is required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   _buildTextField(
                     controller: _phoneController,
                     label: 'Phone Number',
@@ -617,12 +681,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (value) {
                       if (value?.isEmpty == true) return 'Phone is required';
-                      if (value!.length != 10) return 'Enter valid 10-digit number';
+                      if (value!.length != 10)
+                        return 'Enter valid 10-digit number';
                       return null;
                     },
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     children: [
                       Expanded(
@@ -653,20 +718,121 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  
+
+                  _buildSectionTitle('Additional Information'),
+                  const SizedBox(height: 16),
+
+                  // Languages
+                  _buildTextField(
+                    controller: _languagesController,
+                    label: 'Languages',
+                    icon: Icons.language,
+                    hintText: 'e.g., Hindi, English, Punjabi (comma separated)',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Street Address
+                  _buildTextField(
+                    controller: _streetAddressController,
+                    label: 'Street Address',
+                    icon: Icons.home,
+                    hintText: 'House no., Street, Area',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Willing to Relocate
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: const Color(0xFF6B7280)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Are you willing to relocate?',
+                            style: const TextStyle(
+                              color: Color(0xFF1A1A1A),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        Switch(
+                          value: _willingToRelocate,
+                          onChanged: (value) {
+                            setState(() {
+                              _willingToRelocate = value;
+                            });
+                          },
+                          activeColor: AppTheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Career Objective
+                  _buildTextField(
+                    controller: _careerObjectiveController,
+                    label: 'Career Objective',
+                    icon: Icons.flag,
+                    hintText: 'Describe your career goals...',
+                    maxLines: 4,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Work Experience Section Header
+                  _buildSectionTitle('Work Experience'),
+                  const SizedBox(height: 16),
+
+                  // Company Name
+                  _buildTextField(
+                    controller: _companyNameController,
+                    label: 'Company Name',
+                    icon: Icons.business,
+                    hintText: 'e.g., ABC Technologies',
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Job Role
+                  _buildTextField(
+                    controller: _jobRoleController,
+                    label: 'Job Role/Position',
+                    icon: Icons.badge,
+                    hintText: 'e.g., Software Developer',
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Duration
+                  _buildTextField(
+                    controller: _workDurationController,
+                    label: 'Duration',
+                    icon: Icons.calendar_month,
+                    hintText: 'e.g., Jan 2020 - Dec 2022',
+                  ),
+
                   // Professional Information Section
                   _buildSectionTitle('Professional Information'),
                   const SizedBox(height: 16),
-                  
+
                   _buildDropdownField(
                     value: _selectedRole,
                     label: 'Role/Department',
                     icon: Icons.business_center,
                     items: _roles,
-                    onChanged: (value) => setState(() => _selectedRole = value!),
+                    onChanged: (value) =>
+                        setState(() => _selectedRole = value!),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   _buildTextField(
                     controller: _educationController,
                     label: 'Education',
@@ -677,7 +843,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         value?.isEmpty == true ? 'Education is required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   _buildTextField(
                     controller: _skillsController,
                     label: 'Skills',
@@ -690,17 +856,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  
+
                   // Compensation & Location Section
                   _buildSectionTitle('Compensation & Location'),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
                           controller: _currentCtcController,
-                          label: 'Current CTC (Ã¢â€šÂ¹)',
+                          label: 'Current CTC',
                           icon: Icons.currency_rupee,
                           keyboardType: TextInputType.number,
                         ),
@@ -709,7 +875,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Expanded(
                         child: _buildTextField(
                           controller: _expectedCtcController,
-                          label: 'Expected CTC (Ã¢â€šÂ¹)',
+                          label: 'Expected CTC ',
                           icon: Icons.trending_up,
                           keyboardType: TextInputType.number,
                         ),
@@ -717,7 +883,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   Row(
                     children: [
                       Expanded(
@@ -726,8 +892,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'State',
                           icon: Icons.location_on,
                           isRequired: true,
-                          validator: (value) =>
-                              value?.isEmpty == true ? 'State is required' : null,
+                          validator: (value) => value?.isEmpty == true
+                              ? 'State is required'
+                              : null,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -737,14 +904,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'City',
                           icon: Icons.location_city,
                           isRequired: true,
-                          validator: (value) =>
-                              value?.isEmpty == true ? 'City is required' : null,
+                          validator: (value) => value?.isEmpty == true
+                              ? 'City is required'
+                              : null,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   _buildDropdownField(
                     value: _selectedReligion,
                     label: 'Religion (Optional)',
@@ -755,11 +923,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
 
                   const SizedBox(height: 24),
-                  
+
                   // Documents Section - Ã¢Å“â€¦ Updated with both Resume and Video
                   _buildSectionTitle('Documents (Optional)'),
                   const SizedBox(height: 16),
-                  
+
                   // Resume Upload
                   Container(
                     width: double.infinity,
@@ -785,8 +953,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _resumeFile != null
                               ? 'New Resume Selected'
                               : widget.profileData['resume_url'] != null
-                                  ? 'Update Resume'
-                                  : 'Upload Resume',
+                              ? 'Update Resume'
+                              : 'Upload Resume',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -794,10 +962,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _resumeFileName ?? 
-                          (widget.profileData['resume_url'] != null 
-                              ? 'Current resume uploaded' 
-                              : 'PDF format only (Max 5MB)'),
+                          _resumeFileName ??
+                              (widget.profileData['resume_url'] != null
+                                  ? 'Current resume uploaded'
+                                  : 'PDF format only (Max 5MB)'),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -808,7 +976,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ElevatedButton.icon(
                           onPressed: _pickResumeFile,
                           icon: Icon(
-                            _resumeFile != null ? Icons.refresh : Icons.upload_file,
+                            _resumeFile != null
+                                ? Icons.refresh
+                                : Icons.upload_file,
                           ),
                           label: Text(
                             _resumeFile != null ? 'Change File' : 'Choose File',
@@ -848,8 +1018,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _videoIntroFile != null
                               ? 'New Video Selected'
                               : widget.profileData['video_intro_url'] != null
-                                  ? 'Update Video Introduction'
-                                  : 'Upload Video Introduction',
+                              ? 'Update Video Introduction'
+                              : 'Upload Video Introduction',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -857,10 +1027,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _videoIntroFileName ?? 
-                          (widget.profileData['video_intro_url'] != null 
-                              ? 'Current video uploaded' 
-                              : 'MP4, MOV, or AVI (Max 50MB)'),
+                          _videoIntroFileName ??
+                              (widget.profileData['video_intro_url'] != null
+                                  ? 'Current video uploaded'
+                                  : 'MP4, MOV, or AVI (Max 50MB)'),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -871,10 +1041,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ElevatedButton.icon(
                           onPressed: _pickVideoFile,
                           icon: Icon(
-                            _videoIntroFile != null ? Icons.refresh : Icons.upload_file,
+                            _videoIntroFile != null
+                                ? Icons.refresh
+                                : Icons.upload_file,
                           ),
                           label: Text(
-                            _videoIntroFile != null ? 'Change Video' : 'Choose Video',
+                            _videoIntroFile != null
+                                ? 'Change Video'
+                                : 'Choose Video',
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primary,
@@ -885,7 +1059,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
 
                   const SizedBox(height: 32),
-                  
+
                   // Update Button
                   SizedBox(
                     width: double.infinity,
@@ -917,7 +1091,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
                 ],
               ),

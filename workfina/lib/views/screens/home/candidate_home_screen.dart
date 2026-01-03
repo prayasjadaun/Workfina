@@ -22,16 +22,20 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
     final user = context.watch<AuthController>().user;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Welcome, ${user?['email']?.split('@')[0] ?? 'Candidate'}'),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _showLogoutDialog(context),
-          ),
-        ],
-      ),
+    appBar: _currentIndex == 3
+        ? AppBar(
+            title: Text(
+              'Welcome, ${user?['email']?.split('@')[0] ?? 'Candidate'}',
+            ),
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () => _showLogoutDialog(context),
+              ),
+            ],
+          )
+        : null, 
       body: IndexedStack(
         index: _currentIndex,
         children: const [
