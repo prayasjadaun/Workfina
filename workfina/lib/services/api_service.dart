@@ -583,6 +583,11 @@ class ApiService {
     File? resumeFile,
     File? videoIntroFile,
     File? profileImage,
+    String? languages,
+    String? streetAddress,
+    bool willingToRelocate = false,
+    String? workExperience,
+    String? careerObjective,
   }) async {
     try {
       final token = await getAccessToken();
@@ -826,6 +831,11 @@ class ApiService {
     File? resumeFile,
     File? videoIntroFile,
     File? profileImage,
+    String? languages,
+    String? streetAddress,
+    bool? willingToRelocate,
+    String? workExperience,
+    String? careerObjective,
   }) async {
     try {
       final token = await getAccessToken();

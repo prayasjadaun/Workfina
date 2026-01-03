@@ -33,6 +33,16 @@ class _CandidateSetupScreenSwipeableState
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _educationController = TextEditingController();
   final TextEditingController _skillsController = TextEditingController();
+  
+  // New controllers for additional fields
+  final TextEditingController _languagesController = TextEditingController();
+  final TextEditingController _streetAddressController = TextEditingController();
+  final TextEditingController _careerObjectiveController = TextEditingController();
+  final TextEditingController _companyNameController = TextEditingController();
+  final TextEditingController _jobRoleController = TextEditingController();
+  final TextEditingController _workDurationController = TextEditingController();
+  
+  bool _willingToRelocate = false;
 
   String _selectedRole = 'IT';
   String _selectedReligion = 'PREFER_NOT_TO_SAY';
@@ -200,7 +210,7 @@ class _CandidateSetupScreenSwipeableState
     }
   }
 
-  // âœ… Image Picker Methods
+  // Ã¢Å“â€¦ Image Picker Methods
   Future<void> _pickImageFromCamera() async {
     try {
       // Request camera permission
@@ -469,7 +479,7 @@ class _CandidateSetupScreenSwipeableState
       skills: _skillsController.text,
       resumeFile: _resumeFile,
       videoIntroFile: _videoIntroFile,
-      profileImage: _profileImage,  // âœ… Added
+      profileImage: _profileImage,  // Ã¢Å“â€¦ Added
     );
 
     if (success) {
@@ -678,7 +688,7 @@ class _CandidateSetupScreenSwipeableState
           ),
           const SizedBox(height: 32),
           
-          // âœ… Profile Picture Section
+          // Ã¢Å“â€¦ Profile Picture Section
           Center(
             child: Column(
               children: [
@@ -787,6 +797,130 @@ class _CandidateSetupScreenSwipeableState
                 ),
               ),
             ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Languages
+          _buildTextField(
+            controller: _languagesController,
+            label: 'Languages',
+            icon: Icons.language,
+            hintText: 'e.g., Hindi, English, Punjabi (comma separated)',
+            maxLines: 2,
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Street Address
+          _buildTextField(
+            controller: _streetAddressController,
+            label: 'Street Address',
+            icon: Icons.home,
+            hintText: 'House no., Street, Area',
+            maxLines: 2,
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Willing to Relocate
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: const Color(0xFF6B7280)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Are you willing to relocate?',
+                    style: const TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: _willingToRelocate,
+                  onChanged: (value) {
+                    setState(() {
+                      _willingToRelocate = value;
+                    });
+                  },
+                  activeColor: AppTheme.primary,
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Career Objective
+          _buildTextField(
+            controller: _careerObjectiveController,
+            label: 'Career Objective',
+            icon: Icons.flag,
+            hintText: 'Describe your career goals and what you are looking for...',
+            maxLines: 4,
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Work Experience Section Header
+          Row(
+            children: [
+              const Icon(Icons.work_outline, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Work Experience',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Add your previous work experience (if any)',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Company Name
+          _buildTextField(
+            controller: _companyNameController,
+            label: 'Company Name',
+            icon: Icons.business,
+            hintText: 'e.g., ABC Technologies',
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Job Role
+          _buildTextField(
+            controller: _jobRoleController,
+            label: 'Job Role/Position',
+            icon: Icons.badge,
+            hintText: 'e.g., Software Developer',
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Work Duration
+          _buildTextField(
+            controller: _workDurationController,
+            label: 'Duration',
+            icon: Icons.calendar_month,
+            hintText: 'e.g., Jan 2020 - Dec 2022',
           ),
         ],
       ),
@@ -1129,7 +1263,7 @@ const SizedBox(height: 16),
               Expanded(
                 child: _buildTextField(
                   controller: _currentCtcController,
-                  label: 'Current CTC (Ã¢â€šÂ¹)',
+                  label: 'Current CTC',
                   icon: Icons.currency_rupee,
                   keyboardType: TextInputType.number,
                   hintText: 'Annual package',
@@ -1139,7 +1273,7 @@ const SizedBox(height: 16),
               Expanded(
                 child: _buildTextField(
                   controller: _expectedCtcController,
-                  label: 'Expected CTC (Ã¢â€šÂ¹)',
+                  label: 'Expected CTC',
                   icon: Icons.trending_up,
                   keyboardType: TextInputType.number,
                   hintText: 'Expected package',
@@ -1470,6 +1604,12 @@ const SizedBox(height: 16),
     _cityController.dispose();
     _educationController.dispose();
     _skillsController.dispose();
+    _languagesController.dispose();
+    _streetAddressController.dispose();
+    _careerObjectiveController.dispose();
+    _companyNameController.dispose();
+    _jobRoleController.dispose();
+    _workDurationController.dispose();
     super.dispose();
   }
 

@@ -23,18 +23,14 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF121212)
-          : const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: RefreshIndicator(
         onRefresh: () => context.read<CandidateController>().checkProfileExists(),
         color: AppTheme.primary,
         child: Consumer<CandidateController>(
           builder: (context, controller, child) {
             if (controller.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primary),
-              );
+              return _buildLoadingState();
             }
 
             final profileData = controller.candidateProfile;
@@ -43,112 +39,50 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
               return _buildNoProfileState(context);
             }
 
-            return CustomScrollView(
-              slivers: [
-                // Minimal App Bar
-                _buildMinimalAppBar(context, profileData),
-
-                // Content
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24),
-
-                        // Profile Strength - Minimal Card
-                        _buildProfileStrengthCard(context, profileData),
-
-                        const SizedBox(height: 24),
-
-                        // Stats Row - Clean & Minimal
-                        _buildStatsRow(context, profileData),
-
-                        const SizedBox(height: 32),
-
-                        // Profile Overview
-                        _buildSectionTitle('Profile Overview'),
-                        const SizedBox(height: 16),
-                        _buildProfileOverview(context, profileData),
-
-                        const SizedBox(height: 32),
-
-                        // Quick Actions - Minimal
-                        _buildSectionTitle('Quick Actions'),
-                        const SizedBox(height: 16),
-                        _buildQuickActions(context, profileData),
-
-                        const SizedBox(height: 32),
-
-                        // Recommendations
-                        if (_calculateProfileCompleteness(profileData) < 100) ...[
-                          _buildSectionTitle('Recommendations'),
-                          const SizedBox(height: 16),
-                          _buildRecommendations(context, profileData),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
+            return _buildDashboardContent(profileData);
           },
         ),
       ),
     );
   }
 
-  Widget _buildMinimalAppBar(BuildContext context, Map<String, dynamic> profileData) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  final firstName = (profileData['full_name'] ?? 'User').toString().split(' ').first;
-
-  return SliverAppBar(
-    expandedHeight: 80,
-    floating: true,
-    pinned: true,
-    snap: false,
-    backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F5F5),
-    elevation: 0,
-    surfaceTintColor: Colors.transparent,
-    flexibleSpace: FlexibleSpaceBar(
-      titlePadding: EdgeInsets.zero,
-      background: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          alignment: Alignment.bottomLeft,
-          child: Row(
-            children: [
-              Text(
-                'Welcome back, ',
-                style: TextStyle(
-                  color: isDark ? Colors.white60 : Colors.black54,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: -0.3,
-                ),
+  // ============================================================================
+  // LOADING STATE
+  // ============================================================================
+  Widget _buildLoadingState() {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: CircularProgressIndicator(
+                color: AppTheme.primary,
+                strokeWidth: 3,
               ),
-              Expanded(
-                child: Text(
-                  firstName,
-                  style: TextStyle(
-                    color: isDark ? Colors.white : Colors.black87,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.5,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Loading Dashboard...',
+              style: AppTheme.getBodyStyle(
+                context,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade600,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-
+  // ============================================================================
+  // NO PROFILE STATE
+  // ============================================================================
   Widget _buildNoProfileState(BuildContext context) {
     return Center(
       child: Padding(
@@ -157,41 +91,41 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
                 color: AppTheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.person_add_alt_1_rounded,
-                size: 56,
+              child: Icon(
+                Icons.person_add_alt_1,
+                size: 64,
                 color: AppTheme.primary,
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
+            Text(
               'Complete Your Profile',
-              style: TextStyle(
+              style: AppTheme.getHeadlineStyle(
+                context,
                 fontSize: 24,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -0.5,
+                fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Get started by completing your professional profile\nand unlock opportunities.',
+              'Get started by completing your profile\nand unlock opportunities.',
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: AppTheme.getBodyStyle(
+                context,
                 fontSize: 15,
-                color: Colors.grey[600],
-                height: 1.6,
+                color: Colors.grey.shade600,
               ),
             ),
             const SizedBox(height: 40),
             SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 52,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/candidate-setup');
@@ -201,7 +135,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
@@ -209,7 +143,6 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
                   ),
                 ),
               ),
@@ -220,8 +153,151 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
   }
 
-  Widget _buildProfileStrengthCard(BuildContext context, Map<String, dynamic> profileData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  // ============================================================================
+  // MAIN DASHBOARD CONTENT
+  // ============================================================================
+  Widget _buildDashboardContent(Map<String, dynamic> profileData) {
+    return CustomScrollView(
+      slivers: [
+        // Modern App Bar
+        _buildModernAppBar(profileData),
+
+        // Dashboard Content
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+
+                // Profile Strength Card
+                _buildProfileStrengthCard(profileData),
+
+                const SizedBox(height: 20),
+
+                // Quick Stats Grid
+                _buildQuickStatsGrid(profileData),
+
+                const SizedBox(height: 24),
+
+                // Section Header
+                Text(
+                  'Quick Actions',
+                  style: AppTheme.getHeadlineStyle(
+                    context,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Action Cards
+                _buildActionCards(profileData),
+
+                const SizedBox(height: 24),
+
+                // Recent Activity or Tips
+                _buildTipsSection(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // MODERN APP BAR
+  // ============================================================================
+  Widget _buildModernAppBar(Map<String, dynamic> profileData) {
+    final firstName = (profileData['full_name'] ?? 'User').toString().split(' ').first;
+
+    return SliverAppBar(
+      expandedHeight: 140,
+      floating: false,
+      pinned: false,
+      backgroundColor: AppTheme.primary,
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppTheme.primary,
+                AppTheme.primaryDark,
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 50),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Welcome back,',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    firstName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        // titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        // title: Text(
+        //   firstName,
+        //   style: const TextStyle(
+        //     color: Colors.white,
+        //     fontSize: 20,
+        //     fontWeight: FontWeight.w600,
+        //   ),
+        // ),
+      ),
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.notifications_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          onPressed: () {
+            // Notification action
+          },
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // PROFILE STRENGTH CARD
+  // ============================================================================
+  Widget _buildProfileStrengthCard(Map<String, dynamic> profileData) {
     final completeness = _calculateProfileCompleteness(profileData);
     final missingFields = _getMissingFields(profileData);
 
@@ -239,19 +315,22 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       statusIcon = Icons.thumb_up_rounded;
     } else {
       statusColor = const Color(0xFFF59E0B);
-      statusText = 'Needs Attention';
-      statusIcon = Icons.warning_rounded;
+      statusText = 'Needs Work';
+      statusIcon = Icons.warning_amber_rounded;
     }
 
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,12 +338,12 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Profile Strength',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.2,
+                style: AppTheme.getHeadlineStyle(
+                  context,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               Container(
@@ -276,15 +355,14 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(statusIcon, size: 14, color: statusColor),
+                    Icon(statusIcon, size: 16, color: statusColor),
                     const SizedBox(width: 6),
                     Text(
                       statusText,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: statusColor,
-                        letterSpacing: 0.3,
                       ),
                     ),
                   ],
@@ -295,124 +373,90 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           const SizedBox(height: 20),
           Row(
             children: [
+              // Progress Circle
+              SizedBox(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: CircularProgressIndicator(
+                        value: completeness / 100,
+                        strokeWidth: 8,
+                        backgroundColor: AppTheme.lightBackground,
+                        valueColor: AlwaysStoppedAnimation<Color>(statusColor),
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$completeness%',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '$completeness%',
-                      style: const TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -2,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Complete',
+                      'Profile Completion',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade900,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                width: 100,
-                height: 100,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 100,
-                      height: 100,
-                      child: CircularProgressIndicator(
-                        value: completeness / 100,
-                        strokeWidth: 8,
-                        backgroundColor: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.05),
-                        valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                        strokeCap: StrokeCap.round,
+                    const SizedBox(height: 6),
+                    if (missingFields.isNotEmpty)
+                      Text(
+                        'Missing: ${missingFields.join(", ")}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      statusIcon,
-                      size: 32,
-                      color: statusColor,
-                    ),
                   ],
                 ),
               ),
             ],
           ),
-          if (missingFields.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.05)
-                    : Colors.black.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Missing fields',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    missingFields.join(', '),
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (completeness < 100) ...[
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 48,
               child: ElevatedButton(
                 onPressed: () => _navigateToEditProfile(context, profileData),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: statusColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: const Text(
                   'Complete Profile',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
                   ),
                 ),
               ),
@@ -423,339 +467,285 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
   }
 
-  Widget _buildStatsRow(BuildContext context, Map<String, dynamic> profileData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  // ============================================================================
+  // QUICK STATS GRID
+  // ============================================================================
+  Widget _buildQuickStatsGrid(Map<String, dynamic> profileData) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
-            context,
-            icon: Icons.work_history_rounded,
+            icon: Icons.work_outline_rounded,
             value: '${profileData['experience_years'] ?? 0}',
-            label: 'Years',
+            label: 'Years Experience',
             color: const Color(0xFF3B82F6),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            context,
-            icon: Icons.code_rounded,
+            icon: Icons.emoji_objects_outlined,
             value: '${_getSkillsCount(profileData)}',
-            label: 'Skills',
+            label: 'Skills Added',
             color: const Color(0xFF8B5CF6),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            context,
-            icon: Icons.visibility_rounded,
-            value: '0',
-            label: 'Views',
-            color: const Color(0xFFF59E0B),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildStatCard(
-    BuildContext context, {
+  Widget _buildStatCard({
     required IconData icon,
     required String value,
     required String label,
     required Color color,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 24,
+            style: TextStyle(
+              fontSize: 40,
               fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+              color: Colors.grey.shade900,
+              height: 1,
+              letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+              fontSize: 14,
+              color: Colors.grey.shade500,
               fontWeight: FontWeight.w500,
+              letterSpacing: 0.2,
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-      ),
-    );
-  }
-
-  Widget _buildProfileOverview(BuildContext context, Map<String, dynamic> profileData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          _buildOverviewItem(
-            context,
-            icon: Icons.business_center_rounded,
-            label: 'Role',
-            value: _formatRole(profileData['role']),
-            color: const Color(0xFF3B82F6),
-          ),
-          _buildDivider(context),
-          _buildOverviewItem(
-            context,
-            icon: Icons.location_city_rounded,
-            label: 'Location',
-            value: '${profileData['city'] ?? 'N/A'}, ${profileData['state'] ?? 'N/A'}',
-            color: const Color(0xFF10B981),
-          ),
-          _buildDivider(context),
-          _buildOverviewItem(
-            context,
-            icon: Icons.school_rounded,
-            label: 'Education',
-            value: profileData['education'] ?? 'Not provided',
-            color: const Color(0xFFF59E0B),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOverviewItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Divider(
-      color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-      height: 1,
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context, Map<String, dynamic> profileData) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  // ============================================================================
+  // ACTION CARDS
+  // ============================================================================
+  Widget _buildActionCards(Map<String, dynamic> profileData) {
     return Column(
       children: [
-        _buildActionButton(
-          context,
-          icon: Icons.edit_rounded,
-          label: 'Edit Profile',
+        _buildActionCard(
+          icon: Icons.edit_note_rounded,
+          title: 'Edit Profile',
           subtitle: 'Update your information',
+          color: const Color(0xFF3B82F6),
           onTap: () => _navigateToEditProfile(context, profileData),
         ),
         const SizedBox(height: 12),
-        _buildActionButton(
-          context,
-          icon: Icons.description_rounded,
-          label: 'Update Resume',
+        _buildActionCard(
+          icon: Icons.description_outlined,
+          title: 'Update Resume',
           subtitle: 'Keep your resume current',
+          color: const Color(0xFF10B981),
           onTap: () => _navigateToEditProfile(context, profileData),
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          icon: Icons.search_rounded,
+          title: 'Browse Jobs',
+          subtitle: 'Find your next opportunity',
+          color: const Color(0xFF8B5CF6),
+          onTap: () {
+            // Navigate to jobs
+          },
         ),
       ],
     );
   }
 
-  Widget _buildActionButton(
-    BuildContext context, {
+  Widget _buildActionCard({
     required IconData icon,
-    required String label,
+    required String title,
     required String subtitle,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
-            width: 1,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(12),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 24),
               ),
-              child: Icon(icon, color: AppTheme.primary, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade900,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: Colors.grey[400],
-            ),
-          ],
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildRecommendations(BuildContext context, Map<String, dynamic> profileData) {
-    final recommendations = _getRecommendations(profileData);
-
-    return Column(
-      children: recommendations.map((rec) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: rec['color'].withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: rec['color'].withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
+  // ============================================================================
+  // TIPS SECTION
+  // ============================================================================
+  Widget _buildTipsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primary.withOpacity(0.1),
+            AppTheme.primaryDark.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primary.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(rec['icon'], color: rec['color'], size: 20),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.lightbulb_outline_rounded,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  rec['text'],
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: rec['color'],
-                    height: 1.4,
-                  ),
+              Text(
+                'Profile Tips',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade900,
                 ),
               ),
             ],
           ),
-        );
-      }).toList(),
+          const SizedBox(height: 16),
+          _buildTipItem('Add a professional photo to get 3x more profile views'),
+          const SizedBox(height: 10),
+          _buildTipItem('Keep your resume updated for better job matches'),
+          const SizedBox(height: 10),
+          _buildTipItem('Add detailed skills to stand out from other candidates'),
+        ],
+      ),
     );
   }
 
-  // Helper Methods
+  Widget _buildTipItem(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 4),
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade700,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-  void _navigateToEditProfile(BuildContext context, Map<String, dynamic> profileData) async {
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
+
+  void _navigateToEditProfile(
+    BuildContext context,
+    Map<String, dynamic> profileData,
+  ) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -775,11 +765,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     if (profileData['full_name']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['phone']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['age'] != null) completedFields++;
-    if (profileData['role']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['role_name']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['experience_years'] != null) completedFields++;
-    if (profileData['state']?.toString().isNotEmpty == true) completedFields++;
-    if (profileData['city']?.toString().isNotEmpty == true) completedFields++;
-    if (profileData['education']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['state_name']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['city_name']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['education_name']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['skills']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['resume_url']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['current_ctc'] != null) completedFields++;
@@ -802,50 +792,5 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   int _getSkillsCount(Map<String, dynamic> profileData) {
     final skillsList = profileData['skills_list'] as List<dynamic>?;
     return skillsList?.length ?? 0;
-  }
-
-  String _formatRole(String? role) {
-    if (role == null) return 'Not specified';
-    final roleMap = {
-      'IT': 'IT Professional',
-      'HR': 'HR Professional',
-      'SUPPORT': 'Support',
-      'SALES': 'Sales',
-      'MARKETING': 'Marketing',
-      'FINANCE': 'Finance',
-      'DESIGN': 'Design',
-      'OTHER': 'Other',
-    };
-    return roleMap[role] ?? role;
-  }
-
-  List<Map<String, dynamic>> _getRecommendations(Map<String, dynamic> profileData) {
-    List<Map<String, dynamic>> recommendations = [];
-
-    if (profileData['resume']?.toString().isEmpty != false) {
-      recommendations.add({
-        'icon': Icons.upload_file_rounded,
-        'text': 'Upload your resume to get 3x more profile views',
-        'color': const Color(0xFF3B82F6),
-      });
-    }
-
-    if (profileData['video_intro']?.toString().isEmpty != false) {
-      recommendations.add({
-        'icon': Icons.videocam_rounded,
-        'text': 'Add a video intro to stand out from other candidates',
-        'color': const Color(0xFFEF4444),
-      });
-    }
-
-    if (profileData['current_ctc'] == null || profileData['expected_ctc'] == null) {
-      recommendations.add({
-        'icon': Icons.payments_rounded,
-        'text': 'Add salary details to match with relevant opportunities',
-        'color': const Color(0xFF10B981),
-      });
-    }
-
-    return recommendations.take(2).toList();
   }
 }

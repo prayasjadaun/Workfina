@@ -13,143 +13,151 @@ class CandidateController extends ChangeNotifier {
   Map<String, dynamic>? get candidateProfile => _candidateProfile;
 
   // Education - 10th
-final TextEditingController class10Controller = TextEditingController();
-final TextEditingController class10BoardController = TextEditingController();
-final TextEditingController class10YearController = TextEditingController();
-final TextEditingController class10PercentageController = TextEditingController();
+  final TextEditingController class10Controller = TextEditingController();
+  final TextEditingController class10BoardController = TextEditingController();
+  final TextEditingController class10YearController = TextEditingController();
+  final TextEditingController class10PercentageController =
+      TextEditingController();
 
-// Education - 12th
-final TextEditingController class12Controller = TextEditingController();
-final TextEditingController class12BoardController = TextEditingController();
-final TextEditingController class12YearController = TextEditingController();
-final TextEditingController class12PercentageController = TextEditingController();
+  // Education - 12th
+  final TextEditingController class12Controller = TextEditingController();
+  final TextEditingController class12BoardController = TextEditingController();
+  final TextEditingController class12YearController = TextEditingController();
+  final TextEditingController class12PercentageController =
+      TextEditingController();
 
-// Education - Graduation
-final TextEditingController graduationController = TextEditingController();
-final TextEditingController graduationUniversityController = TextEditingController();
-final TextEditingController graduationYearController = TextEditingController();
-final TextEditingController graduationPercentageController = TextEditingController();
+  // Education - Graduation
+  final TextEditingController graduationController = TextEditingController();
+  final TextEditingController graduationUniversityController =
+      TextEditingController();
+  final TextEditingController graduationYearController =
+      TextEditingController();
+  final TextEditingController graduationPercentageController =
+      TextEditingController();
 
-// Education - Post Graduation
-final TextEditingController postGraduationController = TextEditingController();
-final TextEditingController postGraduationUniversityController = TextEditingController();
-final TextEditingController postGraduationYearController = TextEditingController();
-final TextEditingController postGraduationPercentageController = TextEditingController();
+  // Education - Post Graduation
+  final TextEditingController postGraduationController =
+      TextEditingController();
+  final TextEditingController postGraduationUniversityController =
+      TextEditingController();
+  final TextEditingController postGraduationYearController =
+      TextEditingController();
+  final TextEditingController postGraduationPercentageController =
+      TextEditingController();
 
-// Other Education
-final TextEditingController otherEducationController = TextEditingController();
+  // Other Education
+  final TextEditingController otherEducationController =
+      TextEditingController();
 
-// Skills
-final TextEditingController skillsController = TextEditingController();
+  // Skills
+  final TextEditingController skillsController = TextEditingController();
 
-// Education section expansion states
-bool showClass10 = false;
-bool showClass12 = false;
-bool showGraduation = true; // Open by default since required
-bool showPostGraduation = false;
-bool showOtherEducation = false;
+  // Education section expansion states
+  bool showClass10 = false;
+  bool showClass12 = false;
+  bool showGraduation = true; // Open by default since required
+  bool showPostGraduation = false;
+  bool showOtherEducation = false;
 
-
-void toggleClass10() {
-  showClass10 = !showClass10;
-  notifyListeners();
-}
-
-void toggleClass12() {
-  showClass12 = !showClass12;
-  notifyListeners();
-}
-
-void toggleGraduation() {
-  showGraduation = !showGraduation;
-  notifyListeners();
-}
-
-void togglePostGraduation() {
-  showPostGraduation = !showPostGraduation;
-  notifyListeners();
-}
-
-void toggleOtherEducation() {
-  showOtherEducation = !showOtherEducation;
-  notifyListeners();
-}
-
-// void setRole(String role) {
-//   selectedRole = role;
-//   notifyListeners();
-// }
-
-// void setReligion(String religion) {
-//   selectedReligion = religion;
-//   notifyListeners();
-// }
-
-// void setResumeFile(File? file, String? fileName) {
-//   resumeFile = file;
-//   resumeFileName = fileName;
-//   notifyListeners();
-// }
-
-// void setVideoFile(File? file, String? fileName) {
-//   videoIntroFile = file;
-//   videoIntroFileName = fileName;
-//   notifyListeners();
-// }
-
-String combineEducationData() {
-  List<String> educationParts = [];
-
-  if (class10Controller.text.isNotEmpty) {
-    educationParts.add(
-      '10th: ${class10Controller.text}, ${class10BoardController.text} (${class10YearController.text}) - ${class10PercentageController.text}%',
-    );
+  void toggleClass10() {
+    showClass10 = !showClass10;
+    notifyListeners();
   }
 
-  if (class12Controller.text.isNotEmpty) {
-    educationParts.add(
-      '12th: ${class12Controller.text}, ${class12BoardController.text} (${class12YearController.text}) - ${class12PercentageController.text}%',
-    );
+  void toggleClass12() {
+    showClass12 = !showClass12;
+    notifyListeners();
   }
 
-  if (graduationController.text.isNotEmpty) {
-    educationParts.add(
-      'Graduation: ${graduationController.text}, ${graduationUniversityController.text} (${graduationYearController.text}) - ${graduationPercentageController.text}%',
-    );
+  void toggleGraduation() {
+    showGraduation = !showGraduation;
+    notifyListeners();
   }
 
-  if (postGraduationController.text.isNotEmpty) {
-    educationParts.add(
-      'Post-Graduation: ${postGraduationController.text}, ${postGraduationUniversityController.text} (${postGraduationYearController.text}) - ${postGraduationPercentageController.text}%',
-    );
+  void togglePostGraduation() {
+    showPostGraduation = !showPostGraduation;
+    notifyListeners();
   }
 
-  if (otherEducationController.text.isNotEmpty) {
-    educationParts.add('Other: ${otherEducationController.text}');
+  void toggleOtherEducation() {
+    showOtherEducation = !showOtherEducation;
+    notifyListeners();
   }
 
-  return educationParts.join(' | ');
-}
+  // void setRole(String role) {
+  //   selectedRole = role;
+  //   notifyListeners();
+  // }
 
+  // void setReligion(String religion) {
+  //   selectedReligion = religion;
+  //   notifyListeners();
+  // }
 
-bool validateProfessionalInfo() {
-  return graduationController.text.isNotEmpty &&
-      graduationUniversityController.text.isNotEmpty &&
-      graduationYearController.text.isNotEmpty &&
-      skillsController.text.isNotEmpty;
-}
+  // void setResumeFile(File? file, String? fileName) {
+  //   resumeFile = file;
+  //   resumeFileName = fileName;
+  //   notifyListeners();
+  // }
 
-bool hasClass10Data() => class10Controller.text.isNotEmpty;
-bool hasClass12Data() => class12Controller.text.isNotEmpty;
-bool hasGraduationData() {
-  return graduationController.text.isNotEmpty ||
-         graduationUniversityController.text.isNotEmpty ||
-         graduationYearController.text.isNotEmpty ||
-         graduationPercentageController.text.isNotEmpty;
-}
-bool hasPostGraduationData() => postGraduationController.text.isNotEmpty;
-bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
+  // void setVideoFile(File? file, String? fileName) {
+  //   videoIntroFile = file;
+  //   videoIntroFileName = fileName;
+  //   notifyListeners();
+  // }
 
+  String combineEducationData() {
+    List<String> educationParts = [];
+
+    if (class10Controller.text.isNotEmpty) {
+      educationParts.add(
+        '10th: ${class10Controller.text}, ${class10BoardController.text} (${class10YearController.text}) - ${class10PercentageController.text}%',
+      );
+    }
+
+    if (class12Controller.text.isNotEmpty) {
+      educationParts.add(
+        '12th: ${class12Controller.text}, ${class12BoardController.text} (${class12YearController.text}) - ${class12PercentageController.text}%',
+      );
+    }
+
+    if (graduationController.text.isNotEmpty) {
+      educationParts.add(
+        'Graduation: ${graduationController.text}, ${graduationUniversityController.text} (${graduationYearController.text}) - ${graduationPercentageController.text}%',
+      );
+    }
+
+    if (postGraduationController.text.isNotEmpty) {
+      educationParts.add(
+        'Post-Graduation: ${postGraduationController.text}, ${postGraduationUniversityController.text} (${postGraduationYearController.text}) - ${postGraduationPercentageController.text}%',
+      );
+    }
+
+    if (otherEducationController.text.isNotEmpty) {
+      educationParts.add('Other: ${otherEducationController.text}');
+    }
+
+    return educationParts.join(' | ');
+  }
+
+  bool validateProfessionalInfo() {
+    return graduationController.text.isNotEmpty &&
+        graduationUniversityController.text.isNotEmpty &&
+        graduationYearController.text.isNotEmpty &&
+        skillsController.text.isNotEmpty;
+  }
+
+  bool hasClass10Data() => class10Controller.text.isNotEmpty;
+  bool hasClass12Data() => class12Controller.text.isNotEmpty;
+  bool hasGraduationData() {
+    return graduationController.text.isNotEmpty ||
+        graduationUniversityController.text.isNotEmpty ||
+        graduationYearController.text.isNotEmpty ||
+        graduationPercentageController.text.isNotEmpty;
+  }
+
+  bool hasPostGraduationData() => postGraduationController.text.isNotEmpty;
+  bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
 
   Future<bool> registerCandidate({
     required String fullName,
@@ -166,16 +174,17 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
     required String education,
     required String skills,
     File? resumeFile,
-    File? videoIntroFile,  
-    File? profileImage,  
-
-
+    File? videoIntroFile,
+    File? profileImage,
+    String? languages,
+    String? streetAddress,
+    bool willingToRelocate = false,
+    String? workExperience,
+    String? careerObjective,
   }) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
-
-    
 
     try {
       final response = await ApiService.registerCandidate(
@@ -193,13 +202,14 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
         education: combineEducationData(),
         skills: skills,
         resumeFile: resumeFile,
-        videoIntroFile: videoIntroFile,  
-        profileImage: profileImage,  
-
-
+        videoIntroFile: videoIntroFile,
+        profileImage: profileImage,
+        languages: languages,
+        streetAddress: streetAddress,
+        willingToRelocate: willingToRelocate,
+        workExperience: workExperience,
+        careerObjective: careerObjective,
       );
-
-      
 
       if (response.containsKey('error')) {
         _error = response['error'];
@@ -218,8 +228,6 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
       notifyListeners();
       return false;
     }
-    
-    
   }
 
   Future<bool> checkProfileExists() async {
@@ -256,115 +264,117 @@ bool hasOtherEducationData() => otherEducationController.text.isNotEmpty;
     }
   }
 
-
   // Add this method to your CandidateController class
 
-Future<bool> updateProfile({
-  String? fullName,
-  String? phone,
-  int? age,
-  String? role,
-  int? experienceYears,
-  double? currentCtc,
-  double? expectedCtc,
-  String? religion,
-  String? state,
-  String? city,
-  String? education,
-  String? skills,
-  File? resumeFile,
-  File? videoIntroFile,
-  File? profileImage,  
+  Future<bool> updateProfile({
+    String? fullName,
+    String? phone,
+    int? age,
+    String? role,
+    int? experienceYears,
+    double? currentCtc,
+    double? expectedCtc,
+    String? religion,
+    String? state,
+    String? city,
+    String? education,
+    String? skills,
+    File? resumeFile,
+    File? videoIntroFile,
+    File? profileImage,
+    String? languages,
+    String? streetAddress,
+    bool? willingToRelocate,
+    String? workExperience,
+    String? careerObjective,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
 
-}) async {
-  _isLoading = true;
-  _error = null;
-  notifyListeners();
+    try {
+      final response = await ApiService.updateCandidateProfile(
+        fullName: fullName,
+        phone: phone,
+        age: age,
+        role: role,
+        experienceYears: experienceYears,
+        currentCtc: currentCtc,
+        expectedCtc: expectedCtc,
+        religion: religion,
+        state: state,
+        city: city,
+        education: combineEducationData(),
+        skills: skills,
+        resumeFile: resumeFile,
+        profileImage: profileImage, // ✅ ADD THIS
+      );
 
-  try {
-    final response = await ApiService.updateCandidateProfile(
-      fullName: fullName,
-      phone: phone,
-      age: age,
-      role: role,
-      experienceYears: experienceYears,
-      currentCtc: currentCtc,
-      expectedCtc: expectedCtc,
-      religion: religion,
-      state: state,
-      city: city,
-      education: combineEducationData(),
-      skills: skills,
-      resumeFile: resumeFile,
-      profileImage: profileImage,  // ✅ ADD THIS
+      if (response.containsKey('error')) {
+        _error = response['error'];
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
 
-    );
+      // Update local profile data with the response
+      if (response.containsKey('profile')) {
+        _candidateProfile = response['profile'];
+      }
 
-    if (response.containsKey('error')) {
-      _error = response['error'];
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = 'Failed to update profile: $e';
       _isLoading = false;
       notifyListeners();
       return false;
     }
+  }
 
-    // Update local profile data with the response
-    if (response.containsKey('profile')) {
-      _candidateProfile = response['profile'];
-    }
+  @override
+  void dispose() {
+    // Personal Info
+    // fullNameController.dispose();
+    // phoneController.dispose();
+    // ageController.dispose();
+    // experienceController.dispose();
 
-    _isLoading = false;
-    notifyListeners();
-    return true;
-  } catch (e) {
-    _error = 'Failed to update profile: $e';
-    _isLoading = false;
-    notifyListeners();
-    return false;
+    // Education - 10th
+    class10Controller.dispose();
+    class10BoardController.dispose();
+    class10YearController.dispose();
+    class10PercentageController.dispose();
+
+    // Education - 12th
+    class12Controller.dispose();
+    class12BoardController.dispose();
+    class12YearController.dispose();
+    class12PercentageController.dispose();
+
+    // Education - Graduation
+    graduationController.dispose();
+    graduationUniversityController.dispose();
+    graduationYearController.dispose();
+    graduationPercentageController.dispose();
+
+    // Education - Post Graduation
+    postGraduationController.dispose();
+    postGraduationUniversityController.dispose();
+    postGraduationYearController.dispose();
+    postGraduationPercentageController.dispose();
+
+    // Other
+    otherEducationController.dispose();
+    skillsController.dispose();
+
+    // Location
+    // currentCtcController.dispose();
+    // expectedCtcController.dispose();
+    // stateController.dispose();
+    // cityController.dispose();
+
+    super.dispose();
   }
 }
-@override
-void dispose() {
-  // Personal Info
-  // fullNameController.dispose();
-  // phoneController.dispose();
-  // ageController.dispose();
-  // experienceController.dispose();
-  
-  // Education - 10th
-  class10Controller.dispose();
-  class10BoardController.dispose();
-  class10YearController.dispose();
-  class10PercentageController.dispose();
-  
-  // Education - 12th
-  class12Controller.dispose();
-  class12BoardController.dispose();
-  class12YearController.dispose();
-  class12PercentageController.dispose();
-  
-  // Education - Graduation
-  graduationController.dispose();
-  graduationUniversityController.dispose();
-  graduationYearController.dispose();
-  graduationPercentageController.dispose();
-  
-  // Education - Post Graduation
-  postGraduationController.dispose();
-  postGraduationUniversityController.dispose();
-  postGraduationYearController.dispose();
-  postGraduationPercentageController.dispose();
-  
-  // Other
-  otherEducationController.dispose();
-  skillsController.dispose();
-  
-  // Location
-  // currentCtcController.dispose();
-  // expectedCtcController.dispose();
-  // stateController.dispose();
-  // cityController.dispose();
-  
-  super.dispose();
-}
-}
-

@@ -34,21 +34,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _validateForm() {
-    final email = _emailController.text;
-    final password = _passwordController.text;
-
-    final isValid =
-        email.isNotEmpty &&
-        password.isNotEmpty &&
-        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email) &&
-        password.length >= 6;
-
-    if (_isFormValid != isValid) {
-      setState(() {
-        _isFormValid = isValid;
-      });
-    }
+  final email = _emailController.text;
+  final password = _passwordController.text;
+  
+  // Simplified validation - just check if fields have content
+  final isValid = email.trim().isNotEmpty && password.length >= 6;
+  
+  if (_isFormValid != isValid) {
+    setState(() {
+      _isFormValid = isValid;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -252,90 +249,75 @@ class _LoginScreenState extends State<LoginScreen> {
                     // const SizedBox(height: 40),
 
                     // Login Button
-                    Consumer<AuthController>(
-                      builder: (context, authController, child) {
-                        if (authController.error != null) {
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted && authController.error != null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(authController.error!),
-                                  backgroundColor: Colors.red,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              );
-                              authController.clearError();
-                            }
-                          });
-                        }
+                   // Login Button
+Consumer<AuthController>(
+  builder: (context, authController, child) {
+    if (authController.error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && authController.error != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authController.error!),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          authController.clearError();
+        }
+      });
+    }
 
-                        final isButtonEnabled =
-                            _isFormValid && !authController.isLoading;
+    final isButtonEnabled = _isFormValid && !authController.isLoading;
 
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: double.infinity,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: isButtonEnabled
-                                ? LinearGradient(
-                                    colors: [
-                                      AppTheme.primary,
-                                      AppTheme.primary.withOpacity(0.8),
-                                    ],
-                                  )
-                                : null,
-                            color: isButtonEnabled ? null : Colors.grey[300],
-                            boxShadow: isButtonEnabled
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.primary.withOpacity(0.3),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          child: ElevatedButton(
-                            onPressed: isButtonEnabled
-                                ? () => _handleLogin(authController)
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              disabledBackgroundColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: authController.isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: isButtonEnabled
-                                          ? Colors.white
-                                          : Colors.grey[600],
-                                    ),
-                                  ),
-                          ),
-                        );
-                      },
-                    ),
-
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: isButtonEnabled
+            ? () => _handleLogin(authController)
+            : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isButtonEnabled 
+              ? AppTheme.primary 
+              : Colors.grey[300],
+          disabledBackgroundColor: Colors.grey[300],
+          foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.grey[600],
+          elevation: isButtonEnabled ? 2 : 0,
+          shadowColor: isButtonEnabled 
+              ? AppTheme.primary.withOpacity(0.3) 
+              : Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: authController.isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Text(
+                'Login',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isButtonEnabled 
+                      ? Colors.white 
+                      : Colors.grey[600],
+                ),
+              ),
+      ),
+    );
+  },
+),
+                    
                     const SizedBox(height: 24),
 
                     // Divider with OR
