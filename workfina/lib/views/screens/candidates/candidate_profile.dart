@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
@@ -25,64 +26,100 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthController>().user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppTheme.lightBackground,
-      body: Consumer<CandidateController>(
-        builder: (context, profileController, child) {
-          // Loading State
-          if (profileController.isLoading) {
-            return _buildLoadingState();
-          }
+      // appBar: AppBar(),
+      body: Container(
+        height: double.infinity,
+        color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
+        child: Consumer<CandidateController>(
+          builder: (context, profileController, child) {
+            // Loading State
+            if (profileController.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.primary,
+                ),
+              );
+            }
 
-          // Error State
-          if (profileController.error != null) {
-            return _buildErrorState(profileController);
-          }
+            // Error State
+            if (profileController.error != null) {
+              return _buildErrorState(profileController, isDark);
+            }
 
-          final profileData = profileController.candidateProfile;
+            final profileData = profileController.candidateProfile;
 
-          // No Profile State
-          if (profileData == null) {
-            return _buildNoProfileState();
-          }
+            // No Profile State
+            if (profileData == null) {
+              return _buildNoProfileState(isDark);
+            }
 
-          // Main Profile Content
-          return _buildProfileContent(profileData, user);
-        },
+            // Main Profile Content
+            return _buildProfileContent(profileData, user, isDark);
+          },
+        ),
       ),
     );
   }
 
   // ============================================================================
-  // STEP 1: LOADING STATE
+  // ERROR STATE
   // ============================================================================
-  Widget _buildLoadingState() {
-    return Container(
-      decoration: AppTheme.getGradientDecoration(context),
-      child: Center(
+  Widget _buildErrorState(CandidateController controller, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [AppTheme.getCardShadow(context)],
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
               ),
-              child: const CircularProgressIndicator(
-                color: AppTheme.primary,
-                strokeWidth: 3,
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 64,
+                color: Colors.red.shade400,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              'Loading your profile...',
-              style: AppTheme.getTitleStyle(
+              'Oops! Something went wrong',
+              style: AppTheme.getHeadlineStyle(
                 context,
-                fontSize: 16,
-                color: AppTheme.primary,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              controller.error!,
+              style: AppTheme.getBodyStyle(
+                context,
+                color: Colors.grey.shade700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => controller.checkProfileExists(),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -92,868 +129,322 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   }
 
   // ============================================================================
-  // STEP 2: ERROR STATE
+  // NO PROFILE STATE
   // ============================================================================
-  Widget _buildErrorState(CandidateController controller) {
-    return Container(
-      decoration: AppTheme.getGradientDecoration(context),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 64,
-                  color: Colors.red.shade400,
-                ),
+  Widget _buildNoProfileState(bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Oops! Something went wrong',
-                style: AppTheme.getHeadlineStyle(
-                  context,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+              child: Icon(
+                Icons.person_add_outlined,
+                size: 80,
+                color: AppTheme.primary,
               ),
-              const SizedBox(height: 12),
-              Text(
-                controller.error!,
-                style: AppTheme.getBodyStyle(
-                  context,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'Complete Your Profile',
+              style: AppTheme.getHeadlineStyle(
+                context,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () => controller.checkProfileExists(),
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Retry'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Set up your profile to unlock amazing job opportunities and connect with top recruiters',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: Colors.grey.shade600,
+                fontSize: 15,
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================================
-  // STEP 3: NO PROFILE STATE
-  // ============================================================================
-  Widget _buildNoProfileState() {
-    return Container(
-      decoration: AppTheme.getGradientDecoration(context),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/candidate-setup');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 18,
                 ),
-                child: Icon(
-                  Icons.person_add_outlined,
-                  size: 80,
-                  color: AppTheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                elevation: 2,
               ),
-              const SizedBox(height: 32),
-              Text(
-                'Complete Your Profile',
-                style: AppTheme.getHeadlineStyle(
-                  context,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Set up your profile to unlock amazing job opportunities and connect with top recruiters',
-                style: AppTheme.getBodyStyle(
-                  context,
-                  color: Colors.grey.shade600,
-                  fontSize: 15,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/candidate-setup');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 48,
-                    vertical: 18,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 2,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Get Started',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward_rounded, size: 20),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   // ============================================================================
-  // STEP 4: MAIN PROFILE CONTENT
+  // MAIN PROFILE CONTENT
   // ============================================================================
   Widget _buildProfileContent(
     Map<String, dynamic> profileData,
     Map<String, dynamic>? user,
+    bool isDark,
   ) {
-    return Container(
-      decoration: AppTheme.getGradientDecoration(context),
-      child: RefreshIndicator(
-        onRefresh: () =>
-            context.read<CandidateController>().checkProfileExists(),
-        color: AppTheme.primary,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Custom App Bar
-            _buildSliverAppBar(profileData),
-
-            // Profile Content
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Profile Stats Cards
-                    _buildStatsRow(profileData),
-
-                    const SizedBox(height: 24),
-
-                    // Quick Actions
-                    _buildQuickActions(profileData),
-
-                    const SizedBox(height: 24),
-
-                    // Profile Sections
-                    _buildProfileSections(profileData),
-
-                    const SizedBox(height: 100),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================================
-  // STEP 5: SLIVER APP BAR (Header with Profile Picture)
-  // ============================================================================
-  Widget _buildSliverAppBar(Map<String, dynamic> profileData) {
-    return SliverAppBar(
-      expandedHeight: 250,
-      floating: false,
-      pinned: false,
-      backgroundColor: AppTheme.primary,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          // decoration: BoxDecoration(
-          //   // gradient: LinearGradient(
-          //   //   begin: Alignment.topLeft,
-          //   //   end: Alignment.bottomRight,
-          //   //   // colors: [
-          //   //   //   AppTheme.primary,
-          //   //   //   AppTheme.primaryDark,
-          //   //   // ],
-          //   // ),
-          // ),
-          child: SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 13),
-                // Profile Picture
-                Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.white,
-                        backgroundImage:
-                            profileData['profile_image_url'] != null
-                            ? NetworkImage(profileData['profile_image_url'])
-                            : null,
-                        child: profileData['profile_image_url'] == null
-                            ? Text(
-                                (profileData['full_name']?[0] ?? 'C')
-                                    .toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 36,
-                                  color: AppTheme.primary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentPrimary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.verified_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Name
-                Text(
-                  profileData['full_name'] ?? 'Candidate',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Role
-                Text(
-                  _formatRole(profileData['role_name']),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Location
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.location_on_rounded,
-                      color: Colors.white.withOpacity(0.8),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      profileData['city_name'] ?? 'N/A',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      // actions: [
-      //   IconButton(
-      //     icon: const Icon(Icons.edit_outlined, color: Colors.white),
-      //     onPressed: () => _showEditProfileDialog(context, profileData),
-      //   ),
-      // ],
-    );
-  }
-
-  // ============================================================================
-  // STEP 6: STATS ROW (Experience, Age, etc.)
-  // ============================================================================
-
-  Widget _buildStatsRow(Map<String, dynamic> profileData) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.analytics_outlined,
-                  color: const Color(0xFFFF9800),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Profile Statistics',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade900,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 24),
+
+          // Profile Header
+          _buildProfileHeader(profileData, isDark),
 
           const SizedBox(height: 20),
 
-          // Experience
-          _buildStatInfoRow(
-            icon: Icons.work_outline_rounded,
-            label: 'Experience',
-            value: '${profileData['experience_years'] ?? 0} years',
-            iconColor: const Color(0xFF1976D2),
-          ),
+          // Statistics Card
+          _buildStatisticsCard(profileData, isDark),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Age
-          _buildStatInfoRow(
-            icon: Icons.cake_outlined,
-            label: 'Age',
-            value: '${profileData['age'] ?? 0} years',
-            iconColor: const Color(0xFF388E3C),
-          ),
+          // Quick Actions Card
+          _buildQuickActionsCard(profileData, isDark),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
 
-          // Education
-          _buildStatInfoRow(
-            icon: Icons.school_outlined,
-            label: 'Education',
-            value: _getHighestEducation(profileData['education_details']),
-            iconColor: const Color(0xFF7B1FA2),
-          ),
+          // Contact Information Card
+          _buildContactInfoCard(profileData, isDark),
+
+          const SizedBox(height: 20),
+
+          // Professional Information Card
+          _buildProfessionalInfoCard(profileData, isDark),
+
+          const SizedBox(height: 20),
+
+          // Skills Card
+          _buildSkillsCard(profileData, isDark),
+
+          const SizedBox(height: 20),
+
+          // Education Card
+          _buildEducationCard(profileData, isDark),
+
+          const SizedBox(height: 20),
+
+          // Logout Card
+          _buildLogoutCard(isDark),
+
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  String _getHighestEducation(String? educationDetails) {
-    if (educationDetails == null || educationDetails.isEmpty)
-      return 'Not specified';
-
-    // Split by | to get individual education entries
-    List<String> educations = educationDetails.split('|');
-
-    // Priority order: Post-Graduation > Graduation > 12th > 10th
-    String? postGrad;
-    String? grad;
-    String? twelfth;
-    String? tenth;
-
-    for (String edu in educations) {
-      String trimmed = edu.trim();
-      if (trimmed.startsWith('Post-Graduation:')) {
-        postGrad = trimmed
-            .replaceFirst('Post-Graduation:', '')
-            .split(',')
-            .first
-            .trim();
-      } else if (trimmed.startsWith('Graduation:')) {
-        grad = trimmed.replaceFirst('Graduation:', '').split(',').first.trim();
-      } else if (trimmed.startsWith('12th:')) {
-        twelfth = trimmed.replaceFirst('12th:', '').split(',').first.trim();
-      } else if (trimmed.startsWith('10th:')) {
-        tenth = trimmed.replaceFirst('10th:', '').split(',').first.trim();
-      }
-    }
-
-    // Return highest qualification
-    if (postGrad != null) return postGrad;
-    if (grad != null) return grad;
-    if (twelfth != null) return twelfth;
-    if (tenth != null) return tenth;
-
-    return 'Not specified';
-  }
-
-  Widget _buildStatInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color iconColor,
-  }) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.grey.shade600, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade900,
-            letterSpacing: 0.1,
-          ),
-          textAlign: TextAlign.right,
-        ),
-      ],
-    );
-  }
-
   // ============================================================================
-  // STEP 7: QUICK ACTIONS (Resume, Edit Profile, etc.)
+  // PROFILE HEADER
   // ============================================================================
-  Widget _buildQuickActions(Map<String, dynamic> profileData) {
+  Widget _buildProfileHeader(Map<String, dynamic> profileData, bool isDark) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.flash_on_outlined,
-                  color: AppTheme.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade900,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          // Resume Action
-          _buildActionRow(
-            icon: Icons.description_outlined,
-            label: 'View Resume',
-            subtitle: 'Download or view your resume',
-            onTap: () => _handleResumeClick(context, profileData),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Divider(height: 1, color: Colors.grey.shade200),
-          ),
-
-          // Edit Profile Action
-          _buildActionRow(
-            icon: Icons.edit_outlined,
-            label: 'Edit Profile',
-            subtitle: 'Update your information',
-            onTap: () => _showEditProfileDialog(context, profileData),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Divider(height: 1, color: Colors.grey.shade200),
-          ),
-
-          // Share Profile Action (Optional)
-          // _buildActionRow(
-          //   icon: Icons.share_outlined,
-          //   label: 'Share Profile',
-          //   subtitle: 'Share with recruiters',
-          //   onTap: () {
-          //     // Add share functionality
-          //     ScaffoldMessenger.of(context).showSnackBar(
-          //       SnackBar(
-          //         content: const Text('Share profile feature coming soon'),
-          //         behavior: SnackBarBehavior.floating,
-          //         shape: RoundedRectangleBorder(
-          //           borderRadius: BorderRadius.circular(8),
-          //         ),
-          //       ),
-          //     );
-          //   },
-          // ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionRow({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: AppTheme.primary, size: 20),
+          // Profile Avatar
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              shape: BoxShape.circle,
+              image: profileData['profile_image_url'] != null
+                  ? DecorationImage(
+                      image: NetworkImage(profileData['profile_image_url']),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade900,
-                      letterSpacing: 0.1,
+            child: profileData['profile_image_url'] == null
+                ? Center(
+                    child: Text(
+                      (profileData['full_name']?[0] ?? 'C').toUpperCase(),
+                      style: AppTheme.getHeadlineStyle(
+                        context,
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey.shade600,
-                      letterSpacing: 0.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 16,
-              color: Colors.grey.shade400,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ============================================================================
-  // STEP 8: PROFILE SECTIONS (Contact, Professional, etc.)
-  // ============================================================================
-  Widget _buildProfileSections(Map<String, dynamic> profileData) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Profile Details',
-          style: AppTheme.getHeadlineStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+                  )
+                : null,
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Contact Information
-        _buildSectionCard(
-          title: 'Contact Information',
-          icon: Icons.contact_phone_rounded,
-          iconColor: AppTheme.primary,
-          children: [
-            _buildInfoRow(
-              icon: Icons.email_rounded,
-              label: 'Email',
-              value: profileData['email'] ?? 'N/A',
+          // Name
+          Text(
+            profileData['full_name'] ?? 'Candidate',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
-            _buildInfoRow(
-              icon: Icons.phone_rounded,
-              label: 'Phone',
-              value: profileData['phone'] ?? 'N/A',
-            ),
-            _buildInfoRow(
-              icon: Icons.location_city_rounded,
-              label: 'Location',
-              value:
-                  '${profileData['city_name'] ?? 'N/A'}, ${profileData['state_name'] ?? 'N/A'}',
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 4),
 
-        const SizedBox(height: 16),
+          // Email
+          Text(
+            profileData['email'] ?? 'N/A',
+            style: AppTheme.getSubtitleStyle(
+              context,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 12),
 
-        // Professional Information
-        _buildSectionCard(
-          title: 'Professional Information',
-          icon: Icons.work_rounded,
-          iconColor: AppTheme.accentPrimary,
-          children: [
-            _buildInfoRow(
-              icon: Icons.business_center_rounded,
-              label: 'Role',
-              value: _formatRole(profileData['role_name']),
-            ),
-            _buildInfoRow(
-              icon: Icons.work_history_rounded,
-              label: 'Experience',
-              value: '${profileData['experience_years'] ?? 0} years',
-            ),
-            if (profileData['current_ctc'] != null)
-              _buildInfoRow(
-                icon: Icons.currency_rupee_rounded,
-                label: 'Current CTC',
-                value: '₹${profileData['current_ctc']} LPA',
+          // Role Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppTheme.primary.withOpacity(0.3),
               ),
-            if (profileData['expected_ctc'] != null)
-              _buildInfoRow(
-                icon: Icons.trending_up_rounded,
-                label: 'Expected CTC',
-                value: '₹${profileData['expected_ctc']} LPA',
-              ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Skills Section
-        _buildSkillsSection(profileData),
-
-        const SizedBox(height: 16),
-
-        // Education Section
-        _buildSectionCard(
-          title: 'Education',
-          icon: Icons.school_rounded,
-          iconColor: AppTheme.accentSecondary,
-          onTap: () => _showEducationDetails(context, profileData),
-          children: [
-            Text(
-              profileData['education_name'] ?? 'Not provided',
-              style: AppTheme.getBodyStyle(context, fontSize: 15),
             ),
-            if (profileData['education_details'] != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  profileData['education_details'],
-                  style: AppTheme.getSubtitleStyle(
-                    context,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  // ============================================================================
-  // STEP 9: SECTION CARD WIDGET
-  // ============================================================================
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required Color iconColor,
-    required List<Widget> children,
-    VoidCallback? onTap,
-  }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [AppTheme.getCardShadow(context)],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: iconColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: iconColor, size: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: AppTheme.getCardTitleStyle(context),
-                      ),
-                    ),
-                    if (onTap != null)
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 16,
-                        color: Colors.grey.shade400,
-                      ),
-                  ],
+                Icon(
+                  Icons.work_outline_rounded,
+                  color: AppTheme.primary,
+                  size: 14,
                 ),
-                const SizedBox(height: 16),
-                ...children,
+                const SizedBox(width: 6),
+                Text(
+                  _formatRole(profileData['role_name']),
+                  style: AppTheme.getLabelStyle(
+                    context,
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   // ============================================================================
-  // STEP 10: INFO ROW WIDGET
+  // STATISTICS CARD
   // ============================================================================
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildStatisticsCard(Map<String, dynamic> profileData, bool isDark) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          Icon(icon, size: 20, color: AppTheme.primary.withOpacity(0.7)),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: AppTheme.getBodyStyle(
-                context,
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 126, 126, 125).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.analytics_outlined,
+                    color: const Color.fromARGB(255, 16, 16, 16),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Profile Statistics',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: AppTheme.getBodyStyle(
-                context,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.right,
-            ),
+
+          // Statistics Items
+          _buildProfileInfoItem(
+            icon: Icons.work_outline_rounded,
+            title: 'Experience',
+            value: '${profileData['experience_years'] ?? 0} years',
+            isDark: isDark,
+            iconColor: const Color.fromARGB(255, 35, 35, 36),
+          ),
+          _buildDivider(isDark),
+          _buildProfileInfoItem(
+            icon: Icons.cake_outlined,
+            title: 'Age',
+            value: '${profileData['age'] ?? 0} years',
+            isDark: isDark,
+            iconColor: const Color.fromARGB(255, 25, 25, 25),
+          ),
+          _buildDivider(isDark),
+          _buildProfileInfoItem(
+            icon: Icons.school_outlined,
+            title: 'Education',
+            value: _getHighestEducation(profileData['education_details']),
+            isDark: isDark,
+            iconColor: const Color.fromARGB(255, 18, 18, 18),
+            isLast: true,
           ),
         ],
       ),
@@ -961,63 +452,315 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   }
 
   // ============================================================================
-  // STEP 11: SKILLS SECTION
+  // QUICK ACTIONS CARD
   // ============================================================================
-  Widget _buildSkillsSection(Map<String, dynamic> profileData) {
-    final skillsList = profileData['skills_list'] as List<dynamic>? ?? [];
-
+  Widget _buildQuickActionsCard(Map<String, dynamic> profileData, bool isDark) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [AppTheme.getCardShadow(context)],
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Material(
-        color: Colors.transparent,
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.flash_on_outlined,
+                    color: AppTheme.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Quick Actions',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Actions
+          _buildActionItem(
+            icon: Icons.description_outlined,
+            title: 'View Resume',
+            value: 'Download or view your resume',
+            isDark: isDark,
+            onTap: () => _handleResumeClick(context, profileData),
+          ),
+          _buildDivider(isDark),
+          _buildActionItem(
+            icon: Icons.edit_outlined,
+            title: 'Edit Profile',
+            value: 'Update your information',
+            isDark: isDark,
+            onTap: () => _showEditProfileDialog(context, profileData),
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // CONTACT INFORMATION CARD
+  // ============================================================================
+  Widget _buildContactInfoCard(Map<String, dynamic> profileData, bool isDark) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.contact_phone_rounded,
+                    color: AppTheme.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Contact Information',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Contact Details
+          _buildProfileInfoItem(
+            icon: Icons.email_rounded,
+            title: 'Email',
+            value: profileData['email'] ?? 'N/A',
+            isDark: isDark,
+          ),
+          _buildDivider(isDark),
+          _buildProfileInfoItem(
+            icon: Icons.phone_rounded,
+            title: 'Phone',
+            value: profileData['phone'] ?? 'N/A',
+            isDark: isDark,
+          ),
+          _buildDivider(isDark),
+          _buildProfileInfoItem(
+            icon: Icons.location_city_rounded,
+            title: 'Location',
+            value:
+                '${profileData['city_name'] ?? 'N/A'}, ${profileData['state_name'] ?? 'N/A'}',
+            isDark: isDark,
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // PROFESSIONAL INFORMATION CARD
+  // ============================================================================
+  Widget _buildProfessionalInfoCard(
+      Map<String, dynamic> profileData, bool isDark) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color.fromARGB(255, 95, 94, 93).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.work_rounded,
+                    color: const Color.fromARGB(255, 9, 9, 9),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Professional Information',
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Professional Details
+          _buildProfileInfoItem(
+            icon: Icons.business_center_rounded,
+            title: 'Role',
+            value: _formatRole(profileData['role_name']),
+            isDark: isDark,
+          ),
+          _buildDivider(isDark),
+          _buildProfileInfoItem(
+            icon: Icons.work_history_rounded,
+            title: 'Experience',
+            value: '${profileData['experience_years'] ?? 0} years',
+            isDark: isDark,
+          ),
+          if (profileData['current_ctc'] != null) ...[
+            _buildDivider(isDark),
+            _buildProfileInfoItem(
+              icon: Icons.currency_rupee_rounded,
+              title: 'Current CTC',
+              value: '₹${profileData['current_ctc']} LPA',
+              isDark: isDark,
+            ),
+          ],
+          if (profileData['expected_ctc'] != null) ...[
+            _buildDivider(isDark),
+            _buildProfileInfoItem(
+              icon: Icons.trending_up_rounded,
+              title: 'Expected CTC',
+              value: '₹${profileData['expected_ctc']} LPA',
+              isDark: isDark,
+              isLast: true,
+            ),
+          ],
+          if (profileData['current_ctc'] == null &&
+              profileData['expected_ctc'] == null)
+            const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================================
+  // SKILLS CARD
+  // ============================================================================
+  Widget _buildSkillsCard(Map<String, dynamic> profileData, bool isDark) {
+    final skillsList = profileData['skills_list'] as List<dynamic>? ?? [];
+
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: InkWell(
-          onTap: () => _showSkillsDetails(context, profileData),
+          onTap: () => _showSkillsDetails(context, profileData, isDark),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppTheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.psychology_rounded,
                         color: AppTheme.primary,
-                        size: 24,
+                        size: 22,
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Skills & Expertise',
-                        style: AppTheme.getCardTitleStyle(context),
+                        style: AppTheme.getTitleStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 16,
-                      color: Colors.grey.shade400,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // Skills Display
                 skillsList.isEmpty
                     ? Text(
                         'No skills added yet',
                         style: AppTheme.getBodyStyle(
                           context,
-                          color: Colors.grey.shade600,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       )
                     : Wrap(
@@ -1069,9 +812,289 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   }
 
   // ============================================================================
+  // EDUCATION CARD
+  // ============================================================================
+  Widget _buildEducationCard(Map<String, dynamic> profileData, bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () => _showEducationDetails(context, profileData, isDark),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 24, 24, 24).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.school_rounded,
+                        color: const Color.fromARGB(255, 0, 0, 0),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Education',
+                        style: AppTheme.getTitleStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Education Info
+                Text(
+                  profileData['education_name'] ?? 'Not provided',
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                if (profileData['education_details'] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      profileData['education_details'],
+                      style: AppTheme.getSubtitleStyle(
+                        context,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================================
+  // LOGOUT CARD
+  // ============================================================================
+  Widget _buildLogoutCard(bool isDark) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () => _showLogoutDialog(context, isDark),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: _buildProfileInfoItem(
+              icon: Icons.logout_rounded,
+              title: 'Log Out',
+              value: 'Log out from your account',
+              isDark: isDark,
+              isLast: true,
+              titleColor: Colors.red,
+              iconColor: Colors.red,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================================
+  // REUSABLE WIDGETS
+  // ============================================================================
+  Widget _buildProfileInfoItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    required bool isDark,
+    bool isLast = false,
+    Color? titleColor,
+    Color? iconColor,
+  }) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 16,
+        bottom: isLast ? 20 : 16,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: (iconColor ?? AppTheme.primary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: iconColor ?? AppTheme.primary,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    color:
+                        titleColor ?? (isDark ? Colors.white : Colors.black87),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: AppTheme.getSubtitleStyle(
+                    context,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem({
+    required IconData icon,
+    required String title,
+    required String value,
+    required bool isDark,
+    required VoidCallback onTap,
+    bool isLast = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 16,
+          bottom: isLast ? 20 : 16,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: AppTheme.getSubtitleStyle(
+                      context,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: isDark ? Colors.grey[600] : Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: isDark ? Colors.grey[800] : Colors.grey[200],
+      ),
+    );
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
-
   String _formatRole(String? role) {
     if (role == null) return 'Not specified';
     final roleMap = {
@@ -1087,17 +1110,138 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
     return roleMap[role] ?? role;
   }
 
-  String _getEducationShort(String? education) {
-    if (education == null) return 'N/A';
-    if (education.toLowerCase().contains('post')) return 'PG';
-    if (education.toLowerCase().contains('grad')) return 'UG';
-    return education.substring(0, education.length > 3 ? 3 : education.length);
+  List<Map<String, dynamic>> _parseBackendList(String? data) {
+    if (data == null || data.isEmpty) return [];
+    
+    try {
+      String cleaned = data.trim();
+      if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+        cleaned = cleaned.substring(1, cleaned.length - 1);
+      }
+      
+      List<String> items = [];
+      int braceCount = 0;
+      int startIndex = 0;
+      
+      for (int i = 0; i < cleaned.length; i++) {
+        if (cleaned[i] == '{') {
+          braceCount++;
+          if (braceCount == 1) startIndex = i;
+        } else if (cleaned[i] == '}') {
+          braceCount--;
+          if (braceCount == 0) {
+            items.add(cleaned.substring(startIndex, i + 1));
+          }
+        }
+      }
+      
+      List<Map<String, dynamic>> result = [];
+      for (String item in items) {
+        Map<String, dynamic> map = {};
+        String content = item.substring(1, item.length - 1);
+        
+        List<String> pairs = [];
+        int depth = 0;
+        int lastSplit = 0;
+        
+        for (int i = 0; i < content.length; i++) {
+          if (content[i] == '{') depth++;
+          if (content[i] == '}') depth--;
+          
+          if (depth == 0 && i < content.length - 1) {
+            if (content[i] == ',' && content[i + 1] == ' ') {
+              pairs.add(content.substring(lastSplit, i));
+              lastSplit = i + 2;
+            }
+          }
+        }
+        pairs.add(content.substring(lastSplit));
+        
+        for (String pair in pairs) {
+          List<String> parts = pair.split(': ');
+          if (parts.length == 2) {
+            String key = parts[0].trim();
+            String value = parts[1].trim();
+            
+            if (value == 'null') {
+              map[key] = null;
+            } else if (value == 'true') {
+              map[key] = true;
+            } else if (value == 'false') {
+              map[key] = false;
+            } else {
+              map[key] = value;
+            }
+          }
+        }
+        
+        result.add(map);
+      }
+      
+      return result;
+    } catch (e) {
+      print('Error parsing: $e');
+      return [];
+    }
   }
 
-  // ============================================================================
-  // CLICK HANDLERS
-  // ============================================================================
+  String _getHighestEducation(String? educationDetails) {
+    if (educationDetails == null || educationDetails.isEmpty) {
+      return 'Not specified';
+    }
 
+    try {
+      // Parse new JSON format
+      List<Map<String, dynamic>> educationList = _parseBackendList(educationDetails);
+      
+      if (educationList.isEmpty) {
+        return 'Not specified';
+      }
+
+      // Find highest degree
+      String? highestDegree;
+      
+      for (var edu in educationList) {
+        String degree = edu['degree']?.toString() ?? '';
+        
+        // Priority 1: Post-graduation (MCA, MBA, Master's)
+        if (degree.toLowerCase().contains('master') || 
+            degree.toLowerCase().contains('post') ||
+            degree.toLowerCase().contains('mca') ||
+            degree.toLowerCase().contains('mba') ||
+            degree.toLowerCase().contains('m.tech')) {
+          return degree; // Found highest - return immediately
+        } 
+        // Priority 2: Graduation (BCA, B.Tech, Bachelor's)
+        else if (degree.toLowerCase().contains('bachelor') ||
+                 degree.toLowerCase().contains('graduation') ||
+                 degree.toLowerCase().contains('bca') ||
+                 degree.toLowerCase().contains('b.tech') ||
+                 degree.toLowerCase().contains('b.e')) {
+          if (highestDegree == null) {
+            highestDegree = degree;
+          }
+        } 
+        // Priority 3: Others (12th, 10th, etc.)
+        else {
+          if (highestDegree == null && degree.isNotEmpty) {
+            highestDegree = degree;
+          }
+        }
+      }
+      
+      return highestDegree ?? 'Not specified';
+      
+    } catch (e) {
+      print('Error parsing education: $e');
+      return 'Not specified';
+    }
+  }
+
+ 
+  // ============================================================================
+  // DIALOG & INTERACTION HANDLERS
+  // ============================================================================
   void _showEditProfileDialog(
     BuildContext context,
     Map<String, dynamic> profileData,
@@ -1144,12 +1288,14 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
       return;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: AppTheme.getCardColor(context),
+          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
@@ -1177,21 +1323,23 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
             _buildBottomSheetOption(
               icon: Icons.visibility_rounded,
               label: 'View Resume',
+              isDark: isDark,
               onTap: () {
                 Navigator.pop(context);
                 _launchURL(resumeUrl.toString());
               },
             ),
             const SizedBox(height: 12),
-            _buildBottomSheetOption(
-              icon: Icons.download_rounded,
-              label: 'Download Resume',
-              onTap: () {
-                Navigator.pop(context);
-                _launchURL(resumeUrl.toString());
-              },
-            ),
-            const SizedBox(height: 24),
+            // _buildBottomSheetOption(
+            //   icon: Icons.download_rounded,
+            //   label: 'Download Resume',
+            //   isDark: isDark,
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     _launchURL(resumeUrl.toString());
+            //   },
+            // ),
+            // const SizedBox(height: 24),
           ],
         ),
       ),
@@ -1201,6 +1349,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   Widget _buildBottomSheetOption({
     required IconData icon,
     required String label,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -1209,7 +1358,8 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(
+              color: isDark ? Colors.grey[700]! : Colors.grey.shade300),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -1237,129 +1387,29 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
     );
   }
 
-  void _showExperienceDetails(
-    BuildContext context,
-    Map<String, dynamic> profileData,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Experience Details',
-          style: AppTheme.getHeadlineStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildDetailRow('Role', _formatRole(profileData['role_name'])),
-            _buildDetailRow(
-              'Years',
-              '${profileData['experience_years'] ?? 0} years',
-            ),
-            if (profileData['current_ctc'] != null)
-              _buildDetailRow(
-                'Current CTC',
-                '₹${profileData['current_ctc']} LPA',
-              ),
-            if (profileData['expected_ctc'] != null)
-              _buildDetailRow(
-                'Expected CTC',
-                '₹${profileData['expected_ctc']} LPA',
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEducationDetails(
-    BuildContext context,
-    Map<String, dynamic> profileData,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Education',
-          style: AppTheme.getHeadlineStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              profileData['education_name'] ?? 'Not provided',
-              style: AppTheme.getBodyStyle(context, fontSize: 16),
-            ),
-            if (profileData['education_details'] != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Details:',
-                style: AppTheme.getBodyStyle(
-                  context,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                profileData['education_details'],
-                style: AppTheme.getBodyStyle(
-                  context,
-                  color: Colors.grey.shade700,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _showSkillsDetails(
     BuildContext context,
     Map<String, dynamic> profileData,
+    bool isDark,
   ) {
     final skillsList = profileData['skills_list'] as List<dynamic>? ?? [];
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         title: Text(
           'All Skills',
-          style: AppTheme.getHeadlineStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
         ),
         content: skillsList.isEmpty
-            ? const Text('No skills added yet')
+            ? Text(
+                'No skills added yet',
+                style: AppTheme.getBodyStyle(context),
+              )
             : Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -1390,27 +1440,137 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(
+              'Close',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
+  void _showEducationDetails(
+    BuildContext context,
+    Map<String, dynamic> profileData,
+    bool isDark,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          'Education',
+          style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              profileData['education_name'] ?? 'Not provided',
+              style: AppTheme.getBodyStyle(context, fontSize: 16),
+            ),
+            if (profileData['education_details'] != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Details:',
+                style: AppTheme.getBodyStyle(
+                  context,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                profileData['education_details'],
+                style: AppTheme.getBodyStyle(
+                  context,
+                  color: isDark ? Colors.grey[400] : Colors.grey.shade700,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
             child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              'Close',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Text(
+          'Logout',
+          style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Are you sure you want to logout?',
+          style: AppTheme.getBodyStyle(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () async {
+              await context.read<AuthController>().logout();
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/email',
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );

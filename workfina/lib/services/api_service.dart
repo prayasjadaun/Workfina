@@ -606,16 +606,26 @@ class ApiService {
         'city': city,
         'education': education,
         'skills': skills,
+        if (languages != null && languages.isNotEmpty) 'languages': languages,
+      if (streetAddress != null && streetAddress.isNotEmpty) 'street_address': streetAddress,
+      'willing_to_relocate': willingToRelocate,
+      if (workExperience != null && workExperience.isNotEmpty) 'work_experience': workExperience,
+      if (careerObjective != null && careerObjective.isNotEmpty) 'career_objective': careerObjective,
         if (resumeFile != null)
           'resume': await MultipartFile.fromFile(
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-        if (videoIntroFile != null) // âœ… ADD THIS
+        if (videoIntroFile != null) 
           'video_intro': await MultipartFile.fromFile(
             videoIntroFile.path,
             filename: videoIntroFile.path.split('/').last,
           ),
+          if (profileImage != null)  
+        'profile_image': await MultipartFile.fromFile(
+          profileImage.path,
+          filename: profileImage.path.split('/').last,
+        ),
       });
 
       if (kDebugMode) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
 import 'package:workfina/views/screens/candidates/candidate_dashboard.dart';
@@ -22,20 +23,20 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
     final user = context.watch<AuthController>().user;
 
     return Scaffold(
-    appBar: _currentIndex == 3
-        ? AppBar(
-            title: Text(
-              'Welcome, ${user?['email']?.split('@')[0] ?? 'Candidate'}',
-            ),
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => _showLogoutDialog(context),
+      appBar: _currentIndex == 3
+          ? AppBar(
+              title: Text(
+                'Welcome, ${user?['email']?.split('@')[0] ?? 'Candidate'}',
               ),
-            ],
-          )
-        : null, 
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () => _showLogoutDialog(context),
+                ),
+              ],
+            )
+          : null,
       body: IndexedStack(
         index: _currentIndex,
         children: const [
@@ -45,27 +46,51 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
           CandidateProfileScreen(),
         ],
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         selectedItemColor: AppTheme.primary,
         unselectedItemColor: Colors.grey,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+            icon: SvgPicture.asset(
+              'assets/svg/home.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+            ),
+           
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.work_outline),
+            icon: SvgPicture.asset(
+              'assets/svg/work.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+            ),
+            
             label: 'Jobs',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.description_outlined),
+            icon: SvgPicture.asset(
+              'assets/svg/docs.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+            ),
+            
             label: 'Applications',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
+            icon: SvgPicture.asset(
+              'assets/svg/profile.svg',
+              width: 24,
+              height: 24,
+              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+            ),
             label: 'Profile',
           ),
         ],

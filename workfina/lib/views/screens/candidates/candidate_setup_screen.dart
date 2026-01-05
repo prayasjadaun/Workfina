@@ -16,8 +16,7 @@ class CandidateSetupScreen extends StatefulWidget {
       _CandidateSetupScreenSwipeableState();
 }
 
-class _CandidateSetupScreenSwipeableState
-    extends State<CandidateSetupScreen> {
+class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -33,15 +32,18 @@ class _CandidateSetupScreenSwipeableState
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _educationController = TextEditingController();
   final TextEditingController _skillsController = TextEditingController();
-  
+
   // New controllers for additional fields
   final TextEditingController _languagesController = TextEditingController();
-  final TextEditingController _streetAddressController = TextEditingController();
-  final TextEditingController _careerObjectiveController = TextEditingController();
-  final TextEditingController _companyNameController = TextEditingController();
-  final TextEditingController _jobRoleController = TextEditingController();
-  final TextEditingController _workDurationController = TextEditingController();
-  
+  final TextEditingController _streetAddressController =
+      TextEditingController();
+  final TextEditingController _careerObjectiveController =
+      TextEditingController();
+
+  // Work Experience List
+  List<Map<String, dynamic>> _workExperiences = [];
+  List<Map<String, dynamic>> _educationList = [];
+
   bool _willingToRelocate = false;
 
   String _selectedRole = 'IT';
@@ -94,33 +96,30 @@ class _CandidateSetupScreenSwipeableState
   }
 
   bool _validateCurrentPage() {
-  switch (_currentPage) {
-    case 0:
-      // Personal Information
-      return _fullNameController.text.isNotEmpty &&
-          _phoneController.text.length == 10 &&
-          _ageController.text.isNotEmpty &&
-          _experienceController.text.isNotEmpty;
-    case 1:
-      // Professional Information - Check graduation (required) and skills
-      final controller = Provider.of<CandidateController>(context, listen: false);
-      return controller.graduationController.text.isNotEmpty &&
-          controller.graduationUniversityController.text.isNotEmpty &&
-          controller.graduationYearController.text.isNotEmpty &&
-          _skillsController.text.isNotEmpty;
-    case 2:
-      // Compensation & Location
-      return _stateController.text.isNotEmpty &&
-          _cityController.text.isNotEmpty;
-    case 3:
-      // Documents (optional)
-      return true;
-    default:
-      return false;
+    switch (_currentPage) {
+      case 0:
+        // Personal Information
+        return _fullNameController.text.isNotEmpty &&
+            _phoneController.text.length == 10 &&
+            _ageController.text.isNotEmpty &&
+            _experienceController.text.isNotEmpty &&
+            _workExperiences.isNotEmpty;
+
+      case 1:
+        // Professional Information - Check graduation (required) and skills
+          return _educationList.isNotEmpty && _skillsController.text.isNotEmpty;
+
+      case 2:
+        // Compensation & Location
+        return _stateController.text.isNotEmpty &&
+            _cityController.text.isNotEmpty;
+      case 3:
+        // Documents (optional)
+        return true;
+      default:
+        return false;
+    }
   }
-}
-
-
 
   void _handleContinue() {
     if (_validateCurrentPage()) {
@@ -210,12 +209,12 @@ class _CandidateSetupScreenSwipeableState
     }
   }
 
-  // Ã¢Å“â€¦ Image Picker Methods
+  // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Image Picker Methods
   Future<void> _pickImageFromCamera() async {
     try {
       // Request camera permission
       final status = await Permission.camera.request();
-      
+
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -228,7 +227,7 @@ class _CandidateSetupScreenSwipeableState
         }
         return;
       }
-      
+
       if (status.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -286,9 +285,9 @@ class _CandidateSetupScreenSwipeableState
   Future<void> _pickImageFromGallery() async {
     try {
       PermissionStatus status;
-      
+
       // Check Android version for appropriate permission
-      if (await Permission.photos.isPermanentlyDenied || 
+      if (await Permission.photos.isPermanentlyDenied ||
           await Permission.storage.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -298,15 +297,15 @@ class _CandidateSetupScreenSwipeableState
         }
         return;
       }
-      
+
       // Request photos permission (Android 13+) or storage (Android 12 and below)
       status = await Permission.photos.request();
-      
+
       // Fallback to storage permission for older Android versions
       if (!status.isGranted) {
         status = await Permission.storage.request();
       }
-      
+
       if (status.isDenied) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -319,7 +318,7 @@ class _CandidateSetupScreenSwipeableState
         }
         return;
       }
-      
+
       if (status.isPermanentlyDenied) {
         if (mounted) {
           _showPermissionDialog(
@@ -386,9 +385,7 @@ class _CandidateSetupScreenSwipeableState
               Navigator.pop(context);
               openAppSettings();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primary),
             child: const Text('Open Settings'),
           ),
         ],
@@ -409,17 +406,11 @@ class _CandidateSetupScreenSwipeableState
           children: [
             const Text(
               'Choose Profile Picture',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             ListTile(
-              leading: const Icon(
-                Icons.camera_alt,
-                color: AppTheme.primary,
-              ),
+              leading: const Icon(Icons.camera_alt, color: AppTheme.primary),
               title: const Text('Take Photo'),
               onTap: () {
                 Navigator.pop(context);
@@ -427,10 +418,7 @@ class _CandidateSetupScreenSwipeableState
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.photo_library,
-                color: AppTheme.primary,
-              ),
+              leading: const Icon(Icons.photo_library, color: AppTheme.primary),
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
@@ -439,10 +427,7 @@ class _CandidateSetupScreenSwipeableState
             ),
             if (_profileImage != null)
               ListTile(
-                leading: const Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                ),
+                leading: const Icon(Icons.delete, color: Colors.red),
                 title: const Text('Remove Photo'),
                 onTap: () {
                   Navigator.pop(context);
@@ -460,6 +445,40 @@ class _CandidateSetupScreenSwipeableState
   Future<void> _submitProfile() async {
     final controller = context.read<CandidateController>();
 
+    // Convert work experiences to JSON string
+    String workExperienceJson = '';
+    if (_workExperiences.isNotEmpty) {
+      workExperienceJson = _workExperiences
+          .map(
+            (exp) => {
+              'company_name': exp['company_name'],
+              'job_role': exp['job_role'],
+              'start_month': exp['start_month'],
+              'start_year': exp['start_year'],
+              'end_month': exp['end_month'],
+              'end_year': exp['end_year'],
+              'is_current': exp['is_current'],
+            },
+          )
+          .toList()
+          .toString();
+    }
+
+    String educationJson = '';
+if (_educationList.isNotEmpty) {
+  educationJson = _educationList.map((edu) => {
+    'school': edu['school'],
+    'degree': edu['degree'],
+    'field': edu['field'],
+    'start_month': edu['start_month'],
+    'start_year': edu['start_year'],
+    'end_month': edu['end_month'],
+    'end_year': edu['end_year'],
+    'grade': edu['grade'],
+  }).toList().toString();
+}
+
+
     final success = await controller.registerCandidate(
       fullName: _fullNameController.text,
       phone: _phoneController.text,
@@ -475,11 +494,17 @@ class _CandidateSetupScreenSwipeableState
       religion: _selectedReligion,
       state: _stateController.text,
       city: _cityController.text,
-      education: _educationController.text,
+      // education: _educationController.text,
       skills: _skillsController.text,
       resumeFile: _resumeFile,
       videoIntroFile: _videoIntroFile,
-      profileImage: _profileImage,  // Ã¢Å“â€¦ Added
+      profileImage: _profileImage,
+      languages: _languagesController.text,
+      education: educationJson, 
+      streetAddress: _streetAddressController.text,
+      willingToRelocate: _willingToRelocate,
+      workExperience: workExperienceJson,
+      careerObjective: _careerObjectiveController.text,
     );
 
     if (success) {
@@ -490,10 +515,7 @@ class _CandidateSetupScreenSwipeableState
       );
     } else if (controller.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(controller.error!),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(controller.error!), backgroundColor: Colors.red),
       );
     }
   }
@@ -523,7 +545,8 @@ class _CandidateSetupScreenSwipeableState
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Disable manual swipe
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable manual swipe
               onPageChanged: (page) {
                 setState(() {
                   _currentPage = page;
@@ -637,8 +660,8 @@ class _CandidateSetupScreenSwipeableState
                     onPressed: controller.isLoading
                         ? null
                         : _currentPage < 3
-                            ? _handleContinue
-                            : _submitProfile,
+                        ? _handleContinue
+                        : _submitProfile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -687,8 +710,8 @@ class _CandidateSetupScreenSwipeableState
             subtitle: 'Tell us about yourself',
           ),
           const SizedBox(height: 32),
-          
-          // Ã¢Å“â€¦ Profile Picture Section
+
+          // ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Profile Picture Section
           Center(
             child: Column(
               children: [
@@ -702,10 +725,7 @@ class _CandidateSetupScreenSwipeableState
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: Colors.grey[200],
-                          border: Border.all(
-                            color: AppTheme.primary,
-                            width: 3,
-                          ),
+                          border: Border.all(color: AppTheme.primary, width: 3),
                         ),
                         child: _profileImage != null
                             ? ClipOval(
@@ -728,10 +748,7 @@ class _CandidateSetupScreenSwipeableState
                           decoration: BoxDecoration(
                             color: AppTheme.primary,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white,
-                              width: 2,
-                            ),
+                            border: Border.all(color: Colors.white, width: 2),
                           ),
                           child: const Icon(
                             Icons.camera_alt,
@@ -748,16 +765,13 @@ class _CandidateSetupScreenSwipeableState
                   _profileImage != null
                       ? 'Tap to change photo'
                       : 'Tap to add photo (Optional)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 32),
-          
+
           _buildTextField(
             controller: _fullNameController,
             label: 'Full Name',
@@ -798,9 +812,9 @@ class _CandidateSetupScreenSwipeableState
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Languages
           _buildTextField(
             controller: _languagesController,
@@ -809,9 +823,9 @@ class _CandidateSetupScreenSwipeableState
             hintText: 'e.g., Hindi, English, Punjabi (comma separated)',
             maxLines: 2,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Street Address
           _buildTextField(
             controller: _streetAddressController,
@@ -820,9 +834,9 @@ class _CandidateSetupScreenSwipeableState
             hintText: 'House no., Street, Area',
             maxLines: 2,
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Willing to Relocate
           Container(
             padding: const EdgeInsets.all(16),
@@ -856,20 +870,29 @@ class _CandidateSetupScreenSwipeableState
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Career Objective
           _buildTextField(
             controller: _careerObjectiveController,
             label: 'Career Objective',
             icon: Icons.flag,
-            hintText: 'Describe your career goals and what you are looking for...',
+            hintText:
+                'Describe your career goals and what you are looking for...',
             maxLines: 4,
           ),
-          
+
           const SizedBox(height: 20),
-          
+          _buildDropdownField(
+            value: _selectedRole,
+            label: 'Role/Department',
+            icon: Icons.business_center,
+            items: _roles,
+            onChanged: (value) => setState(() => _selectedRole = value!),
+          ),
+          const SizedBox(height: 20),
+
           // Work Experience Section Header
           Row(
             children: [
@@ -883,45 +906,60 @@ class _CandidateSetupScreenSwipeableState
                   color: Color(0xFF1A1A1A),
                 ),
               ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(
+                  Icons.add_circle,
+                  color: AppTheme.primary,
+                  size: 28,
+                ),
+                onPressed: _showAddExperienceDialog,
+                tooltip: 'Add Experience',
+              ),
             ],
           ),
           const SizedBox(height: 4),
           Text(
             'Add your previous work experience (if any)',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
           ),
           const SizedBox(height: 16),
-          
-          // Company Name
-          _buildTextField(
-            controller: _companyNameController,
-            label: 'Company Name',
-            icon: Icons.business,
-            hintText: 'e.g., ABC Technologies',
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Job Role
-          _buildTextField(
-            controller: _jobRoleController,
-            label: 'Job Role/Position',
-            icon: Icons.badge,
-            hintText: 'e.g., Software Developer',
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Work Duration
-          _buildTextField(
-            controller: _workDurationController,
-            label: 'Duration',
-            icon: Icons.calendar_month,
-            hintText: 'e.g., Jan 2020 - Dec 2022',
-          ),
+
+          // Display Work Experiences
+          // if (_workExperiences.isEmpty)
+          //   Container(
+          //     padding: const EdgeInsets.all(24),
+          //     decoration: BoxDecoration(
+          //       color: Colors.grey[50],
+          //       borderRadius: BorderRadius.circular(12),
+          //       border: Border.all(color: Colors.grey[300]!),
+          //     ),
+          //     child: Column(
+          //       children: [
+          //         Icon(Icons.work_outline, size: 48, color: Colors.grey[400]),
+          //         const SizedBox(height: 12),
+          //         Text(
+          //           'No work experience added yet',
+          //           style: TextStyle(
+          //             fontSize: 14,
+          //             color: Colors.grey[600],
+          //           ),
+          //         ),
+          //         const SizedBox(height: 8),
+          //         TextButton.icon(
+          //           onPressed: _showAddExperienceDialog,
+          //           icon: const Icon(Icons.add),
+          //           label: const Text('Add Experience'),
+          //         ),
+          //       ],
+          //     ),
+          //   )
+          // else
+          ...(_workExperiences.asMap().entries.map((entry) {
+            int index = entry.key;
+            Map<String, dynamic> exp = entry.value;
+            return _buildExperienceCard(exp, index);
+          }).toList()),
         ],
       ),
     );
@@ -929,320 +967,436 @@ class _CandidateSetupScreenSwipeableState
 
   // PAGE 2: Professional Information
   Widget _buildProfessionalInfoPage() {
-      return Consumer<CandidateController>(
-    builder: (context, controller, child) {
+    return Consumer<CandidateController>(
+      builder: (context, controller, child) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // _buildPageHeader(
+              //   icon: Icons.work_outline,
+              //   title: 'Professional Information',
+              //   subtitle: 'Your career details',
+              // ),
+              // const SizedBox(height: 32),
+              // _buildDropdownField(
+              //   value: _selectedRole,
+              //   label: 'Role/Department',
+              //   icon: Icons.business_center,
+              //   items: _roles,
+              //   onChanged: (value) => setState(() => _selectedRole = value!),
+              // ),
+              // const SizedBox(height: 20),
+              // Education Section Header
+              const SizedBox(height: 24),
+              // Education Section Header
+              const SizedBox(height: 24),
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
+              Row(
+                children: [
+                  const Icon(Icons.school, color: AppTheme.primary, size: 20),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Education',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '*',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.add_circle,
+                      color: AppTheme.primary,
+                      size: 28,
+                    ),
+                    onPressed: _showAddEducationDialog,
+                    tooltip: 'Add Education',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Add at least one educational qualification (Required)',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+
+              // Display Education Cards
+              ...(_educationList.asMap().entries.map((entry) {
+                int index = entry.key;
+                Map<String, dynamic> edu = entry.value;
+                return _buildEducationDisplayCard(edu, index);
+              }).toList()),
+
+              const SizedBox(height: 32),
+
+              // Skills Header
+              Row(
+                children: [
+                  const Icon(
+                    Icons.psychology,
+                    color: AppTheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Skills',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _skillsController,
+                label: 'Skills',
+                icon: Icons.psychology,
+                isRequired: true,
+                maxLines: 4,
+                hintText: 'e.g., Python, Django, React (comma separated)',
+              ),
+
+              
+            ],
+          ),
+        );
+      },
+    );
+  }
+  // ========== Education Methods ==========
+
+  void _showAddEducationDialog() {
+    final schoolController = TextEditingController();
+    final degreeController = TextEditingController();
+    final fieldController = TextEditingController();
+    final gradeController = TextEditingController();
+    String startMonth = 'January';
+    String startYear = DateTime.now().year.toString();
+    String endMonth = 'January';
+    String endYear = DateTime.now().year.toString();
+
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    final years = List.generate(
+      50,
+      (index) => (DateTime.now().year - index).toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Education'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: schoolController,
+                  decoration: const InputDecoration(
+                    labelText: 'School/University *',
+                    hintText: 'e.g., K.R. Mangalam University',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: degreeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Degree *',
+                    hintText: 'e.g., Bachelor\'s, Master\'s',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: fieldController,
+                  decoration: const InputDecoration(
+                    labelText: 'Field of Study',
+                    hintText: 'e.g., Computer Science',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Start Date *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'Month',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => startMonth = value!);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startYear,
+                        decoration: const InputDecoration(
+                          labelText: 'Year',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => startYear = value!);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'End Date (or Expected) *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: endMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'Month',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => endMonth = value!);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: endYear,
+                        decoration: const InputDecoration(
+                          labelText: 'Year',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => endYear = value!);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: gradeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Grade/Percentage',
+                    hintText: 'e.g., 8.5 CGPA or 85%',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (schoolController.text.isEmpty ||
+                    degreeController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill all required fields'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  _educationList.add({
+                    'school': schoolController.text,
+                    'degree': degreeController.text,
+                    'field': fieldController.text,
+                    'start_month': startMonth,
+                    'start_year': startYear,
+                    'end_month': endMonth,
+                    'end_year': endYear,
+                    'grade': gradeController.text,
+                  });
+                });
+
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+              ),
+              child: const Text('Add', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEducationDisplayCard(Map<String, dynamic> education, int index) {
+    String duration =
+        '${education['start_month']} ${education['start_year']} - ${education['end_month']} ${education['end_year']}';
+    String degreeText = education['degree'];
+    if (education['field'].isNotEmpty) {
+      degreeText += ' - ${education['field']}';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPageHeader(
-            icon: Icons.work_outline,
-            title: 'Professional Information',
-            subtitle: 'Your career details',
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.school, color: AppTheme.primary, size: 24),
           ),
-          const SizedBox(height: 32),
-          _buildDropdownField(
-            value: _selectedRole,
-            label: 'Role/Department',
-            icon: Icons.business_center,
-            items: _roles,
-            onChanged: (value) => setState(() => _selectedRole = value!),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  education['school'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  degreeText,
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      duration,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                if (education['grade'].isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.grade, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Grade: ${education['grade']}',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          // Education Section Header
-const SizedBox(height: 24),
-
-Row(
-  children: [
-    const Icon(Icons.school, color: AppTheme.primary, size: 20),
-    const SizedBox(width: 8),
-    const Text(
-      'Education Details',
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A1A),
-      ),
-    ),
-  ],
-),
-const SizedBox(height: 4),
-Text(
-  'Add your educational qualifications',
-  style: TextStyle(
-    fontSize: 13,
-    color: Colors.grey[600],
-  ),
-),
-
-const SizedBox(height: 16),
-
-// 10th Standard
-_buildEducationCard(
-  controller: controller,
-  title: '10th Standard',
-  subtitle: controller.showClass10 ? 'Click to collapse' : 'Click to add details',
-  icon: Icons.school_outlined,
-  isExpanded: controller.showClass10,
-  hasData: controller.hasClass10Data(),
-  onTap: () => controller.toggleClass10(),
-  children: [
-    _buildTextField(
-      controller: controller.class10Controller,
-      label: 'School Name',
-      icon: Icons.location_city,
-      hintText: 'e.g., ABC High School',
-    ),
-    const SizedBox(height: 16),
-    Row(
-      children: [
-        Expanded(
-          child: _buildTextField(
-            controller: controller.class10BoardController,
-            label: 'Board',
-            icon: Icons.corporate_fare,
-            hintText: 'CBSE/ICSE/State',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTextField(
-            controller: controller.class10YearController,
-            label: 'Year',
-            icon: Icons.calendar_today,
-            keyboardType: TextInputType.number,
-            hintText: '2020',
-          ),
-        ),
-      ],
-    ),
-    const SizedBox(height: 16),
-    _buildTextField(
-      controller: controller.class10PercentageController,
-      label: 'Percentage/CGPA',
-      icon: Icons.grade,
-      keyboardType: TextInputType.number,
-      hintText: 'e.g., 85.5',
-    ),
-  ],
-),
-
-const SizedBox(height: 12),
-
-// 12th Standard
-_buildEducationCard(
-  controller: controller,
-  title: '12th Standard / Diploma',
-  subtitle: controller.showClass12 ? 'Click to collapse' : 'Click to add details',
-  icon: Icons.school_outlined,
-  isExpanded: controller.showClass12,
-  hasData: controller.hasClass12Data(),
-  onTap: () => controller.toggleClass12(),
-  children: [
-    _buildTextField(
-      controller: controller.class12Controller,
-      label: 'School/College Name',
-      icon: Icons.location_city,
-      hintText: 'e.g., XYZ Senior Secondary School',
-    ),
-    const SizedBox(height: 16),
-    Row(
-      children: [
-        Expanded(
-          child: _buildTextField(
-            controller: controller.class12BoardController,
-            label: 'Board/Stream',
-            icon: Icons.corporate_fare,
-            hintText: 'Science/Commerce/Arts',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTextField(
-            controller: controller.class12YearController,
-            label: 'Year',
-            icon: Icons.calendar_today,
-            keyboardType: TextInputType.number,
-            hintText: '2022',
-          ),
-        ),
-      ],
-    ),
-    const SizedBox(height: 16),
-    _buildTextField(
-      controller: controller.class12PercentageController,
-      label: 'Percentage/CGPA',
-      icon: Icons.grade,
-      keyboardType: TextInputType.number,
-      hintText: 'e.g., 90.2',
-    ),
-  ],
-),
-
-const SizedBox(height: 12),
-
-// Graduation (Required)
-_buildEducationCard(
-  controller: controller,
-  title: 'Graduation (Bachelor\'s Degree)',
-  subtitle: controller.showGraduation ? 'Click to collapse' : 'Click to add details',
-  icon: Icons.school,
-  isExpanded: controller.showGraduation,
-  hasData: controller.hasGraduationData(),
-  isRequired: true,
-  onTap: () => controller.toggleGraduation(),
-  children: [
-    _buildTextField(
-      controller: controller.graduationController,
-      label: 'Degree',
-      icon: Icons.workspace_premium,
-      hintText: 'e.g., B.Tech Computer Science',
-      isRequired: true,
-    ),
-    const SizedBox(height: 16),
-    _buildTextField(
-      controller: controller.graduationUniversityController,
-      label: 'University/College',
-      icon: Icons.account_balance,
-      hintText: 'e.g., Delhi University',
-      isRequired: true,
-    ),
-    const SizedBox(height: 16),
-    Row(
-      children: [
-        Expanded(
-          child: _buildTextField(
-            controller: controller.graduationYearController,
-            label: 'Year of Passing',
-            icon: Icons.calendar_today,
-            keyboardType: TextInputType.number,
-            hintText: '2024',
-            isRequired: true,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTextField(
-            controller: controller.graduationPercentageController,
-            label: 'Percentage/CGPA',
-            icon: Icons.grade,
-            keyboardType: TextInputType.number,
-            hintText: 'e.g., 8.5',
-          ),
-        ),
-      ],
-    ),
-  ],
-),
-
-const SizedBox(height: 12),
-
-// Post Graduation
-_buildEducationCard(
-  controller: controller,
-  title: 'Post Graduation (Master\'s Degree)',
-  subtitle: controller.showPostGraduation ? 'Click to collapse' : 'Click to add details (Optional)',
-  icon: Icons.school,
-  isExpanded: controller.showPostGraduation,
-  hasData: controller.hasPostGraduationData(),
-  onTap: () => controller.togglePostGraduation(),
-  children: [
-    _buildTextField(
-      controller: controller.postGraduationController,
-      label: 'Degree',
-      icon: Icons.workspace_premium,
-      hintText: 'e.g., M.Tech, MBA, MCA',
-    ),
-    const SizedBox(height: 16),
-    _buildTextField(
-      controller: controller.postGraduationUniversityController,
-      label: 'University/College',
-      icon: Icons.account_balance,
-      hintText: 'e.g., IIT Delhi',
-    ),
-    const SizedBox(height: 16),
-    Row(
-      children: [
-        Expanded(
-          child: _buildTextField(
-            controller: controller.postGraduationYearController,
-            label: 'Year of Passing',
-            icon: Icons.calendar_today,
-            keyboardType: TextInputType.number,
-            hintText: '2026 or Pursuing',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildTextField(
-            controller: controller.postGraduationPercentageController,
-            label: 'Percentage/CGPA',
-            icon: Icons.grade,
-            keyboardType: TextInputType.number,
-            hintText: 'e.g., 9.0',
-          ),
-        ),
-      ],
-    ),
-  ],
-),
-
-const SizedBox(height: 12),
-
-// Other Certifications
-_buildEducationCard(
-  controller: controller,
-  title: 'Other Certifications / Courses',
-  subtitle: controller.showOtherEducation ? 'Click to collapse' : 'Click to add additional qualifications',
-  icon: Icons.card_membership,
-  isExpanded: controller.showOtherEducation,
-  hasData: controller.hasOtherEducationData(),
-  onTap: () => controller.toggleOtherEducation(),
-  children: [
-    _buildTextField(
-      controller: controller.otherEducationController,
-      label: 'Additional Qualifications',
-      icon: Icons.emoji_events,
-      maxLines: 4,
-      hintText: 'e.g., AWS Certified, Google Analytics, Python Bootcamp',
-    ),
-  ],
-),
-
-const SizedBox(height: 32),
-
-// Skills Header
-Row(
-  children: [
-    const Icon(Icons.psychology, color: AppTheme.primary, size: 20),
-    const SizedBox(width: 8),
-    const Text(
-      'Skills',
-      style: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A1A),
-      ),
-    ),
-  ],
-),
-const SizedBox(height: 16),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _skillsController,
-            label: 'Skills',
-            icon: Icons.psychology,
-            isRequired: true,
-            maxLines: 4,
-            hintText: 'e.g., Python, Django, React (comma separated)',
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _educationList.removeAt(index);
+              });
+            },
+            tooltip: 'Remove',
           ),
         ],
       ),
     );
-    },
-      );
   }
 
   // PAGE 3: Compensation & Location
@@ -1357,11 +1511,7 @@ const SizedBox(height: 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.blue.shade700,
-                  size: 24,
-                ),
+                Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -1380,7 +1530,7 @@ const SizedBox(height: 16),
       ),
     );
   }
-  
+
   Widget _buildPageHeader({
     required IconData icon,
     required String title,
@@ -1390,16 +1540,16 @@ const SizedBox(height: 16),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            icon,
-            color: AppTheme.primary,
-            size: 32,
-          ),
+          // padding: const EdgeInsets.all(16),
+          // decoration: BoxDecoration(
+          //   color: AppTheme.primary.withOpacity(0.1),
+          //   borderRadius: BorderRadius.circular(16),
+          // ),
+          // child: Icon(
+          //   icon,
+          //   color: AppTheme.primary,
+          //   size: 32,
+          // ),
         ),
         const SizedBox(height: 20),
         Text(
@@ -1411,13 +1561,7 @@ const SizedBox(height: 16),
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 15,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(subtitle, style: TextStyle(fontSize: 15, color: Colors.grey[600])),
       ],
     );
   }
@@ -1571,10 +1715,7 @@ const SizedBox(height: 16),
                   const SizedBox(height: 4),
                   Text(
                     fileName ?? description,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1607,128 +1748,448 @@ const SizedBox(height: 16),
     _languagesController.dispose();
     _streetAddressController.dispose();
     _careerObjectiveController.dispose();
-    _companyNameController.dispose();
-    _jobRoleController.dispose();
-    _workDurationController.dispose();
     super.dispose();
   }
 
-  Widget _buildEducationCard({
-  required CandidateController controller,
-  required String title,
-  required String subtitle,
-  required IconData icon,
-  required bool isExpanded,
-  required bool hasData,
-  required VoidCallback onTap,
-  required List<Widget> children,
-  bool isRequired = false,
-}) {
-  return Container(
-    decoration: BoxDecoration(
-      border: Border.all(
-        color: hasData
-            ? AppTheme.primary
-            : isExpanded
-                ? AppTheme.primary.withOpacity(0.5)
-                : Colors.grey[300]!,
-        width: hasData ? 2 : 1,
-      ),
-      borderRadius: BorderRadius.circular(12),
-      color: Colors.white,
-    ),
-    child: Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+  // ========== Work Experience Methods ==========
+
+  void _showAddExperienceDialog() {
+    final companyController = TextEditingController();
+    final roleController = TextEditingController();
+    String startMonth = 'January';
+    String startYear = DateTime.now().year.toString();
+    String endMonth = 'January';
+    String endYear = DateTime.now().year.toString();
+    bool isCurrentlyWorking = false;
+
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    final years = List.generate(
+      50,
+      (index) => (DateTime.now().year - index).toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Work Experience'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: hasData
-                        ? AppTheme.primary.withOpacity(0.1)
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    hasData ? Icons.check_circle : icon,
-                    color: hasData ? AppTheme.primary : Colors.grey[600],
-                    size: 20,
+                TextField(
+                  controller: companyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Company Name *',
+                    hintText: 'e.g., Pro HousyPoint Tech Solutions',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              title,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: hasData
-                                    ? AppTheme.primary
-                                    : const Color(0xFF1A1A1A),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: roleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Job Role/Position *',
+                    hintText: 'e.g., Mobile App Intern',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Start Date *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'Month',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
                               ),
-                            ),
-                          ),
-                          if (isRequired)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red.shade50,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'Required',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red.shade700,
-                                ),
-                              ),
-                            ),
-                        ],
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => startMonth = value!);
+                        },
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startYear,
+                        decoration: const InputDecoration(
+                          labelText: 'Year',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => startYear = value!);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  value: isCurrentlyWorking,
+                  onChanged: (value) {
+                    setDialogState(() => isCurrentlyWorking = value ?? false);
+                  },
+                  title: const Text('I am currently working in this role'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (!isCurrentlyWorking) ...[
+                  const SizedBox(height: 8),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'End Date *',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: endMonth,
+                          decoration: const InputDecoration(
+                            labelText: 'Month',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: months
+                              .map(
+                                (month) => DropdownMenuItem(
+                                  value: month,
+                                  child: Text(month),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setDialogState(() => endMonth = value!);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: endYear,
+                          decoration: const InputDecoration(
+                            labelText: 'Year',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: years
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text(year),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setDialogState(() => endYear = value!);
+                          },
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: Colors.grey[600],
-                ),
+                ],
               ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (companyController.text.isEmpty ||
+                    roleController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill all required fields'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  _workExperiences.add({
+                    'company_name': companyController.text,
+                    'job_role': roleController.text,
+                    'start_month': startMonth,
+                    'start_year': startYear,
+                    'end_month': isCurrentlyWorking ? null : endMonth,
+                    'end_year': isCurrentlyWorking ? null : endYear,
+                    'is_current': isCurrentlyWorking,
+                  });
+                });
+
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+              ),
+              child: const Text('Add', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        if (isExpanded)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              children: children,
+      ),
+    );
+  }
+
+  Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
+    String duration =
+        '${experience['start_month']} ${experience['start_year']} - ';
+    if (experience['is_current']) {
+      duration += 'Present';
+    } else {
+      duration += '${experience['end_month']} ${experience['end_year']}';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.business,
+              color: AppTheme.primary,
+              size: 24,
             ),
           ),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  experience['job_role'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  experience['company_name'],
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      duration,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                if (experience['is_current'])
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Currently Working',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            onPressed: () {
+              setState(() {
+                _workExperiences.removeAt(index);
+              });
+            },
+            tooltip: 'Remove',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEducationCard({
+    required CandidateController controller,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isExpanded,
+    required bool hasData,
+    required VoidCallback onTap,
+    required List<Widget> children,
+    bool isRequired = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: hasData
+              ? AppTheme.primary
+              : isExpanded
+              ? AppTheme.primary.withOpacity(0.5)
+              : Colors.grey[300]!,
+          width: hasData ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onTap,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: hasData
+                          ? AppTheme.primary.withOpacity(0.1)
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      hasData ? Icons.check_circle : icon,
+                      color: hasData ? AppTheme.primary : Colors.grey[600],
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: hasData
+                                      ? AppTheme.primary
+                                      : const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                            ),
+                            if (isRequired)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Required',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.red.shade700,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(children: children),
+            ),
+        ],
+      ),
+    );
+  }
 }
