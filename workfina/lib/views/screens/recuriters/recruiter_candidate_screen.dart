@@ -378,8 +378,8 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       builder: (context) => Container(
         margin: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: 16,
-          right: 16,
+          // left: 16,
+          // right: 16,
           top: 60,
         ),
         decoration: BoxDecoration(

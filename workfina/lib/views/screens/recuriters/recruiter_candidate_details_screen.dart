@@ -378,7 +378,11 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     children: [
                       _buildProfileHeader(context),
                       const SizedBox(height: 24),
+                      // _buildCareerObjectiveSection(context),
+                      // const SizedBox(height: 24),
                       _buildVideoIntroSection(context),
+                      const SizedBox(height: 24),
+                      _buildWorkExperienceSection(context),
                       const SizedBox(height: 24),
                       if (widget.candidate['skills'] != null) ...[
                         _buildSkillsSection(context),
@@ -386,7 +390,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       ],
                       _buildPersonalInfoSection(context),
                       const SizedBox(height: 24),
-
                       _buildEducationSection(context),
                       const SizedBox(height: 24),
                       _buildFollowupsSection(context),
@@ -430,7 +433,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary.withOpacity(0.1),
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppTheme.primary.withOpacity(0.3),
@@ -442,7 +447,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               children: [
                                 SvgPicture.asset(
                                   "assets/svg/call.svg",
-                                  color: AppTheme.primary,
+                                  color: Colors.black,
                                   width: 20,
                                   height: 20,
                                 ),
@@ -458,7 +463,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary.withOpacity(0.1),
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppTheme.primary.withOpacity(0.3),
@@ -467,7 +474,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                             child: SvgPicture.asset(
                               "assets/svg/whatsapp.svg",
-                              color: AppTheme.primary,
+                              color: Colors.black,
                               width: 20,
                               height: 20,
                             ),
@@ -495,7 +502,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary.withOpacity(0.1),
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppTheme.primary.withOpacity(0.3),
@@ -504,7 +513,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                             child: SvgPicture.asset(
                               "assets/svg/email.svg",
-                              color: AppTheme.primary,
+                              color: Colors.black,
                               width: 20,
                               height: 20,
                             ),
@@ -524,15 +533,15 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     icon: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.black.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: SvgPicture.asset(
                         "assets/svg/docs.svg",
                         width: 16,
                         height: 16,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
+                        colorFilter: ColorFilter.mode(
+                          isDark ? Colors.black : Colors.white,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -541,14 +550,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       'Resume',
                       style: AppTheme.getBodyStyle(
                         context,
-                        color: Colors.white,
+                        color: isDark ? Colors.black : Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: isDark ? Colors.white : Colors.black,
+                      foregroundColor: Colors.black,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -608,6 +617,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -624,7 +634,15 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Icon(Icons.location_on, color: AppTheme.primary, size: 20),
+            // Icon(
+            //   Icons.location_on,
+            //   color: isDark ? Colors.white : AppTheme.primary,
+            //   size: 20,
+            // ),
+            SvgPicture.asset(
+              "assets/svgs/location.svg",
+              color: isDark ? Colors.white : AppTheme.primary,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -656,7 +674,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   children: [
                     SvgPicture.asset(
                       "assets/svg/work.svg",
-                      color: AppTheme.primary,
+                      color: isDark ? Colors.white : AppTheme.primary,
                       width: 20,
                       height: 20,
                     ),
@@ -689,7 +707,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   children: [
                     SvgPicture.asset(
                       "assets/svg/schedule.svg",
-                      color: AppTheme.primary,
+                      color: isDark ? Colors.white : AppTheme.primary,
                       width: 20,
                       height: 20,
                     ),
@@ -697,7 +715,11 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     Expanded(
                       child: Text(
                         '${widget.candidate['experience_years'] ?? 0} yrs exp',
-                        style: AppTheme.getSubtitleStyle(context, fontSize: 18),
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -712,6 +734,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
 
   Widget _buildSkillsSection(BuildContext context) {
     final skills = widget.candidate['skills']?.split(',') ?? [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: double.infinity,
@@ -734,7 +757,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           ),
           const SizedBox(height: 16),
           Wrap(
-            spacing: 8,
+            spacing: 5,
             runSpacing: 8,
             children: skills.map<Widget>((skill) {
               return Container(
@@ -743,10 +766,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.1),
+                  color: isDark
+                      ? Colors.white
+                      : AppTheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppTheme.primary.withOpacity(0.3),
+                    color: isDark
+                        ? AppTheme.primary.withOpacity(0.5)
+                        : AppTheme.primary.withOpacity(0.3),
                     width: 1,
                   ),
                 ),
@@ -755,7 +782,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   style: AppTheme.getLabelStyle(
                     context,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.primary,
+                    color: isDark ? Colors.black : Colors.black,
                   ),
                 ),
               );
@@ -766,104 +793,54 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     );
   }
 
-  Widget _buildNotesSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildRelocateInfoRow(BuildContext context) {
+    final isWillingToRelocate = widget.candidate['willing_to_relocate'] == true;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Notes',
-          style: AppTheme.getTitleStyle(
+          'Willing to Relocate',
+          style: AppTheme.getSubtitleStyle(
             context,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+            // color: Colors.grey.shade600,
           ),
         ),
-        const SizedBox(height: 12),
-        // Display existing notes
-        if (notes.isNotEmpty) ...[
-          ...notes
-              .map(
-                (note) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getCardColor(context),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Text(
-                    note['note_text'] ?? '',
-                    style: AppTheme.getBodyStyle(context, fontSize: 14),
-                  ),
-                ),
-              )
-              .toList(),
-          const SizedBox(height: 12),
-        ],
         Row(
           children: [
-            Expanded(
-              child: TextField(
-                controller: _notesController,
-                focusNode: _notesFocusNode,
-                maxLines: 1,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _sendNote(),
-                style: AppTheme.getBodyStyle(context),
-                decoration: InputDecoration(
-                  hintText: 'Add notes about this candidate...',
-                  hintStyle: AppTheme.getSubtitleStyle(
-                    context,
-                    color: Colors.grey.shade500,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.outline.withOpacity(0.2),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: AppTheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: AppTheme.getCardColor(context),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isWillingToRelocate
+                    ? AppTheme.primary.withOpacity(0.1)
+                    : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isWillingToRelocate
+                      ? AppTheme.primary.withOpacity(0.3)
+                      : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                  width: 1,
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primary,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: IconButton(
-                onPressed: _isLoadingNotes ? null : _sendNote,
-                icon: _isLoadingNotes
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.send, color: Colors.white, size: 20),
-                tooltip: 'Send Note',
-                padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isWillingToRelocate ? Icons.check_circle : Icons.cancel,
+                    color: isDark ? Colors.white : Colors.black,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isWillingToRelocate ? 'Yes' : 'No',
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -872,7 +849,202 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     );
   }
 
+  Widget _buildNotesSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.getCardShadow(context)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Notes',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Display existing notes
+          if (notes.isNotEmpty) ...[
+            ...notes.map((note) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.darkSurface.withOpacity(0.5)
+                      : const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.grey.shade700
+                        : Theme.of(
+                            context,
+                          ).colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.sticky_note_2_rounded,
+                        color: isDark ? Colors.white : AppTheme.primary,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        note['note_text'] ?? '',
+                        style: AppTheme.getBodyStyle(context, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+          ],
+          // Add note input
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _notesController,
+                  focusNode: _notesFocusNode,
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _sendNote(),
+                  style: AppTheme.getBodyStyle(context),
+                  decoration: InputDecoration(
+                    hintText: 'Add notes about this candidate...',
+                    hintStyle: AppTheme.getSubtitleStyle(
+                      context,
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade500,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.grey.shade600
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.2),
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.grey.shade600
+                            : Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.2),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: AppTheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: isDark ? AppTheme.darkSurface : Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white : AppTheme.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: _isLoadingNotes ? null : _sendNote,
+                  icon: _isLoadingNotes
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Icon(
+                          Icons.send,
+                          color: isDark ? Colors.black : Colors.white,
+                          size: 20,
+                        ),
+                  tooltip: 'Send Note',
+                  padding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          if (notes.isEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppTheme.darkSurface.withOpacity(0.3)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.grey.shade700
+                      : Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.note_add_rounded,
+                    color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'No notes added yet',
+                    style: AppTheme.getSubtitleStyle(
+                      context,
+                      color: isDark
+                          ? Colors.grey.shade400
+                          : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildFollowupsSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -922,14 +1094,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               color: AppTheme.getCardColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                color: isDark
+                    ? Colors.grey.shade700
+                    : Theme.of(context).colorScheme.outline.withOpacity(0.1),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.alarm_off_rounded,
-                  color: Colors.grey.shade400,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -937,7 +1111,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   'No follow-up reminders set',
                   style: AppTheme.getSubtitleStyle(
                     context,
-                    color: Colors.grey.shade600,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -976,9 +1150,13 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? const Color(0xFFF0FDF4)
+                    ? (isDark
+                          ? const Color(0xFF0F4F3C)
+                          : const Color(0xFFF0FDF4))
                     : isPast
-                    ? const Color(0xFFFEF2F2)
+                    ? (isDark
+                          ? const Color(0xFF4F1E1E)
+                          : const Color(0xFFFEF2F2))
                     : AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
@@ -986,6 +1164,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       ? const Color(0xFF22C55E)
                       : isPast
                       ? const Color(0xFFEF4444)
+                      : isDark
+                      ? Colors.grey.shade700
                       : Theme.of(context).colorScheme.outline.withOpacity(0.2),
                   width: 1,
                 ),
@@ -997,10 +1177,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: isCompleted
-                          ? const Color(0xFF22C55E).withOpacity(0.1)
+                          ? const Color(0xFF22C55E).withOpacity(0.2)
                           : isPast
-                          ? const Color(0xFFEF4444).withOpacity(0.1)
-                          : AppTheme.primary.withOpacity(0.1),
+                          ? const Color(0xFFEF4444).withOpacity(0.2)
+                          : AppTheme.primary.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -1027,7 +1207,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           style: AppTheme.getBodyStyle(
                             context,
                             fontWeight: FontWeight.w600,
-                            color: isCompleted ? const Color(0xFF22C55E) : null,
+                            color: isCompleted
+                                ? const Color(0xFF22C55E)
+                                : (isDark ? Colors.white : null),
                             fontSize: 14,
                           ),
                         ),
@@ -1038,7 +1220,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             followup['notes'].toString(),
                             style: AppTheme.getSubtitleStyle(
                               context,
-                              color: Colors.grey.shade600,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
                               fontSize: 12,
                             ),
                             maxLines: 2,
@@ -1069,73 +1253,121 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       fullVideoUrl = '$baseUrl$fullVideoUrl';
     }
 
-    return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        color: AppTheme.getCardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [AppTheme.getCardShadow(context)],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          children: [
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage('$fullVideoUrl#t=0.1'),
-                  fit: BoxFit.cover,
-                  onError: (exception, stackTrace) {},
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.grey.shade400, Colors.grey.shade600],
-                  ),
-                ),
-                child: Icon(
-                  Icons.videocam,
-                  size: 50,
-                  color: Colors.white.withOpacity(0.3),
-                ),
-              ),
-            ),
-            Container(color: Colors.black.withOpacity(0.3)),
-            Center(
-              child: GestureDetector(
-                onTap: () => _handleVideoClick(context, widget.candidate),
-                child: Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 15,
-                        spreadRadius: 3,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.play_arrow,
-                    color: AppTheme.primary,
-                    size: 30,
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Video Introduction',
+          style: AppTheme.getTitleStyle(
+            context,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ),
+        const SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          height: 200,
+          decoration: BoxDecoration(
+            color: AppTheme.getCardColor(context),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [AppTheme.getCardShadow(context)],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: NetworkImage('$fullVideoUrl#t=0.1'),
+                      fit: BoxFit.cover,
+                      onError: (exception, stackTrace) {},
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.grey.shade400, Colors.grey.shade600],
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.videocam,
+                      size: 50,
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+                Container(color: Colors.black.withOpacity(0.3)),
+                Center(
+                  child: GestureDetector(
+                    onTap: () => _handleVideoClick(context, widget.candidate),
+                    child: Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 15,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.play_arrow,
+                        color: AppTheme.primary,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildEducationSection(BuildContext context) {
+    final educationDetails =
+        widget.candidate['education_details'] ?? 'Not Available';
+
+    List<TextSpan> spans = [];
+
+    if (educationDetails.contains(':')) {
+      List<String> parts = educationDetails.split(':');
+      spans.add(
+        TextSpan(
+          text: '${parts[0]}:',
+          style: AppTheme.getBodyStyle(
+            context,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+      if (parts.length > 1) {
+        spans.add(
+          TextSpan(
+            text: parts[1],
+            style: AppTheme.getBodyStyle(context, fontSize: 14),
+          ),
+        );
+      }
+    } else {
+      spans.add(
+        TextSpan(
+          text: educationDetails,
+          style: AppTheme.getBodyStyle(context, fontSize: 14),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -1156,10 +1388,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            widget.candidate['education_details'] ?? 'Not Available',
-            style: AppTheme.getBodyStyle(context, fontSize: 14),
-          ),
+          RichText(text: TextSpan(children: spans)),
         ],
       ),
     );
@@ -1199,13 +1428,166 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           const SizedBox(height: 16),
           _buildContactInfoRow(
             context,
+            'Languages',
+            widget.candidate['languages'] ?? 'Not Available',
+          ),
+          const SizedBox(height: 16),
+          _buildContactInfoRow(
+            context,
+            'Address',
+            widget.candidate['street_address'] ?? 'Not Available',
+          ),
+          const SizedBox(height: 16),
+          _buildContactInfoRow(
+            context,
             'Current CTC',
             _formatCurrency(widget.candidate['current_ctc']),
           ),
+          const SizedBox(height: 16),
+          _buildRelocateInfoRow(context),
         ],
       ),
     );
   }
+
+  Widget _buildWorkExperienceSection(BuildContext context) {
+    final workExp = widget.candidate['work_experience'];
+    if (workExp == null || workExp.toString().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    String expText = workExp.toString();
+    List<TextSpan> spans = [];
+
+    // Split and format the text
+    expText = expText
+        .replaceAll('Company:', '\nCompany:')
+        .replaceAll('Role:', '\nRole:')
+        .replaceAll('Duration:', '\nDuration:');
+
+    List<String> parts = expText.split('\n');
+
+    for (int i = 0; i < parts.length; i++) {
+      String part = parts[i].trim();
+      if (part.isEmpty) continue;
+
+      if (part.startsWith('Company:')) {
+        spans.add(
+          TextSpan(
+            text: 'Company: ',
+            style: AppTheme.getBodyStyle(
+              context,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+        spans.add(
+          TextSpan(
+            text: part.substring(8).trim(),
+            style: AppTheme.getBodyStyle(context, fontSize: 14),
+          ),
+        );
+      } else if (part.startsWith('Role:')) {
+        spans.add(TextSpan(text: '\n'));
+        spans.add(
+          TextSpan(
+            text: 'Role: ',
+            style: AppTheme.getBodyStyle(
+              context,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+        spans.add(
+          TextSpan(
+            text: part.substring(5).trim(),
+            style: AppTheme.getBodyStyle(context, fontSize: 14),
+          ),
+        );
+      } else if (part.startsWith('Duration:')) {
+        spans.add(TextSpan(text: '\n'));
+        spans.add(
+          TextSpan(
+            text: 'Duration: ',
+            style: AppTheme.getBodyStyle(
+              context,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+        spans.add(
+          TextSpan(
+            text: '${part.substring(9).trim()} months',
+            style: AppTheme.getBodyStyle(context, fontSize: 14),
+          ),
+        );
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppTheme.getCardShadow(context)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Work Experience',
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          RichText(text: TextSpan(children: spans)),
+        ],
+      ),
+    );
+  }
+
+  // Widget _buildCareerObjectiveSection(BuildContext context) {
+  //   final objective = widget.candidate['career_objective'];
+  //   if (objective == null || objective.toString().isEmpty) {
+  //     return const SizedBox.shrink();
+  //   }
+
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: AppTheme.getCardColor(context),
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [AppTheme.getCardShadow(context)],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Career Objective',
+  //           style: AppTheme.getTitleStyle(
+  //             context,
+  //             fontSize: 18,
+  //             fontWeight: FontWeight.w600,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 16),
+  //         Text(
+  //           objective.toString(),
+  //           style: AppTheme.getBodyStyle(context, fontSize: 14),
+  //           textAlign: TextAlign.justify,
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildContactInfoRow(
     BuildContext context,
@@ -1219,7 +1601,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           label,
           style: AppTheme.getSubtitleStyle(
             context,
-            color: Colors.grey.shade600,
+            // color: Colors.grey.shade600,
           ),
         ),
         Text(
@@ -1254,9 +1636,11 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                 height:
                     MediaQuery.of(context).size.height * 0.85 -
                     MediaQuery.of(context).viewInsets.bottom,
-                decoration: const BoxDecoration(
-                  color: CupertinoColors.systemBackground,
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.darkSurface
+                      : CupertinoColors.systemBackground,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -1271,10 +1655,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: CupertinoColors.systemBackground,
+                        color: isDark
+                            ? AppTheme.darkSurface
+                            : CupertinoColors.systemBackground,
                         border: Border(
                           bottom: BorderSide(
-                            color: CupertinoColors.separator.withOpacity(0.3),
+                            color: isDark
+                                ? Colors.grey.shade700
+                                : CupertinoColors.separator.withOpacity(0.3),
                             width: 0.5,
                           ),
                         ),
@@ -1289,15 +1677,18 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               'Cancel',
                               style: TextStyle(
                                 fontSize: 17,
-                                color: Colors.grey.shade600,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
                               ),
                             ),
                           ),
-                          const Text(
+                          Text(
                             'Follow-up',
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
                           ),
                           CupertinoButton(
@@ -1356,7 +1747,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               margin: const EdgeInsets.all(16),
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: CupertinoColors.systemGrey6,
+                                color: isDark
+                                    ? AppTheme.darkCardBackground
+                                    : CupertinoColors.systemGrey6,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -1370,11 +1763,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                         color: AppTheme.primary,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text(
+                                      Text(
                                         'Date & Time',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
                                         ),
                                       ),
                                     ],
@@ -1384,9 +1780,12 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                     DateFormat(
                                       'MMMM dd, yyyy',
                                     ).format(selectedDateTime),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -1394,21 +1793,24 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                     DateFormat(
                                       'hh:mm a',
                                     ).format(selectedDateTime),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 15,
-                                      color: CupertinoColors.systemGrey,
+                                      color: isDark
+                                          ? Colors.grey.shade400
+                                          : CupertinoColors.systemGrey,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.all(15.0),
+                            Padding(
+                              padding: const EdgeInsets.all(15.0),
                               child: Text(
                                 'Pick Date',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.black,
                                 ),
                               ),
                             ),
@@ -1440,13 +1842,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Padding(
-                              padding: EdgeInsets.all(15.0),
+                            Padding(
+                              padding: const EdgeInsets.all(15.0),
                               child: Text(
                                 'Pick Time',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.black,
                                 ),
                               ),
                             ),
@@ -1487,11 +1890,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                         color: AppTheme.primary,
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text(
+                                      Text(
                                         'Notes (Optional)',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black,
                                         ),
                                       ),
                                     ],
@@ -1503,8 +1909,20 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                         'Add notes for this follow-up...',
                                     maxLines: 4,
                                     padding: const EdgeInsets.all(12),
+                                    style: TextStyle(
+                                      color: isDark
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                                    placeholderStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.grey.shade500
+                                          : CupertinoColors.placeholderText,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: CupertinoColors.systemGrey6,
+                                      color: isDark
+                                          ? AppTheme.darkCardBackground
+                                          : CupertinoColors.systemGrey6,
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
@@ -1524,20 +1942,27 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         ),
       );
     } else {
-      // Android Material Design
+      // Android Material Design - keep existing code but add dark mode support
       await showDialog(
         context: context,
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Add Follow-up Reminder'),
+            backgroundColor: AppTheme.getCardColor(context),
+            title: Text(
+              'Add Follow-up Reminder',
+              style: AppTheme.getTitleStyle(context),
+            ),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Date & Time',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   InkWell(
@@ -1547,11 +1972,35 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                         initialDate: selectedDateTime,
                         firstDate: DateTime.now(),
                         lastDate: DateTime.now().add(const Duration(days: 365)),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: Theme.of(context).colorScheme
+                                  .copyWith(
+                                    primary: AppTheme.primary,
+                                    surface: AppTheme.getCardColor(context),
+                                  ),
+                            ),
+                            child: child!,
+                          );
+                        },
                       );
                       if (pickedDate != null) {
                         final pickedTime = await showTimePicker(
                           context: context,
                           initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: Theme.of(context).colorScheme
+                                    .copyWith(
+                                      primary: AppTheme.primary,
+                                      surface: AppTheme.getCardColor(context),
+                                    ),
+                              ),
+                              child: child!,
+                            );
+                          },
                         );
                         if (pickedTime != null) {
                           setDialogState(() {
@@ -1569,12 +2018,21 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        border: Border.all(
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : const Color(0xFFE5E7EB),
+                        ),
                         borderRadius: BorderRadius.circular(8),
+                        color: AppTheme.getCardColor(context),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.calendar_today, size: 18),
+                          Icon(
+                            Icons.calendar_today,
+                            size: 18,
+                            color: AppTheme.primary,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
@@ -1584,7 +2042,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                   DateFormat(
                                     'dd/MM/yyyy',
                                   ).format(selectedDateTime),
-                                  style: const TextStyle(
+                                  style: AppTheme.getBodyStyle(
+                                    context,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1594,9 +2053,12 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                   DateFormat(
                                     'hh:mm a',
                                   ).format(selectedDateTime),
-                                  style: TextStyle(
+                                  style: AppTheme.getSubtitleStyle(
+                                    context,
                                     fontSize: 13,
-                                    color: Colors.grey.shade600,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
                                   ),
                                 ),
                               ],
@@ -1605,26 +2067,60 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           Icon(
                             Icons.chevron_right,
                             size: 18,
-                            color: Colors.grey.shade400,
+                            color: isDark
+                                ? Colors.grey.shade500
+                                : Colors.grey.shade400,
                           ),
                         ],
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Notes (Optional)',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: notesController,
                     maxLines: 3,
+                    style: AppTheme.getBodyStyle(context),
                     decoration: InputDecoration(
                       hintText: 'Add notes for this follow-up...',
+                      hintStyle: AppTheme.getSubtitleStyle(
+                        context,
+                        color: isDark
+                            ? Colors.grey.shade500
+                            : Colors.grey.shade600,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade300,
+                        ),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.grey.shade600
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: AppTheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: AppTheme.getCardColor(context),
                     ),
                   ),
                 ],
@@ -1637,7 +2133,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     : () => Navigator.pop(dialogContext),
                 child: Text(
                   'Cancel',
-                  style: TextStyle(color: Colors.grey.shade400),
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
                 ),
               ),
               ElevatedButton(

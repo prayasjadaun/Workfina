@@ -7,7 +7,8 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 
 class RecruiterDashboard extends StatefulWidget {
-  const RecruiterDashboard({super.key});
+  final VoidCallback? onNavigateToUnlocked;
+  const RecruiterDashboard({super.key, this.onNavigateToUnlocked});
 
   @override
   State<RecruiterDashboard> createState() => _RecruiterDashboardState();
@@ -24,6 +25,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<RecruiterController>(
       builder: (context, controller, _) {
         if (controller.isLoading && controller.hrProfile == null) {
@@ -51,7 +53,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
 
                 // Main Heading
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -59,8 +61,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
                         'What would you like to\nfind today?',
                         style: AppTheme.getHeadlineStyle(
                           context,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 32,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 28,
                         ),
                       ),
                     ],
@@ -94,14 +96,13 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {
-                              // Navigate to full activity
-                            },
+                            onTap: widget.onNavigateToUnlocked,
                             child: Text(
                               'View all',
                               style: AppTheme.getBodyStyle(
                                 context,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.blue,
                               ),
                             ),
                           ),
@@ -123,6 +124,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
   }
 
   Widget _buildHeader(BuildContext context, RecruiterController controller) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final profile = controller.hrProfile;
     final fullName = profile?['full_name'] ?? 'HR';
 
@@ -137,35 +139,31 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     } else {
       displayName = parts[0];
     }
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
-      
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
       child: Row(
         children: [
-          // Profile Avatar
           Container(
-            width: 48,
-            height: 48,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.primaryDark,
-              borderRadius: BorderRadius.circular(12),
+              color: isDark ? Colors.white : Colors.black,
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text(
                 displayName[0].toUpperCase(),
                 style: AppTheme.getTitleStyle(
                   context,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
+                  color: isDark ? Colors.black : Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 18,
                 ),
               ),
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Greeting
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,38 +172,32 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
                   'Hello 👋',
                   style: AppTheme.getSubtitleStyle(
                     context,
-                    color: Colors.grey.shade600,
+                    color: Colors.grey.shade500,
                     fontWeight: FontWeight.w400,
+                    fontSize: 13,
                   ),
                 ),
+                const SizedBox(height: 1),
                 Text(
                   displayName,
                   style: AppTheme.getBodyStyle(
                     context,
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                 ),
               ],
             ),
           ),
-
-          // Notification Icon
-          Container(
-            // width: 30,
-            // height: 30,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
+          SizedBox(
             child: SvgPicture.asset(
               'assets/svg/bell.svg',
-              width: 30,
-              height: 30,
+              width: 24,
+              height: 24,
               colorFilter: ColorFilter.mode(
                 Theme.of(context).brightness == Brightness.dark
                     ? Colors.white
-                    : Colors.grey.shade600,
+                    : Colors.black,
                 BlendMode.srcIn,
               ),
             ),
@@ -234,25 +226,21 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
           'assets/svgs/wallet.svg',
           'Credits',
           balance.toString(),
-          AppTheme.secondary,
         ),
         _buildStatCard(
           'assets/svgs/unlock.svg',
           'Unlocked',
           unlockedCount.toString(),
-          AppTheme.accentPrimary,
         ),
         _buildStatCard(
           'assets/svgs/spend.svg',
           'Total Spent',
           totalSpent.toString(),
-          AppTheme.accentSecondary,
         ),
         _buildStatCard(
           'assets/svgs/candidates.svg',
           'Candidates',
           totalCandidates.toString(),
-          AppTheme.secondary,
         ),
       ],
     );
@@ -262,7 +250,6 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     String iconPath,
     String title,
     String value,
-    Color accentColor,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -288,7 +275,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
               width: 16,
               height: 16,
               colorFilter: ColorFilter.mode(
-                isDark ? Colors.white : AppTheme.secondary,
+                isDark ? Colors.white : AppTheme.darkBackground,
                 BlendMode.srcIn,
               ),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
@@ -35,15 +34,12 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final recruiterController = context.watch<RecruiterController>();
-    final fullName = (recruiterController.hrProfile?['full_name'] ?? 'HR')
-        .split(' ')
-        .take(2)
-        .join(' ');
+    // final recruiterController = context.watch<RecruiterController>();
+    // final fullName = (recruiterController.hrProfile?['full_name'] ?? 'HR')
+    //     .split(' ')
+    //     .take(2)
+    //     .join(' ');
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Show AppBar only for Profile (index 3)
-    final showAppBar = _currentIndex == 3;
 
     return Scaffold(
       // appBar: showAppBar
@@ -56,11 +52,13 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          const RecruiterDashboard(),
+          RecruiterDashboard(
+            onNavigateToUnlocked: () => setState(() => _currentIndex = 2),
+          ),
           const RecruiterFilterScreen(showUnlockedOnly: false),
           RecruiterCandidate(
             onSwitchToWallet: (index) =>
-                setState(() => _currentIndex = 3), // Updated index for wallet
+                setState(() => _currentIndex = 3), 
             showOnlyUnlocked: true,
           ),
           const RecruiterWalletScreen(),

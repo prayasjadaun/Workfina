@@ -67,9 +67,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
     );
 
     if (result.containsKey('error')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result['error'])),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result['error'])));
     } else {
       setState(() => _isEditing = false);
       await context.read<RecruiterController>().loadHRProfile();
@@ -84,7 +84,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: Text("WORKFINA", style: TextStyle(letterSpacing: 1)),
+      ),
       body: Container(
         height: double.infinity,
         color: isDark ? AppTheme.darkBackground : AppTheme.lightBackground,
@@ -92,12 +94,10 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
           builder: (context, controller, child) {
             if (controller.isLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: AppTheme.primary,
-                ),
+                child: CircularProgressIndicator(color: AppTheme.primary),
               );
             }
-      
+
             final profile = controller.hrProfile;
             if (profile == null) {
               return Center(
@@ -107,11 +107,11 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 ),
               );
             }
-      
+
             if (_fullNameController.text.isEmpty) {
               _initializeControllers(profile);
             }
-      
+
             return _isEditing
                 ? _buildEditForm(profile, isDark)
                 : _buildProfileView(profile, isDark);
@@ -127,7 +127,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
       child: Column(
         children: [
           const SizedBox(height: 24),
-          
+
           // Profile Header
           Container(
             width: double.infinity,
@@ -137,9 +137,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: isDark 
-                    ? Colors.black26 
-                    : Colors.grey.withOpacity(0.08),
+                  color: isDark
+                      ? Colors.black26
+                      : Colors.grey.withOpacity(0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -147,87 +147,111 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
             ),
             child: Column(
               children: [
-                // Profile Avatar
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      (profile['full_name'] ?? 'R').substring(0, 1).toUpperCase(),
-                      style: AppTheme.getHeadlineStyle(
-                        context,
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600,
+                // Profile Row
+                Row(
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary,
+                        shape: BoxShape.circle,
                       ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Name and Email
-                Text(
-                  profile['full_name'] ?? 'N/A',
-                  style: AppTheme.getTitleStyle(
-                    context,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  profile['email'] ?? 'N/A',
-                  style: AppTheme.getSubtitleStyle(
-                    context,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Verified Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppTheme.primary.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/svgs/check.svg',
-                        width: 14,
-                        height: 14,
-                        colorFilter: const ColorFilter.mode(
-                          AppTheme.primary,
-                          BlendMode.srcIn,
+                      child: Center(
+                        child: Text(
+                          (profile['full_name'] ?? 'R')
+                              .substring(0, 1)
+                              .toUpperCase(),
+                          style: AppTheme.getHeadlineStyle(
+                            context,
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Verified',
-                        style: AppTheme.getLabelStyle(
-                          context,
-                          color: AppTheme.primary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Name, Email and Verified
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile['full_name'] ?? 'N/A',
+                            style: AppTheme.getTitleStyle(
+                              context,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            profile['email'] ?? 'N/A',
+                            style: AppTheme.getSubtitleStyle(
+                              context,
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.white
+                                  : AppTheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: AppTheme.primary.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/svgs/check.svg',
+                                  width: 12,
+                                  height: 12,
+                                  colorFilter: ColorFilter.mode(
+                                    isDark
+                                        ? AppTheme.primary
+                                        : AppTheme.primary,
+                                    BlendMode.srcIn,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Verified',
+                                  style: AppTheme.getLabelStyle(
+                                    context,
+                                    color: isDark
+                                        ? AppTheme.primary
+                                        : AppTheme.primary,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Profile Details Card
           Container(
             width: double.infinity,
@@ -236,9 +260,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: isDark 
-                    ? Colors.black26 
-                    : Colors.grey.withOpacity(0.08),
+                  color: isDark
+                      ? Colors.black26
+                      : Colors.grey.withOpacity(0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -282,7 +306,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     ],
                   ),
                 ),
-                
+
                 // Profile Information
                 _buildProfileInfoItem(
                   svgPath: 'assets/svgs/company.svg',
@@ -322,9 +346,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Logout Card
           Material(
             color: Colors.transparent,
@@ -335,9 +359,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: isDark 
-                      ? Colors.black26 
-                      : Colors.grey.withOpacity(0.08),
+                    color: isDark
+                        ? Colors.black26
+                        : Colors.grey.withOpacity(0.08),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -361,7 +385,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 40),
         ],
       ),
@@ -402,7 +426,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                   width: 20,
                   height: 20,
                   colorFilter: ColorFilter.mode(
-                    iconColor ?? AppTheme.primary,
+                    iconColor ?? (isDark ? Colors.white : AppTheme.primary),
                     BlendMode.srcIn,
                   ),
                 ),
@@ -417,7 +441,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     title,
                     style: AppTheme.getBodyStyle(
                       context,
-                      color: titleColor ?? (isDark ? Colors.white : Colors.black87),
+                      color:
+                          titleColor ??
+                          (isDark ? Colors.white : Colors.black87),
                       fontWeight: FontWeight.w500,
                       fontSize: 15,
                     ),
@@ -462,9 +488,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: isDark 
-                ? Colors.black26 
-                : Colors.grey.withOpacity(0.08),
+              color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -484,7 +508,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               _buildTextField(
                 controller: _fullNameController,
                 label: 'Full Name',
@@ -492,7 +516,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 isRequired: true,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _companyNameController,
                 label: 'Company Name',
@@ -500,7 +524,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 isRequired: true,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _designationController,
                 label: 'Designation',
@@ -508,7 +532,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 isRequired: true,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _phoneController,
                 label: 'Phone',
@@ -516,17 +540,17 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                 isRequired: true,
               ),
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _companyWebsiteController,
                 label: 'Company Website (Optional)',
                 isDark: isDark,
               ),
               const SizedBox(height: 16),
-              
+
               _buildDropdown(isDark),
               const SizedBox(height: 32),
-              
+
               // Action Buttons
               Row(
                 children: [
@@ -534,7 +558,9 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     child: ElevatedButton(
                       onPressed: () => setState(() => _isEditing = false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? Colors.grey[700] : Colors.grey[300],
+                        backgroundColor: isDark
+                            ? Colors.grey[700]
+                            : Colors.grey[300],
                         foregroundColor: isDark ? Colors.white : Colors.black87,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -612,26 +638,20 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppTheme.primary,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: Colors.red,
-            width: 1,
-          ),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
       ),
-      validator: isRequired 
-        ? (v) => v?.isEmpty ?? true ? 'This field is required' : null
-        : null,
+      validator: isRequired
+          ? (v) => v?.isEmpty ?? true ? 'This field is required' : null
+          : null,
     );
   }
 
@@ -659,10 +679,7 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppTheme.primary,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -684,14 +701,12 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
 
   void _showLogoutDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Logout',
           style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
