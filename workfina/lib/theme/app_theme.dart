@@ -10,6 +10,11 @@ class AppTheme {
   // static const Color secondary = Color(0xFF6BA3D6);
   static const Color accentPrimary = Color(0xFFF39C12);
   static const Color accentSecondary = Color(0xFF8E44AD);
+  
+  // Blue Colors
+  static const Color blue = Color(0xFF2196F3);
+  static const Color blueDark = Color(0xFF1976D2);
+  static const Color blueLight = Color(0xFF64B5F6);
 
   // Light Theme Colors
   static const Color lightBackground = Color.fromARGB(255, 250, 250, 250);

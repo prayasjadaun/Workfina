@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -75,19 +74,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // Helper method to parse backend list format
   List<Map<String, dynamic>> _parseBackendList(String? data) {
     if (data == null || data.isEmpty) return [];
-    
+
     try {
       // Remove outer brackets if present
       String cleaned = data.trim();
       if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
       }
-      
+
       // Split by '}, {' to get individual items
       List<String> items = [];
       int braceCount = 0;
       int startIndex = 0;
-      
+
       for (int i = 0; i < cleaned.length; i++) {
         if (cleaned[i] == '{') {
           braceCount++;
@@ -99,24 +98,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         }
       }
-      
+
       // Parse each item
       List<Map<String, dynamic>> result = [];
       for (String item in items) {
         Map<String, dynamic> map = {};
-        
+
         // Remove braces
         String content = item.substring(1, item.length - 1);
-        
+
         // Split by ', ' to get key-value pairs
         List<String> pairs = [];
         int depth = 0;
         int lastSplit = 0;
-        
+
         for (int i = 0; i < content.length; i++) {
           if (content[i] == '{') depth++;
           if (content[i] == '}') depth--;
-          
+
           if (depth == 0 && i < content.length - 1) {
             if (content[i] == ',' && content[i + 1] == ' ') {
               pairs.add(content.substring(lastSplit, i));
@@ -125,14 +124,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         }
         pairs.add(content.substring(lastSplit));
-        
+
         // Parse each pair
         for (String pair in pairs) {
           List<String> parts = pair.split(': ');
           if (parts.length == 2) {
             String key = parts[0].trim();
             String value = parts[1].trim();
-            
+
             // Convert value to appropriate type
             if (value == 'null') {
               map[key] = null;
@@ -145,10 +144,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             }
           }
         }
-        
+
         result.add(map);
       }
-      
+
       return result;
     } catch (e) {
       print('Error parsing backend list: $e');
@@ -203,17 +202,84 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       text: skillsList?.join(', ') ?? widget.profileData['skills'] ?? '',
     );
 
-    // Parse work experience if it exists
-    String workExp = widget.profileData['work_experience'] ?? '';
-    _workExperiences = _parseBackendList(workExp);
+    final workExpList = widget.profileData['work_experiences'];
+    if (workExpList != null && workExpList is List) {
+      _workExperiences = workExpList
+          .map<Map<String, dynamic>>(
+            (exp) => {
+              'company_name': exp['company_name'] ?? '',
+              'job_role':
+                  exp['role_title'] ?? '', // Note: role_title -> job_role
+              'start_month': _getMonthFromDate(exp['start_date']),
+              'start_year': _getYearFromDate(exp['start_date']),
+              'end_month': exp['end_date'] != null
+                  ? _getMonthFromDate(exp['end_date'])
+                  : null,
+              'end_year': exp['end_date'] != null
+                  ? _getYearFromDate(exp['end_date'])
+                  : null,
+              'is_current': exp['is_current'] ?? false,
+            },
+          )
+          .toList();
+    }
 
-    // Parse education if it exists
-    String education = widget.profileData['education_details'] ?? widget.profileData['education'] ?? '';
-    _educationList = _parseBackendList(education);
-
+    // Fix education parsing
+    final educationsList = widget.profileData['educations'];
+    if (educationsList != null && educationsList is List) {
+      _educationList = educationsList
+          .map<Map<String, dynamic>>(
+            (edu) => {
+              'school': edu['institution_name'] ?? '',
+              'degree': edu['degree'] ?? '',
+              'field': edu['field_of_study'] ?? '',
+              'start_month': 'January', // Default since API doesn't have month
+              'start_year': edu['start_year']?.toString() ?? '',
+              'end_month': 'December', // Default
+              'end_year': edu['end_year']?.toString() ?? '',
+              'grade': edu['grade_percentage']?.toString() ?? '',
+            },
+          )
+          .toList();
+    }
     _willingToRelocate = widget.profileData['willing_to_relocate'] ?? false;
     _selectedRole = widget.profileData['role_name'] ?? 'IT';
-    _selectedReligion = widget.profileData['religion_name'] ?? 'PREFER_NOT_TO_SAY';
+    _selectedReligion =
+        widget.profileData['religion_name'] ?? 'PREFER_NOT_TO_SAY';
+  }
+
+  String _getMonthFromDate(String? dateStr) {
+    if (dateStr == null) return 'January';
+    try {
+      final date = DateTime.parse(dateStr);
+      const months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+      return months[date.month - 1];
+    } catch (e) {
+      return 'January';
+    }
+  }
+
+  String _getYearFromDate(String? dateStr) {
+    if (dateStr == null) return DateTime.now().year.toString();
+    try {
+      final date = DateTime.parse(dateStr);
+      return date.year.toString();
+    } catch (e) {
+      return DateTime.now().year.toString();
+    }
   }
 
   @override
@@ -538,7 +604,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   // ========== Work Experience Methods ==========
-  
+
   void _showAddExperienceDialog() {
     final companyController = TextEditingController();
     final roleController = TextEditingController();
@@ -549,11 +615,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     bool isCurrentlyWorking = false;
 
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
 
-    final years = List.generate(50, (index) => (DateTime.now().year - index).toString());
+    final years = List.generate(
+      50,
+      (index) => (DateTime.now().year - index).toString(),
+    );
 
     showDialog(
       context: context,
@@ -599,10 +678,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Month',
                           border: OutlineInputBorder(),
                         ),
-                        items: months.map((month) => DropdownMenuItem(
-                          value: month,
-                          child: Text(month),
-                        )).toList(),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => startMonth = value!);
                         },
@@ -616,10 +699,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Year',
                           border: OutlineInputBorder(),
                         ),
-                        items: years.map((year) => DropdownMenuItem(
-                          value: year,
-                          child: Text(year),
-                        )).toList(),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => startYear = value!);
                         },
@@ -656,10 +743,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             labelText: 'Month',
                             border: OutlineInputBorder(),
                           ),
-                          items: months.map((month) => DropdownMenuItem(
-                            value: month,
-                            child: Text(month),
-                          )).toList(),
+                          items: months
+                              .map(
+                                (month) => DropdownMenuItem(
+                                  value: month,
+                                  child: Text(month),
+                                ),
+                              )
+                              .toList(),
                           onChanged: (value) {
                             setDialogState(() => endMonth = value!);
                           },
@@ -673,10 +764,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             labelText: 'Year',
                             border: OutlineInputBorder(),
                           ),
-                          items: years.map((year) => DropdownMenuItem(
-                            value: year,
-                            child: Text(year),
-                          )).toList(),
+                          items: years
+                              .map(
+                                (year) => DropdownMenuItem(
+                                  value: year,
+                                  child: Text(year),
+                                ),
+                              )
+                              .toList(),
                           onChanged: (value) {
                             setDialogState(() => endYear = value!);
                           },
@@ -695,7 +790,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (companyController.text.isEmpty || roleController.text.isEmpty) {
+                if (companyController.text.isEmpty ||
+                    roleController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Please fill all required fields'),
@@ -731,7 +827,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
-    String duration = '${experience['start_month']} ${experience['start_year']} - ';
+    String duration =
+        '${experience['start_month']} ${experience['start_year']} - ';
     if (experience['is_current']) {
       duration += 'Present';
     } else {
@@ -782,7 +879,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       duration,
@@ -793,7 +894,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 if (experience['is_current'])
                   Container(
                     margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(4),
@@ -837,11 +941,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String endYear = DateTime.now().year.toString();
 
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
 
-    final years = List.generate(50, (index) => (DateTime.now().year - index).toString());
+    final years = List.generate(
+      50,
+      (index) => (DateTime.now().year - index).toString(),
+    );
 
     showDialog(
       context: context,
@@ -896,10 +1013,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Month',
                           border: OutlineInputBorder(),
                         ),
-                        items: months.map((month) => DropdownMenuItem(
-                          value: month,
-                          child: Text(month),
-                        )).toList(),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => startMonth = value!);
                         },
@@ -913,10 +1034,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Year',
                           border: OutlineInputBorder(),
                         ),
-                        items: years.map((year) => DropdownMenuItem(
-                          value: year,
-                          child: Text(year),
-                        )).toList(),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => startYear = value!);
                         },
@@ -942,10 +1067,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Month',
                           border: OutlineInputBorder(),
                         ),
-                        items: months.map((month) => DropdownMenuItem(
-                          value: month,
-                          child: Text(month),
-                        )).toList(),
+                        items: months
+                            .map(
+                              (month) => DropdownMenuItem(
+                                value: month,
+                                child: Text(month),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => endMonth = value!);
                         },
@@ -959,10 +1088,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           labelText: 'Year',
                           border: OutlineInputBorder(),
                         ),
-                        items: years.map((year) => DropdownMenuItem(
-                          value: year,
-                          child: Text(year),
-                        )).toList(),
+                        items: years
+                            .map(
+                              (year) => DropdownMenuItem(
+                                value: year,
+                                child: Text(year),
+                              ),
+                            )
+                            .toList(),
                         onChanged: (value) {
                           setDialogState(() => endYear = value!);
                         },
@@ -989,7 +1122,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                if (schoolController.text.isEmpty || degreeController.text.isEmpty) {
+                if (schoolController.text.isEmpty ||
+                    degreeController.text.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Please fill all required fields'),
@@ -1026,7 +1160,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildEducationDisplayCard(Map<String, dynamic> education, int index) {
-    String duration = '${education['start_month']} ${education['start_year']} - ${education['end_month']} ${education['end_year']}';
+    String duration =
+        '${education['start_month']} ${education['start_year']} - ${education['end_month']} ${education['end_year']}';
     String degreeText = education['degree'];
     if (education['field'].isNotEmpty) {
       degreeText += ' - ${education['field']}';
@@ -1072,7 +1207,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       duration,
@@ -1116,34 +1255,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     final controller = context.read<CandidateController>();
-    
+
     // Convert work experiences to JSON string
     String workExperienceJson = '';
     if (_workExperiences.isNotEmpty) {
-      workExperienceJson = _workExperiences.map((exp) => {
-        'company_name': exp['company_name'],
-        'job_role': exp['job_role'],
-        'start_month': exp['start_month'],
-        'start_year': exp['start_year'],
-        'end_month': exp['end_month'],
-        'end_year': exp['end_year'],
-        'is_current': exp['is_current'],
-      }).toList().toString();
+      workExperienceJson = _workExperiences
+          .map(
+            (exp) => {
+              'company_name': exp['company_name'],
+              'job_role': exp['job_role'],
+              'start_month': exp['start_month'],
+              'start_year': exp['start_year'],
+              'end_month': exp['end_month'],
+              'end_year': exp['end_year'],
+              'is_current': exp['is_current'],
+            },
+          )
+          .toList()
+          .toString();
     }
 
     // Convert education list to JSON string
     String educationJson = '';
     if (_educationList.isNotEmpty) {
-      educationJson = _educationList.map((edu) => {
-        'school': edu['school'],
-        'degree': edu['degree'],
-        'field': edu['field'],
-        'start_month': edu['start_month'],
-        'start_year': edu['start_year'],
-        'end_month': edu['end_month'],
-        'end_year': edu['end_year'],
-        'grade': edu['grade'],
-      }).toList().toString();
+      educationJson = _educationList
+          .map(
+            (edu) => {
+              'school': edu['school'],
+              'degree': edu['degree'],
+              'field': edu['field'],
+              'start_month': edu['start_month'],
+              'start_year': edu['start_year'],
+              'end_month': edu['end_month'],
+              'end_year': edu['end_year'],
+              'grade': edu['grade'],
+            },
+          )
+          .toList()
+          .toString();
     }
 
     final success = await controller.updateProfile(
@@ -1166,11 +1315,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       resumeFile: _resumeFile,
       videoIntroFile: _videoIntroFile,
       profileImage: _profileImage,
-      languages: _languagesController.text.isEmpty ? null : _languagesController.text,
-      streetAddress: _streetAddressController.text.isEmpty ? null : _streetAddressController.text,
+      languages: _languagesController.text.isEmpty
+          ? null
+          : _languagesController.text,
+      streetAddress: _streetAddressController.text.isEmpty
+          ? null
+          : _streetAddressController.text,
       willingToRelocate: _willingToRelocate,
       workExperience: workExperienceJson,
-      careerObjective: _careerObjectiveController.text.isEmpty ? null : _careerObjectiveController.text,
+      careerObjective: _careerObjectiveController.text.isEmpty
+          ? null
+          : _careerObjectiveController.text,
     );
 
     if (success) {
@@ -1235,18 +1390,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fit: BoxFit.cover,
                                         ),
                                       )
-                                    : widget.profileData['profile_image_url'] != null
+                                    : widget.profileData['profile_image_url'] !=
+                                          null
                                     ? ClipOval(
                                         child: Image.network(
-                                          widget.profileData['profile_image_url'],
+                                          widget
+                                              .profileData['profile_image_url'],
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Icon(
-                                              Icons.person,
-                                              size: 60,
-                                              color: Colors.grey[400],
-                                            );
-                                          },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                                return Icon(
+                                                  Icons.person,
+                                                  size: 60,
+                                                  color: Colors.grey[400],
+                                                );
+                                              },
                                         ),
                                       )
                                     : Icon(
@@ -1317,7 +1475,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     validator: (value) {
                       if (value?.isEmpty == true) return 'Phone is required';
-                      if (value!.length != 10) return 'Enter valid 10-digit number';
+                      if (value!.length != 10)
+                        return 'Enter valid 10-digit number';
                       return null;
                     },
                   ),
@@ -1359,7 +1518,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     label: 'Role/Department',
                     icon: Icons.business_center,
                     items: _roles,
-                    onChanged: (value) => setState(() => _selectedRole = value!),
+                    onChanged: (value) =>
+                        setState(() => _selectedRole = value!),
                   ),
 
                   const SizedBox(height: 24),
@@ -1442,11 +1602,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Expanded(
                         child: Text(
                           'Add at least one work experience (Required)',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.add_circle, color: AppTheme.primary, size: 28),
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
                         onPressed: _showAddExperienceDialog,
                         tooltip: 'Add Experience',
                       ),
@@ -1471,11 +1638,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       Expanded(
                         child: Text(
                           'Add at least one educational qualification (Required)',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.add_circle, color: AppTheme.primary, size: 28),
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
                         onPressed: _showAddEducationDialog,
                         tooltip: 'Add Education',
                       ),

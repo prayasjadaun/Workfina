@@ -282,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isButtonEnabled
-                                  ? AppTheme.primary
+                                  ? AppTheme.blue
                                   : Colors.grey[300],
                               disabledBackgroundColor: Colors.grey[300],
                               foregroundColor: Colors.white,
@@ -367,7 +367,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Sign Up',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: AppTheme.primary,
+                                color: AppTheme.blue,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

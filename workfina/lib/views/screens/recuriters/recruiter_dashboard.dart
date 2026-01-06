@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
+import 'package:workfina/views/screens/notification/notification_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 
 class RecruiterDashboard extends StatefulWidget {
@@ -25,7 +26,6 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Consumer<RecruiterController>(
       builder: (context, controller, _) {
         if (controller.isLoading && controller.hrProfile == null) {
@@ -50,25 +50,6 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
               children: [
                 // Header Section
                 _buildHeader(context, controller),
-
-                // Main Heading
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'What would you like to\nfind today?',
-                        style: AppTheme.getHeadlineStyle(
-                          context,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 28,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 // Stats Overview Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -80,9 +61,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
                         totalSpent,
                         controller.candidates.length,
                       ),
-
                       const SizedBox(height: 32),
-
                       // Recent Activity Section
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -141,65 +120,106 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-      child: Row(
+      color: AppTheme.primary,
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white : Colors.black,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                displayName[0].toUpperCase(),
-                style: AppTheme.getTitleStyle(
-                  context,
-                  color: isDark ? Colors.black : Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+            child: Row(
               children: [
-                Text(
-                  'Hello 👋',
-                  style: AppTheme.getSubtitleStyle(
-                    context,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w400,
-                    fontSize: 13,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white : Colors.black,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(
+                    child: Text(
+                      displayName[0].toUpperCase(),
+                      style: AppTheme.getTitleStyle(
+                        context,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  displayName,
-                  style: AppTheme.getBodyStyle(
-                    context,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hello 👋',
+                        style: AppTheme.getSubtitleStyle(
+                          context,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        displayName,
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => NotificationScreen(),
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    // padding: const EdgeInsets.all(8),
+                    // decoration: BoxDecoration(
+                    //   color: Colors.grey,
+                    //   borderRadius: BorderRadius.circular(12),
+                    //   border: Border.all(color: Colors.grey.shade200, width: 1),
+                    // ),
+                    child: SvgPicture.asset(
+                      'assets/svg/bell.svg',
+                      width: 24,
+                      height: 24,
+                      colorFilter: ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          SizedBox(
-            child: SvgPicture.asset(
-              'assets/svg/bell.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.black,
-                BlendMode.srcIn,
-              ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'What would you like to\nfind today?',
+                  style: AppTheme.getHeadlineStyle(
+                    context,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 28,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -222,11 +242,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       children: [
-        _buildStatCard(
-          'assets/svgs/wallet.svg',
-          'Credits',
-          balance.toString(),
-        ),
+        _buildStatCard('assets/svgs/wallet.svg', 'Credits', balance.toString()),
         _buildStatCard(
           'assets/svgs/unlock.svg',
           'Unlocked',
@@ -246,11 +262,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     );
   }
 
-  Widget _buildStatCard(
-    String iconPath,
-    String title,
-    String value,
-  ) {
+  Widget _buildStatCard(String iconPath, String title, String value) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),

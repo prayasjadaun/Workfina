@@ -9,10 +9,10 @@ class RecruiterFilterScreen extends StatefulWidget {
   const RecruiterFilterScreen({super.key, this.showUnlockedOnly = false});
 
   @override
-  State<RecruiterFilterScreen> createState() => _RecruiterFilterScreenState();
+  State<RecruiterFilterScreen> createState() => RecruiterFilterScreenState();
 }
 
-class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
+class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
   Map<String, dynamic> _filterOverview = {};
   List<Map<String, dynamic>> _currentFilterData = [];
   bool _isLoading = true;
@@ -309,159 +309,121 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
         .toList();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(15, 10, 15, 0),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Discover Talent',
+            'Find your perfect candidate match!',
             style: AppTheme.getHeadlineStyle(
               context,
-              fontSize: 30,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Filter candidates by your preferred criteria',
-            style: AppTheme.getBodyStyle(context, color: Colors.grey.shade600),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 16, 24, 0),
-            child: Text(
-              'Find your perfect\ncandidate match',
-              style: AppTheme.getHeadlineStyle(
-                context,
-                fontWeight: FontWeight.w700,
-                fontSize: 24,
-              ),
+              fontWeight: FontWeight.w700,
+              fontSize: 24,
             ),
           ),
           const SizedBox(height: 20),
           Expanded(
-            child: ListView.builder(
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1,
+              ),
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
                 final count = category['count'] ?? 0;
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  height: 150,
-                  child: CustomPaint(
-                    painter: FilterCardPainter(
-                      isDark: isDark,
-                      gradientColors: [
-                        AppTheme.primary.withOpacity(0.1),
-                        AppTheme.primary.withOpacity(0.05),
-                      ],
+                  decoration: BoxDecoration(
+                    color: AppTheme.getCardColor(context),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark 
+                          ? Colors.grey.shade800.withOpacity(0.3)
+                          : Colors.grey.shade200.withOpacity(0.5),
+                      width: 0.5,
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () =>
-                            _onFilterCategoryTap(category['title'] as String),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primary.withOpacity(
-                                          0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: AppTheme.primary.withOpacity(
-                                            0.3,
-                                          ),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Available Now',
-                                        style: AppTheme.getBodyStyle(
-                                          context,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppTheme.primary,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      category['title'] as String,
-                                      style: AppTheme.getTitleStyle(
-                                        context,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark
-                                            ? Colors.white
-                                            : Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 4,
-                                          height: 4,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade400,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '$count qualified candidates',
-                                          style: AppTheme.getBodyStyle(
-                                            context,
-                                            fontSize: 13,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                    boxShadow: isDark 
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () =>
+                          _onFilterCategoryTap(category['title'] as String),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppTheme.primary.withOpacity(0.15)
+                                    : AppTheme.primary.withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(16),
                               ),
-                              Container(
-                                width: 70,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: AppTheme.primary.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Center(
-                                  child: SvgPicture.asset(
-                                    category['svg'] as String,
-                                    width: 32,
-                                    height: 32,
-                                    colorFilter: ColorFilter.mode(
-                                      AppTheme.primary,
-                                      BlendMode.srcIn,
-                                    ),
+                              child: Center(
+                                child: SvgPicture.asset(
+                                  category['svg'] as String,
+                                  width: 28,
+                                  height: 28,
+                                  colorFilter: ColorFilter.mode(
+                                    AppTheme.primary,
+                                    BlendMode.srcIn,
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              category['title'] as String,
+                              style: AppTheme.getCardTitleStyle(context)
+                                  .copyWith(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: -0.2,
+                                  ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.grey.shade800.withOpacity(0.6)
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$count candidates',
+                                style: AppTheme.getCardSubtitleStyle(context)
+                                    .copyWith(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.3,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -622,9 +584,9 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 2.0,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 14,
+                                childAspectRatio: 1.5,
                               ),
                           itemCount:
                               filteredData.length + (_isLoadingMore ? 1 : 0),
@@ -641,75 +603,81 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                             }
 
                             final option = filteredData[index];
-                            final isSelected =
-                                _selectedSubFilter == option['value'];
 
                             return Container(
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? (isDark
-                                          ? Colors.grey.shade800
-                                          : Colors.grey.shade100)
-                                    : (isDark
-                                          ? AppTheme.darkCardBackground
-                                          : Colors.white),
-                                borderRadius: BorderRadius.circular(12),
+                                color: AppTheme.getCardColor(context),
+                                borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isSelected
-                                      ? (isDark
-                                            ? Colors.white
-                                            : Colors.grey.shade400)
-                                      : (isDark
-                                            ? Colors.grey.shade800
-                                            : Colors.grey.shade200),
-                                  width: isSelected ? 1.5 : 1,
+                                  color: isDark 
+                                      ? Colors.grey.shade800.withOpacity(0.3)
+                                      : Colors.grey.shade200.withOpacity(0.6),
+                                  width: 0.5,
                                 ),
+                                boxShadow: isDark 
+                                    ? []
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.03),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                               ),
                               child: Material(
                                 color: Colors.transparent,
                                 child: InkWell(
                                   onTap: () => _onSubFilterTap(option['value']),
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(16),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
                                     child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           option['label'],
-                                          style: AppTheme.getBodyStyle(
-                                            context,
-                                            fontSize: 14,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w600
-                                                : FontWeight.w400,
-                                            color: isSelected
-                                                ? (isDark
-                                                      ? Colors.white
-                                                      : Colors.black87)
-                                                : (isDark
-                                                      ? Colors.grey.shade300
-                                                      : Colors.grey.shade700),
-                                          ),
+                                          style:
+                                              AppTheme.getCardTitleStyle(
+                                                context,
+                                              ).copyWith(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.w600,
+                                                letterSpacing: -0.1,
+                                              ),
                                           textAlign: TextAlign.center,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        if (option['locked_count'] != null ||
-                                            option['unlocked_count'] !=
-                                                null) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isDark
+                                                ? Colors.grey.shade800.withOpacity(0.4)
+                                                : Colors.grey.shade100,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
                                             '${widget.showUnlockedOnly ? (option['unlocked_count'] ?? 0) : (option['locked_count'] ?? 0)} candidates',
-                                            style: AppTheme.getBodyStyle(
+                                            style: AppTheme.getCardSubtitleStyle(
                                               context,
-                                              fontSize: 11,
-                                              color: Colors.grey.shade500,
+                                            ).copyWith(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              letterSpacing: 0.2,
                                             ),
                                             textAlign: TextAlign.center,
                                           ),
-                                        ],
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -775,53 +743,4 @@ class _RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     // Fallback: convert display name back to likely API key format
     return filterType.toLowerCase().replaceAll(' ', '_');
   }
-}
-
-class FilterCardPainter extends CustomPainter {
-  final bool isDark;
-  final List<Color> gradientColors;
-
-  FilterCardPainter({required this.isDark, required this.gradientColors});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..shader = LinearGradient(
-        colors: gradientColors,
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0, 0, size.width, size.height),
-          const Radius.circular(20),
-        ),
-      );
-
-    canvas.drawPath(path, paint);
-
-    final borderPaint = Paint()
-      ..color = isDark ? Colors.grey.shade800 : Colors.grey.shade200
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-
-    canvas.drawPath(path, borderPaint);
-
-    final accentPaint = Paint()
-      ..color = AppTheme.primary.withOpacity(0.1)
-      ..style = PaintingStyle.fill;
-
-    final accentPath = Path()
-      ..moveTo(size.width * 0.7, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height * 0.3)
-      ..close();
-
-    canvas.drawPath(accentPath, accentPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

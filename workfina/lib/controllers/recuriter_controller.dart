@@ -15,7 +15,8 @@ class RecruiterController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   Map<String, dynamic>? get hrProfile => _hrProfile;
-  List<Map<String, dynamic>> get candidates => _candidates.cast<Map<String, dynamic>>();
+  List<Map<String, dynamic>> get candidates =>
+      _candidates.cast<Map<String, dynamic>>();
   Map<String, dynamic>? get wallet => _wallet;
   List<dynamic> get transactions => _transactions;
   Set<String> get unlockedCandidateIds => _unlockedCandidateIds;
@@ -113,6 +114,8 @@ class RecruiterController extends ChangeNotifier {
     String? country,
     String? religion,
     String? skills,
+    String? name,
+    String? education,
     int page = 1,
     int pageSize = 20,
     bool loadMore = false,
@@ -133,6 +136,8 @@ class RecruiterController extends ChangeNotifier {
         country: country,
         religion: religion,
         skills: skills,
+        name: name,
+        education: education,
         page: page,
         pageSize: pageSize,
       );

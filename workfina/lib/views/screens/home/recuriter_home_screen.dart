@@ -19,6 +19,7 @@ class RecruiterHomeScreen extends StatefulWidget {
 
 class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
   int _currentIndex = 0;
+  GlobalKey<RecruiterFilterScreenState> _filterKey = GlobalKey();
 
   @override
   void initState() {
@@ -34,31 +35,18 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final recruiterController = context.watch<RecruiterController>();
-    // final fullName = (recruiterController.hrProfile?['full_name'] ?? 'HR')
-    //     .split(' ')
-    //     .take(2)
-    //     .join(' ');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      // appBar: showAppBar
-      //     ? AppBar(
-      //         title: Text('HR Dashboard - $fullName',
-      //             style: AppTheme.getAppBarTextStyle()),
-      //         automaticallyImplyLeading: false,
-      //       )
-      //     : null,
       body: IndexedStack(
         index: _currentIndex,
         children: [
           RecruiterDashboard(
             onNavigateToUnlocked: () => setState(() => _currentIndex = 2),
           ),
-          const RecruiterFilterScreen(showUnlockedOnly: false),
+          RecruiterFilterScreen(key: _filterKey, showUnlockedOnly: false),
           RecruiterCandidate(
-            onSwitchToWallet: (index) =>
-                setState(() => _currentIndex = 3), 
+            onSwitchToWallet: (index) => setState(() => _currentIndex = 3),
             showOnlyUnlocked: true,
           ),
           const RecruiterWalletScreen(),
@@ -89,6 +77,9 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
       onTap: () {
         if (_currentIndex != index) {
           HapticFeedback.mediumImpact();
+          if (index == 1) {
+            _filterKey = GlobalKey();
+          }
           setState(() => _currentIndex = index);
         }
       },

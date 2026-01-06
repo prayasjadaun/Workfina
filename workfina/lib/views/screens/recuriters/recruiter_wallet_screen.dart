@@ -58,7 +58,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                       titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
                       background: Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.primary
+                          color: AppTheme.primary,
                           // gradient: LinearGradient(
                           //   colors: [
                           //     AppTheme.primary,
@@ -175,7 +175,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       SvgPicture.asset(
-                                        "assets/svgs/add.svg",
+                                        "assets/svg/add.svg",
                                         width: 24,
                                         height: 24,
                                         colorFilter: ColorFilter.mode(
@@ -223,7 +223,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         child: _buildStatCard(
                           'Unlocked',
                           '${hrController.unlockedCandidateIds.length}',
-                          "assets/svgs/unlock.svg",
+                          "assets/svg/unlock.svg",
                           AppTheme.primary,
                           isDark,
                         ),
@@ -237,7 +237,6 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               SliverToBoxAdapter(
                 child: Container(
                   // decoration: AppTheme.getGradientDecoration(context),
-
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,8 +265,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               if (hrController.transactions.isEmpty)
                 SliverToBoxAdapter(
                   child: Container(
-                  // decoration: AppTheme.getGradientDecoration(context),
-
+                    // decoration: AppTheme.getGradientDecoration(context),
                     padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
                     child: Column(
                       children: [
@@ -303,7 +301,6 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                 )
               else
                 SliverPadding(
-                  
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
@@ -326,7 +323,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
         },
         backgroundColor: AppTheme.primary,
         child: SvgPicture.asset(
-          'assets/svgs/add.svg',
+          'assets/svg/add.svg',
           width: 30,
           height: 30,
           colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
@@ -413,9 +410,9 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-           
+
             child: SvgPicture.asset(
-              isRecharge ? 'assets/svgs/add.svg' : 'assets/svgs/unlock.svg',
+              isRecharge ? 'assets/svg/add.svg' : 'assets/svg/unlock.svg',
               width: 25,
               height: 25,
               colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
@@ -554,10 +551,8 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
+                        width: 80,
+                        height: 70,
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppTheme.primary
@@ -573,6 +568,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                           ),
                         ),
                         child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               '$amount',
@@ -633,10 +629,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: AppTheme.primary,
-                        width: 2,
-                      ),
+                      borderSide: BorderSide(color: AppTheme.primary, width: 2),
                     ),
                   ),
                 ),

@@ -179,8 +179,8 @@ class _EmailScreenState extends State<EmailScreen> {
                               ? null
                               : LinearGradient(
                                   colors: [
-                                    AppTheme.primary,
-                                    AppTheme.primary.withOpacity(0.8),
+                                    AppTheme.blue,
+                                    AppTheme.blue.withOpacity(0.8),
                                   ],
                                 ),
                           color: authController.isLoading
@@ -258,7 +258,7 @@ class _EmailScreenState extends State<EmailScreen> {
                             'Login',
                             style: TextStyle(
                               fontSize: 14,
-                              color: AppTheme.primary,
+                              color: AppTheme.blue,
                               fontWeight: FontWeight.bold,
                             ),
                           ),

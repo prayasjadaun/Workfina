@@ -1,12 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_svg/svg.dart';
 import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
@@ -30,6 +32,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   final TextEditingController _notesController = TextEditingController();
   final FocusNode _notesFocusNode = FocusNode();
   bool _isLoadingNotes = false;
+  bool _isObjectiveExpanded = false;
+  Map<int, bool> _workExpDescriptionExpanded = {};
 
   @override
   void initState() {
@@ -42,6 +46,29 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     _notesController.dispose();
     _notesFocusNode.dispose();
     super.dispose();
+  }
+
+  String _getTruncatedText(String text) {
+    const maxLength = 150; // Approximately 3 lines worth of text
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength);
+  }
+
+  bool _needsViewMore(String text) {
+    const maxLength = 150;
+    return text.length > maxLength;
+  }
+
+  double _calculateExpandedHeight() {
+    final baseHeight = MediaQuery.of(context).size.height * 0.43;
+    if (widget.candidate['career_objective'] != null &&
+        widget.candidate['career_objective'].toString().isNotEmpty) {
+      if (_isObjectiveExpanded) {
+        return baseHeight + 60;
+      }
+      return baseHeight + 20;
+    }
+    return baseHeight;
   }
 
   Future<void> _sendNote() async {
@@ -282,7 +309,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         body: CustomScrollView(
           slivers: [
             SliverAppBar(
-              expandedHeight: MediaQuery.of(context).size.height * 0.43,
+              expandedHeight: _calculateExpandedHeight(),
               floating: false,
               pinned: true,
               backgroundColor: Theme.of(context).colorScheme.primary,
@@ -357,6 +384,96 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           Colors.black.withOpacity(0.8),
                         ],
                       ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.candidate['career_objective'] != null &&
+                            widget.candidate['career_objective']
+                                .toString()
+                                .isNotEmpty) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 5),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.3),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Career Objective',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: _isObjectiveExpanded
+                                            ? widget
+                                                  .candidate['career_objective']
+                                                  .toString()
+                                            : _getTruncatedText(
+                                                widget
+                                                    .candidate['career_objective']
+                                                    .toString(),
+                                              ),
+                                      ),
+                                      if (!_isObjectiveExpanded &&
+                                          _needsViewMore(
+                                            widget.candidate['career_objective']
+                                                .toString(),
+                                          ))
+                                        TextSpan(
+                                          text: ' View More',
+                                          style: const TextStyle(
+                                            color: Colors.blue,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          recognizer: TapGestureRecognizer()
+                                            ..onTap = () {
+                                              setState(() {
+                                                _isObjectiveExpanded = true;
+                                              });
+                                            },
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (_isObjectiveExpanded) ...[
+                                  const SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _isObjectiveExpanded = false;
+                                      });
+                                    },
+                                    child: const Text(
+                                      'View Less',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -435,10 +552,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             decoration: BoxDecoration(
                               color: isDark
                                   ? Colors.white
-                                  : AppTheme.primary.withOpacity(0.1),
+                                  : AppTheme.blueLight.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppTheme.primary.withOpacity(0.3),
+                                color: AppTheme.blue.withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
@@ -447,7 +564,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               children: [
                                 SvgPicture.asset(
                                   "assets/svg/call.svg",
-                                  color: Colors.black,
+                                  color: isDark
+                                      ? Colors.black
+                                      : AppTheme.blueDark,
                                   width: 20,
                                   height: 20,
                                 ),
@@ -465,16 +584,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             decoration: BoxDecoration(
                               color: isDark
                                   ? Colors.white
-                                  : AppTheme.primary.withOpacity(0.1),
+                                  : AppTheme.blueLight.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppTheme.primary.withOpacity(0.3),
+                                color: AppTheme.blue.withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
                             child: SvgPicture.asset(
                               "assets/svg/whatsapp.svg",
-                              color: Colors.black,
+                              color: isDark ? Colors.black : AppTheme.blueDark,
                               width: 20,
                               height: 20,
                             ),
@@ -504,16 +623,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             decoration: BoxDecoration(
                               color: isDark
                                   ? Colors.white
-                                  : AppTheme.primary.withOpacity(0.1),
+                                  : AppTheme.blueLight.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppTheme.primary.withOpacity(0.3),
+                                color: AppTheme.blue.withOpacity(0.3),
                                 width: 1,
                               ),
                             ),
                             child: SvgPicture.asset(
                               "assets/svg/email.svg",
-                              color: Colors.black,
+                              color: isDark ? Colors.black : AppTheme.blueDark,
                               width: 20,
                               height: 20,
                             ),
@@ -541,7 +660,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                         width: 16,
                         height: 16,
                         colorFilter: ColorFilter.mode(
-                          isDark ? Colors.black : Colors.white,
+                          Colors.white,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -550,13 +669,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       'Resume',
                       style: AppTheme.getBodyStyle(
                         context,
-                        color: isDark ? Colors.black : Colors.white,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? Colors.white : Colors.black,
+                      // backgroundColor: isDark ? Colors.white : Colors.black,
+                      backgroundColor: AppTheme.blueDark,
                       foregroundColor: Colors.black,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -634,11 +754,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            // Icon(
-            //   Icons.location_on,
-            //   color: isDark ? Colors.white : AppTheme.primary,
-            //   size: 20,
-            // ),
             SvgPicture.asset(
               "assets/svgs/location.svg",
               color: isDark ? Colors.white : AppTheme.primary,
@@ -976,7 +1091,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               const SizedBox(width: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white : AppTheme.primary,
+                  color: isDark ? Colors.white : AppTheme.blueDark,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -1072,7 +1187,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: AppTheme.blueDark,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
@@ -1334,38 +1449,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   }
 
   Widget _buildEducationSection(BuildContext context) {
-    final educationDetails =
-        widget.candidate['education_details'] ?? 'Not Available';
+    final educations = widget.candidate['educations'];
+    
+    if (educations == null || educations.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    List<TextSpan> spans = [];
+    List<dynamic> educationList = educations is List ? educations : [];
 
-    if (educationDetails.contains(':')) {
-      List<String> parts = educationDetails.split(':');
-      spans.add(
-        TextSpan(
-          text: '${parts[0]}:',
-          style: AppTheme.getBodyStyle(
-            context,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-      if (parts.length > 1) {
-        spans.add(
-          TextSpan(
-            text: parts[1],
-            style: AppTheme.getBodyStyle(context, fontSize: 14),
-          ),
-        );
-      }
-    } else {
-      spans.add(
-        TextSpan(
-          text: educationDetails,
-          style: AppTheme.getBodyStyle(context, fontSize: 14),
-        ),
-      );
+    if (educationList.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     return Container(
@@ -1379,16 +1472,162 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Education',
-            style: AppTheme.getTitleStyle(
-              context,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Text(
+                'Education',
+                style: AppTheme.getTitleStyle(
+                  context,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                ),
+                child: Text(
+                  '${educationList.length} ${educationList.length == 1 ? 'Qualification' : 'Qualifications'}',
+                  style: AppTheme.getLabelStyle(
+                    context,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          RichText(text: TextSpan(children: spans)),
+          ...educationList.asMap().entries.map<Widget>((entry) {
+            final index = entry.key + 1;
+            final edu = entry.value;
+            final institutionName = edu['institution_name'] ?? '';
+            final degree = edu['degree'] ?? '';
+            final fieldOfStudy = edu['field_of_study'] ?? '';
+            final startYear = edu['start_year'] ?? '';
+            final endYear = edu['end_year'] ?? '';
+            final isOngoing = edu['is_ongoing'] ?? false;
+            final gradePercentage = edu['grade_percentage'] ?? '';
+            final location = edu['location'] ?? '';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade800.withOpacity(0.3)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade700
+                      : Colors.grey.shade200,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$index',
+                        style: AppTheme.getBodyStyle(
+                          context,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Degree: ',
+                            style: AppTheme.getBodyStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '$degree${fieldOfStudy.isNotEmpty ? ' in $fieldOfStudy' : ''}\n',
+                            style: AppTheme.getBodyStyle(context, fontSize: 14),
+                          ),
+                          TextSpan(
+                            text: 'Institution: ',
+                            style: AppTheme.getBodyStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '$institutionName\n',
+                            style: AppTheme.getBodyStyle(context, fontSize: 14),
+                          ),
+                          TextSpan(
+                            text: 'Duration: ',
+                            style: AppTheme.getBodyStyle(
+                              context,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          TextSpan(
+                            text: isOngoing ? '$startYear - Ongoing' : '$startYear - $endYear',
+                            style: AppTheme.getBodyStyle(context, fontSize: 14),
+                          ),
+                          if (gradePercentage.isNotEmpty) ...[
+                            TextSpan(
+                              text: '\nGrade: ',
+                              style: AppTheme.getBodyStyle(
+                                context,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '$gradePercentage%',
+                              style: AppTheme.getBodyStyle(context, fontSize: 14),
+                            ),
+                          ],
+                          if (location.isNotEmpty) ...[
+                            TextSpan(
+                              text: '\nLocation: ',
+                              style: AppTheme.getBodyStyle(
+                                context,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(
+                              text: location,
+                              style: AppTheme.getBodyStyle(context, fontSize: 14),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
@@ -1451,80 +1690,16 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   }
 
   Widget _buildWorkExperienceSection(BuildContext context) {
-    final workExp = widget.candidate['work_experience'];
-    if (workExp == null || workExp.toString().isEmpty) {
+    final workExperiences = widget.candidate['work_experiences'];
+
+    if (workExperiences == null || workExperiences.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    String expText = workExp.toString();
-    List<TextSpan> spans = [];
+    List<dynamic> experiences = workExperiences is List ? workExperiences : [];
 
-    // Split and format the text
-    expText = expText
-        .replaceAll('Company:', '\nCompany:')
-        .replaceAll('Role:', '\nRole:')
-        .replaceAll('Duration:', '\nDuration:');
-
-    List<String> parts = expText.split('\n');
-
-    for (int i = 0; i < parts.length; i++) {
-      String part = parts[i].trim();
-      if (part.isEmpty) continue;
-
-      if (part.startsWith('Company:')) {
-        spans.add(
-          TextSpan(
-            text: 'Company: ',
-            style: AppTheme.getBodyStyle(
-              context,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: part.substring(8).trim(),
-            style: AppTheme.getBodyStyle(context, fontSize: 14),
-          ),
-        );
-      } else if (part.startsWith('Role:')) {
-        spans.add(TextSpan(text: '\n'));
-        spans.add(
-          TextSpan(
-            text: 'Role: ',
-            style: AppTheme.getBodyStyle(
-              context,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: part.substring(5).trim(),
-            style: AppTheme.getBodyStyle(context, fontSize: 14),
-          ),
-        );
-      } else if (part.startsWith('Duration:')) {
-        spans.add(TextSpan(text: '\n'));
-        spans.add(
-          TextSpan(
-            text: 'Duration: ',
-            style: AppTheme.getBodyStyle(
-              context,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: '${part.substring(9).trim()} months',
-            style: AppTheme.getBodyStyle(context, fontSize: 14),
-          ),
-        );
-      }
+    if (experiences.isEmpty) {
+      return const SizedBox.shrink();
     }
 
     return Container(
@@ -1538,16 +1713,231 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Work Experience',
-            style: AppTheme.getTitleStyle(
-              context,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Text(
+                'Work Experience',
+                style: AppTheme.getTitleStyle(
+                  context,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                ),
+                child: Text(
+                  '${experiences.length} ${experiences.length == 1 ? 'Company' : 'Companies'}',
+                  style: AppTheme.getLabelStyle(
+                    context,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          RichText(text: TextSpan(children: spans)),
+          ...experiences.asMap().entries.map<Widget>((entry) {
+            final index = entry.key + 1;
+            final exp = entry.value;
+            final companyName = exp['company_name'] ?? '';
+            final roleTitle = exp['role_title'] ?? '';
+            final startDate = exp['start_date'] ?? '';
+            final endDate = exp['end_date'] ?? '';
+            final isCurrent = exp['is_current'] ?? false;
+            final location = exp['location'] ?? '';
+
+            // Format dates
+            String duration = '';
+            if (startDate.isNotEmpty) {
+              try {
+                final start = DateTime.parse(startDate);
+                final startFormatted = DateFormat('MMM yyyy').format(start);
+                
+                if (isCurrent) {
+                  duration = '$startFormatted - Present';
+                } else if (endDate.isNotEmpty) {
+                  final end = DateTime.parse(endDate);
+                  final endFormatted = DateFormat('MMM yyyy').format(end);
+                  duration = '$startFormatted - $endFormatted';
+                } else {
+                  duration = startFormatted;
+                }
+              } catch (e) {
+                duration = isCurrent ? '$startDate - Present' : '$startDate - $endDate';
+              }
+            }
+
+            final description = exp['description'] ?? '';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade800.withOpacity(0.3)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade700
+                      : Colors.grey.shade200,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$index',
+                            style: AppTheme.getBodyStyle(
+                              context,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Company: ',
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$companyName\n',
+                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                              ),
+                              TextSpan(
+                                text: 'Role: ',
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '$roleTitle\n',
+                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                              ),
+                              TextSpan(
+                                text: 'Duration: ',
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              TextSpan(
+                                text: duration,
+                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                              ),
+                              if (location.isNotEmpty) ...[
+                                TextSpan(
+                                  text: '\nLocation: ',
+                                  style: AppTheme.getBodyStyle(
+                                    context,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: location,
+                                  style: AppTheme.getBodyStyle(context, fontSize: 14),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // if (description.isNotEmpty) ...[
+                  //   const SizedBox(height: 12),
+                  //   Row(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       const SizedBox(width: 36), // Align with content above
+                  //       Expanded(
+                  //         child: Column(
+                  //           crossAxisAlignment: CrossAxisAlignment.start,
+                  //           children: [
+                  //             Text(
+                  //               'Description: ',
+                  //               style: AppTheme.getBodyStyle(
+                  //                 context,
+                  //                 fontSize: 14,
+                  //                 fontWeight: FontWeight.bold,
+                  //               ),
+                  //             ),
+                  //             const SizedBox(height: 4),
+                  //             RichText(
+                  //               text: TextSpan(
+                  //                 style: AppTheme.getBodyStyle(context, fontSize: 14),
+                  //                 children: [
+                  //                   TextSpan(
+                  //                     text: _workExpDescriptionExpanded[index] == true
+                  //                         ? description
+                  //                         : _getTruncatedText(description),
+                  //                   ),
+                  //                   if (description.length > 120) ...[
+                  //                     TextSpan(text: ' '),
+                  //                     TextSpan(
+                  //                       text: _workExpDescriptionExpanded[index] == true
+                  //                           ? 'View Less'
+                  //                           : 'View More',
+                  //                       style: AppTheme.getBodyStyle(
+                  //                         context,
+                  //                         color: AppTheme.primary,
+                  //                         fontWeight: FontWeight.w600,
+                  //                       ),
+                  //                       recognizer: TapGestureRecognizer()
+                  //                         ..onTap = () {
+                  //                           setState(() {
+                  //                             _workExpDescriptionExpanded[index] =
+                  //                                 !(_workExpDescriptionExpanded[index] ?? false);
+                  //                           });
+                  //                         },
+                  //                     ),
+                  //                   ],
+                  //                 ],
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ],
+                ],
+              ),
+            );
+          }).toList(),
         ],
       ),
     );
