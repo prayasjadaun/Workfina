@@ -32,9 +32,26 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen> {
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _educationController = TextEditingController();
   final TextEditingController _skillsController = TextEditingController();
+  final TextEditingController _otherRoleController = TextEditingController();
 
-  // New controllers for additional fields
-  final TextEditingController _languagesController = TextEditingController();
+  List<String> _selectedLanguages = [];
+  String? _currentLanguageValue;
+
+  final List<String> _availableLanguages = [
+    'Hindi',
+    'English',
+    'Punjabi',
+    'Bengali',
+    'Telugu',
+    'Marathi',
+    'Tamil',
+    'Gujarati',
+    'Urdu',
+    'Kannada',
+    'Malayalam',
+    'Odia',
+  ];
+
   final TextEditingController _streetAddressController =
       TextEditingController();
   final TextEditingController _careerObjectiveController =
@@ -47,6 +64,8 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen> {
   bool _willingToRelocate = false;
 
   String _selectedRole = 'IT';
+  bool _isOtherRole = false; // YEH ADD KARO
+
   String _selectedReligion = 'PREFER_NOT_TO_SAY';
   File? _resumeFile;
   String? _resumeFileName;
@@ -98,24 +117,26 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen> {
   bool _validateCurrentPage() {
     switch (_currentPage) {
       case 0:
-        // Personal Information
+        // Personal Information with Compensation & Location
         return _fullNameController.text.isNotEmpty &&
             _phoneController.text.length == 10 &&
             _ageController.text.isNotEmpty &&
-            _experienceController.text.isNotEmpty &&
-            _workExperiences.isNotEmpty;
+            _stateController.text.isNotEmpty &&
+            _cityController.text.isNotEmpty &&
+            (!_isOtherRole || _otherRoleController.text.isNotEmpty);
 
       case 1:
-        // Professional Information - Check graduation (required) and skills
-          return _educationList.isNotEmpty && _skillsController.text.isNotEmpty;
+        // Work Experience (optional but at least structure should be valid)
+        return true;
 
       case 2:
-        // Compensation & Location
-        return _stateController.text.isNotEmpty &&
-            _cityController.text.isNotEmpty;
+        // Education - At least one education entry required
+        return _educationList.isNotEmpty && _skillsController.text.isNotEmpty;
+
       case 3:
         // Documents (optional)
         return true;
+
       default:
         return false;
     }
@@ -443,82 +464,159 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen> {
   }
 
   Future<void> _submitProfile() async {
-    final controller = context.read<CandidateController>();
-
-    // Convert work experiences to JSON string
-    String workExperienceJson = '';
-    if (_workExperiences.isNotEmpty) {
-      workExperienceJson = _workExperiences
-          .map(
-            (exp) => {
-              'company_name': exp['company_name'],
-              'job_role': exp['job_role'],
-              'start_month': exp['start_month'],
-              'start_year': exp['start_year'],
-              'end_month': exp['end_month'],
-              'end_year': exp['end_year'],
-              'is_current': exp['is_current'],
-            },
-          )
-          .toList()
-          .toString();
-    }
-
-    String educationJson = '';
-if (_educationList.isNotEmpty) {
-  educationJson = _educationList.map((edu) => {
-    'school': edu['school'],
-    'degree': edu['degree'],
-    'field': edu['field'],
-    'start_month': edu['start_month'],
-    'start_year': edu['start_year'],
-    'end_month': edu['end_month'],
-    'end_year': edu['end_year'],
-    'grade': edu['grade'],
-  }).toList().toString();
-}
-
-
-    final success = await controller.registerCandidate(
-      fullName: _fullNameController.text,
-      phone: _phoneController.text,
-      age: int.parse(_ageController.text),
-      role: _selectedRole,
-      experienceYears: int.parse(_experienceController.text),
-      currentCtc: _currentCtcController.text.isEmpty
-          ? null
-          : double.parse(_currentCtcController.text),
-      expectedCtc: _expectedCtcController.text.isEmpty
-          ? null
-          : double.parse(_expectedCtcController.text),
-      religion: _selectedReligion,
-      state: _stateController.text,
-      city: _cityController.text,
-      // education: _educationController.text,
-      skills: _skillsController.text,
-      resumeFile: _resumeFile,
-      videoIntroFile: _videoIntroFile,
-      profileImage: _profileImage,
-      languages: _languagesController.text,
-      education: educationJson, 
-      streetAddress: _streetAddressController.text,
-      willingToRelocate: _willingToRelocate,
-      workExperience: workExperienceJson,
-      careerObjective: _careerObjectiveController.text,
+  // VALIDATE ALL REQUIRED FIELDS FIRST
+  if (_fullNameController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter your full name'),
+        backgroundColor: Colors.red,
+      ),
     );
+    return;
+  }
 
-    if (success) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/candidate-home',
-        (route) => false,
-      );
-    } else if (controller.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(controller.error!), backgroundColor: Colors.red),
-      );
+  if (_phoneController.text.isEmpty || _phoneController.text.length != 10) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter a valid 10-digit phone number'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (_ageController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter your age'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (_educationList.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please add at least one education qualification'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (_skillsController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter your skills'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  if (_stateController.text.isEmpty || _cityController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please enter your state and city'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  final controller = context.read<CandidateController>();
+
+  String workExperienceJson = '';
+  if (_workExperiences.isNotEmpty) {
+    workExperienceJson = _workExperiences
+        .map(
+          (exp) => {
+            'company_name': exp['company_name'],
+            'job_role': exp['job_role'],
+            'start_month': exp['start_month'],
+            'start_year': exp['start_year'],
+            'end_month': exp['end_month'],
+            'end_year': exp['end_year'],
+            'is_current': exp['is_current'],
+          },
+        )
+        .toList()
+        .toString();
+  }
+
+  String educationJson = '';
+  if (_educationList.isNotEmpty) {
+    educationJson = _educationList
+        .map(
+          (edu) => {
+            'school': edu['school'],
+            'degree': edu['degree'],
+            'field': edu['field'],
+            'start_month': edu['start_month'],
+            'start_year': edu['start_year'],
+            'end_month': edu['end_month'],
+            'end_year': edu['end_year'],
+            'grade': edu['grade'],
+          },
+        )
+        .toList()
+        .toString();
+  }
+
+  // Calculate experience years
+  int experienceYears = 0;
+  if (_workExperiences.isNotEmpty) {
+    for (var exp in _workExperiences) {
+      int startYear = int.parse(exp['start_year']);
+      int endYear = exp['is_current'] 
+          ? DateTime.now().year 
+          : int.parse(exp['end_year']);
+      experienceYears += (endYear - startYear);
     }
   }
+
+  final success = await controller.registerCandidate(
+    fullName: _fullNameController.text,
+    phone: _phoneController.text,
+    age: int.parse(_ageController.text),
+    role: _selectedRole == 'OTHER'
+        ? _otherRoleController.text
+        : _selectedRole,
+    experienceYears: experienceYears,
+    currentCtc: _currentCtcController.text.isEmpty
+        ? null
+        : double.parse(_currentCtcController.text),
+    expectedCtc: _expectedCtcController.text.isEmpty
+        ? null
+        : double.parse(_expectedCtcController.text),
+    religion: _selectedReligion,
+    state: _stateController.text,
+    city: _cityController.text,
+    skills: _skillsController.text,
+    resumeFile: _resumeFile,
+    videoIntroFile: _videoIntroFile,
+    profileImage: _profileImage,
+    languages: _selectedLanguages.join(', '),
+    education: educationJson,
+    streetAddress: _streetAddressController.text,
+    willingToRelocate: _willingToRelocate,
+    workExperience: workExperienceJson,
+    careerObjective: _careerObjectiveController.text,
+  );
+
+  if (success) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/candidate-home',
+      (route) => false,
+    );
+  } else if (controller.error != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(controller.error!), backgroundColor: Colors.red),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -545,18 +643,17 @@ if (_educationList.isNotEmpty) {
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics:
-                  const NeverScrollableScrollPhysics(), // Disable manual swipe
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (page) {
                 setState(() {
                   _currentPage = page;
                 });
               },
               children: [
-                _buildPersonalInfoPage(),
-                _buildProfessionalInfoPage(),
-                _buildLocationPage(),
-                _buildDocumentsPage(),
+                _buildPersonalInfoPage(), // Page 1: Personal + Compensation + Location
+                _buildWorkExperiencePage(), // Page 2: Work Experience
+                _buildProfessionalInfoPage(), // Page 3: Education + Skills
+                _buildDocumentsPage(), // Page 4: Documents
               ],
             ),
           ),
@@ -576,7 +673,7 @@ if (_educationList.isNotEmpty) {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Step ${_currentPage + 1} of 4',
+                'Step ${_currentPage + 1} of 4', // Change from 4 to 5
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -584,7 +681,7 @@ if (_educationList.isNotEmpty) {
                 ),
               ),
               Text(
-                '${((_currentPage + 1) / 4 * 100).toInt()}% Complete',
+                '${((_currentPage + 1) / 4 * 100).toInt()}% Complete', // Change from 4 to 5
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,
@@ -595,9 +692,12 @@ if (_educationList.isNotEmpty) {
           const SizedBox(height: 12),
           Row(
             children: List.generate(4, (index) {
+              // Change from 4 to 5
               return Expanded(
                 child: Container(
-                  margin: EdgeInsets.only(right: index < 3 ? 8 : 0),
+                  margin: EdgeInsets.only(
+                    right: index < 3 ? 8 : 0,
+                  ), // Change from 3 to 4
                   height: 6,
                   decoration: BoxDecoration(
                     color: index <= _currentPage
@@ -680,7 +780,9 @@ if (_educationList.isNotEmpty) {
                             ),
                           )
                         : Text(
-                            _currentPage < 3 ? 'Continue' : 'Submit Profile',
+                            _currentPage < 3
+                                ? 'Continue'
+                                : 'Submit Profile', // Change from 3 to 4
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -800,28 +902,130 @@ if (_educationList.isNotEmpty) {
                   keyboardType: TextInputType.number,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildTextField(
-                  controller: _experienceController,
-                  label: 'Experience (Years)',
-                  icon: Icons.work_history,
-                  isRequired: true,
-                  keyboardType: TextInputType.number,
-                ),
-              ),
+              // const SizedBox(width: 16),
+              // Expanded(
+              //   child: _buildTextField(
+              //     controller: _experienceController,
+              //     label: 'Experience (Years)',
+              //     icon: Icons.work_history,
+              //     isRequired: true,
+              //     keyboardType: TextInputType.number,
+              //   ),
+              // ),
             ],
           ),
 
           const SizedBox(height: 20),
 
-          // Languages
-          _buildTextField(
-            controller: _languagesController,
-            label: 'Languages',
-            icon: Icons.language,
-            hintText: 'e.g., Hindi, English, Punjabi (comma separated)',
-            maxLines: 2,
+          // // Languages
+          // _buildTextField(
+          //   controller: _languagesController,
+          //   label: 'Languages',
+          //   icon: Icons.language,
+          //   hintText: 'e.g., Hindi, English, Punjabi (comma separated)',
+          //   maxLines: 2,
+          // ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<String>(
+                key: ValueKey(_selectedLanguages.length),
+                value: _currentLanguageValue,
+
+                dropdownColor: Colors.white,
+                style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
+                decoration: InputDecoration(
+                  labelText: 'Select Language',
+                  labelStyle: const TextStyle(color: Color(0xFF6B7280)),
+                  prefixIcon: const Icon(
+                    Icons.language,
+                    color: Color(0xFF6B7280),
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppTheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                hint: const Text('Choose a language'),
+                items: _availableLanguages
+                    .where((lang) => !_selectedLanguages.contains(lang))
+                    .map(
+                      (lang) =>
+                          DropdownMenuItem(value: lang, child: Text(lang)),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedLanguages.add(value);
+                      _currentLanguageValue = null;
+                    });
+                  }
+                },
+              ),
+              if (_selectedLanguages.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _selectedLanguages
+                      .map(
+                        (lang) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                lang,
+                                style: const TextStyle(
+                                  color: AppTheme.primary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () => setState(
+                                  () => _selectedLanguages.remove(lang),
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: AppTheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ],
           ),
 
           const SizedBox(height: 20),
@@ -832,7 +1036,8 @@ if (_educationList.isNotEmpty) {
             label: 'Street Address',
             icon: Icons.home,
             hintText: 'House no., Street, Area',
-            maxLines: 2,
+            minLines: 1, // YEH ADD KARO
+            maxLines: null,
           ),
 
           const SizedBox(height: 20),
@@ -880,7 +1085,8 @@ if (_educationList.isNotEmpty) {
             icon: Icons.flag,
             hintText:
                 'Describe your career goals and what you are looking for...',
-            maxLines: 4,
+            maxLines: null,
+            minLines: 1,
           ),
 
           const SizedBox(height: 20),
@@ -889,40 +1095,163 @@ if (_educationList.isNotEmpty) {
             label: 'Role/Department',
             icon: Icons.business_center,
             items: _roles,
-            onChanged: (value) => setState(() => _selectedRole = value!),
+            onChanged: (value) => setState(() {
+              _selectedRole = value!;
+              _isOtherRole = value == 'OTHER';
+            }),
           ),
           const SizedBox(height: 20),
 
-          // Work Experience Section Header
+          const SizedBox(height: 20),
+
+          if (_isOtherRole)
+            Column(
+              children: [
+                _buildTextField(
+                  controller: _otherRoleController,
+                  label: 'Specify Role',
+                  icon: Icons.edit,
+                  isRequired: true,
+                  hintText: 'Enter your role',
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+
           Row(
             children: [
-              const Icon(Icons.work_outline, color: AppTheme.primary, size: 20),
+              const Icon(
+                Icons.currency_rupee,
+                color: AppTheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               const Text(
-                'Work Experience',
+                'Compensation',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1A1A1A),
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppTheme.primary,
-                  size: 28,
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _currentCtcController,
+                  label: 'Current CTC',
+                  icon: Icons.currency_rupee,
+                  keyboardType: TextInputType.number,
+                  hintText: 'Annual package',
                 ),
-                onPressed: _showAddExperienceDialog,
-                tooltip: 'Add Experience',
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _expectedCtcController,
+                  label: 'Expected CTC',
+                  icon: Icons.trending_up,
+                  keyboardType: TextInputType.number,
+                  hintText: 'Expected package',
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Add your previous work experience (if any)',
-            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+
+          const SizedBox(height: 32),
+
+          // Location Section Header
+          Row(
+            children: [
+              const Icon(Icons.location_on, color: AppTheme.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Location',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text(
+                '*',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildTextField(
+                  controller: _stateController,
+                  label: 'State',
+                  icon: Icons.location_on,
+                  isRequired: true,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildTextField(
+                  controller: _cityController,
+                  label: 'City',
+                  icon: Icons.location_city,
+                  isRequired: true,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildDropdownField(
+            value: _selectedReligion,
+            label: 'Religion (Optional)',
+            icon: Icons.account_circle,
+            items: _religions,
+            onChanged: (value) => setState(() => _selectedReligion = value!),
+          ),
+
+          // // Work Experience Section Header
+          // Row(
+          //   children: [
+          //     const Icon(Icons.work_outline, color: AppTheme.primary, size: 20),
+          //     const SizedBox(width: 8),
+          //     const Text(
+          //       'Work Experience',
+          //       style: TextStyle(
+          //         fontSize: 18,
+          //         fontWeight: FontWeight.bold,
+          //         color: Color(0xFF1A1A1A),
+          //       ),
+          //     ),
+          //     const Spacer(),
+          //     IconButton(
+          //       icon: const Icon(
+          //         Icons.add_circle,
+          //         color: AppTheme.primary,
+          //         size: 28,
+          //       ),
+          //       onPressed: _showAddExperienceDialog,
+          //       tooltip: 'Add Experience',
+          //     ),
+          //   ],
+          // ),
+          // const SizedBox(height: 4),
+          // Text(
+          //   'Add your previous work experience (if any)',
+          //   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          // ),
           const SizedBox(height: 16),
 
           // Display Work Experiences
@@ -965,6 +1294,92 @@ if (_educationList.isNotEmpty) {
     );
   }
 
+  // PAGE 2: Work Experience
+Widget _buildWorkExperiencePage() {
+  return SingleChildScrollView(
+    padding: const EdgeInsets.all(20),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildPageHeader(
+          icon: Icons.work_outline,
+          title: 'Work Experience',
+          subtitle: 'Add your previous work experience',
+        ),
+        const SizedBox(height: 32),
+
+        // Work Experience Section
+        Row(
+          children: [
+            const Icon(Icons.work_outline, color: AppTheme.primary, size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Experience Details',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const Spacer(),
+            IconButton(
+              icon: const Icon(
+                Icons.add_circle,
+                color: AppTheme.primary,
+                size: 28,
+              ),
+              onPressed: _showAddExperienceDialog,
+              tooltip: 'Add Experience',
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Add your work experience (Optional - but recommended)',
+          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+
+        // Display Work Experiences
+        if (_workExperiences.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.work_outline, size: 48, color: Colors.grey[400]),
+                const SizedBox(height: 12),
+                Text(
+                  'No work experience added yet',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: _showAddExperienceDialog,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Experience'),
+                ),
+              ],
+            ),
+          )
+        else
+          ...(_workExperiences.asMap().entries.map((entry) {
+            int index = entry.key;
+            Map<String, dynamic> exp = entry.value;
+            return _buildExperienceCard(exp, index);
+          }).toList()),
+      ],
+    ),
+  );
+}
+
   // PAGE 2: Professional Information
   Widget _buildProfessionalInfoPage() {
     return Consumer<CandidateController>(
@@ -974,21 +1389,6 @@ if (_educationList.isNotEmpty) {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // _buildPageHeader(
-              //   icon: Icons.work_outline,
-              //   title: 'Professional Information',
-              //   subtitle: 'Your career details',
-              // ),
-              // const SizedBox(height: 32),
-              // _buildDropdownField(
-              //   value: _selectedRole,
-              //   label: 'Role/Department',
-              //   icon: Icons.business_center,
-              //   items: _roles,
-              //   onChanged: (value) => setState(() => _selectedRole = value!),
-              // ),
-              // const SizedBox(height: 20),
-              // Education Section Header
               const SizedBox(height: 24),
               // Education Section Header
               const SizedBox(height: 24),
@@ -1067,11 +1467,10 @@ if (_educationList.isNotEmpty) {
                 label: 'Skills',
                 icon: Icons.psychology,
                 isRequired: true,
-                maxLines: 4,
+                minLines: 1,
+                maxLines: null,
                 hintText: 'e.g., Python, Django, React (comma separated)',
               ),
-
-              
             ],
           ),
         );
@@ -1574,7 +1973,9 @@ if (_educationList.isNotEmpty) {
     String? hintText,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
-    int maxLines = 1,
+    int? maxLines = 1,
+    int? minLines,
+
     int? maxLength,
   }) {
     return TextFormField(
@@ -1610,6 +2011,8 @@ if (_educationList.isNotEmpty) {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       maxLines: maxLines,
+      minLines: minLines,
+
       maxLength: maxLength,
     );
   }
@@ -1745,9 +2148,11 @@ if (_educationList.isNotEmpty) {
     _cityController.dispose();
     _educationController.dispose();
     _skillsController.dispose();
-    _languagesController.dispose();
+    // _languagesController.dispose();
     _streetAddressController.dispose();
     _careerObjectiveController.dispose();
+    _otherRoleController.dispose();
+
     super.dispose();
   }
 

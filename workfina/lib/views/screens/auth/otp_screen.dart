@@ -90,7 +90,7 @@ class _OTPScreenState extends State<OTPScreen> {
                 
                 // Title
                 const Text(
-                  'We just sent an SMS',
+                  'We just sent an Email',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
