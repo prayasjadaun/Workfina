@@ -422,13 +422,13 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           ),
 
           // Statistics Items
-          _buildProfileInfoItem(
-            icon: Icons.work_outline_rounded,
-            title: 'Experience',
-            value: '${profileData['experience_years'] ?? 0} years',
-            isDark: isDark,
-            iconColor: const Color.fromARGB(255, 35, 35, 36),
-          ),
+          // _buildProfileInfoItem(
+          //   icon: Icons.work_outline_rounded,
+          //   title: 'Experience',
+          //   value: '${profileData['experience_years'] ?? 0} years',
+          //   isDark: isDark,
+          //   iconColor: const Color.fromARGB(255, 35, 35, 36),
+          // ),
           _buildDivider(isDark),
           _buildProfileInfoItem(
             icon: Icons.cake_outlined,
