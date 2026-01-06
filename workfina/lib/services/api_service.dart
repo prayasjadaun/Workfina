@@ -866,12 +866,12 @@ class ApiService {
         if (religion != null) 'religion': religion,
         if (state != null) 'state': state,
         if (city != null) 'city': city,
-        if (education != null) 'education': education,
+        if (education != null) 'educations': education,
         if (skills != null) 'skills': skills,
         if (languages != null) 'languages': languages,
         if (streetAddress != null) 'street_address': streetAddress,
         if (willingToRelocate != null) 'willing_to_relocate': willingToRelocate,
-        if (workExperience != null) 'work_experience': workExperience,
+        if (workExperience != null) 'work_experiences': workExperience,
         if (careerObjective != null) 'career_objective': careerObjective,
         if (resumeFile != null)
           'resume': await MultipartFile.fromFile(

@@ -196,7 +196,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       text: widget.profileData['career_objective'] ?? '',
     );
 
-    // Convert skills list to comma-separated string
     final skillsList = widget.profileData['skills_list'] as List<dynamic>?;
     _skillsController = TextEditingController(
       text: skillsList?.join(', ') ?? widget.profileData['skills'] ?? '',
