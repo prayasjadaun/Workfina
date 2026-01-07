@@ -605,327 +605,374 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   // ========== Work Experience Methods ==========
 
   void _showAddExperienceDialog() {
-    final companyController = TextEditingController();
-    final roleController = TextEditingController();
-    String startMonth = 'January';
-    String startYear = DateTime.now().year.toString();
-    String endMonth = 'January';
-    String endYear = DateTime.now().year.toString();
-    bool isCurrentlyWorking = false;
+  final companyController = TextEditingController();
+  final roleController = TextEditingController();
+  final locationController = TextEditingController(); // ✅ NEW
+  final descriptionController = TextEditingController(); // ✅ NEW
 
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+  String startMonth = 'January';
+  String startYear = DateTime.now().year.toString();
+  String endMonth = 'January';
+  String endYear = DateTime.now().year.toString();
+  bool isCurrentlyWorking = false;
 
-    final years = List.generate(
-      50,
-      (index) => (DateTime.now().year - index).toString(),
-    );
+  final months = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December',
+  ];
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Work Experience'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: companyController,
-                  decoration: const InputDecoration(
-                    labelText: 'Company Name *',
-                    hintText: 'e.g., Pro HousyPoint Tech Solutions',
-                    border: OutlineInputBorder(),
-                  ),
+  final years = List.generate(
+    50,
+    (index) => (DateTime.now().year - index).toString(),
+  );
+
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setDialogState) => AlertDialog(
+        title: const Text('Add Work Experience'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              /// Company
+              TextField(
+                controller: companyController,
+                decoration: const InputDecoration(
+                  labelText: 'Company Name *',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: roleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Job Role/Position *',
-                    hintText: 'e.g., Mobile App Intern',
-                    border: OutlineInputBorder(),
-                  ),
+              ),
+              const SizedBox(height: 12),
+
+              /// Role
+              TextField(
+                controller: roleController,
+                decoration: const InputDecoration(
+                  labelText: 'Job Role / Position *',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Start Date *',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+              ),
+              const SizedBox(height: 12),
+
+              /// ✅ Location
+              TextField(
+                controller: locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  hintText: 'e.g. Gurgaon, Haryana',
+                  border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 12),
+
+              /// ✅ Description
+              TextField(
+                controller: descriptionController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'Briefly describe your role & work',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              /// Start Date
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Start Date *',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(height: 8),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: startMonth,
+                      decoration: const InputDecoration(
+                        labelText: 'Month',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: months
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (v) => setDialogState(() => startMonth = v!),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: startYear,
+                      decoration: const InputDecoration(
+                        labelText: 'Year',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: years
+                          .map((y) => DropdownMenuItem(value: y, child: Text(y)))
+                          .toList(),
+                      onChanged: (v) => setDialogState(() => startYear = v!),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              CheckboxListTile(
+                value: isCurrentlyWorking,
+                onChanged: (v) =>
+                    setDialogState(() => isCurrentlyWorking = v ?? false),
+                title: const Text('I am currently working in this role'),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+
+              if (!isCurrentlyWorking) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: startMonth,
+                        value: endMonth,
                         decoration: const InputDecoration(
-                          labelText: 'Month',
+                          labelText: 'End Month',
                           border: OutlineInputBorder(),
                         ),
                         items: months
-                            .map(
-                              (month) => DropdownMenuItem(
-                                value: month,
-                                child: Text(month),
-                              ),
-                            )
+                            .map((m) =>
+                                DropdownMenuItem(value: m, child: Text(m)))
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => startMonth = value!);
-                        },
+                        onChanged: (v) =>
+                            setDialogState(() => endMonth = v!),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: startYear,
+                        value: endYear,
                         decoration: const InputDecoration(
-                          labelText: 'Year',
+                          labelText: 'End Year',
                           border: OutlineInputBorder(),
                         ),
                         items: years
-                            .map(
-                              (year) => DropdownMenuItem(
-                                value: year,
-                                child: Text(year),
-                              ),
-                            )
+                            .map((y) =>
+                                DropdownMenuItem(value: y, child: Text(y)))
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => startYear = value!);
-                        },
+                        onChanged: (v) =>
+                            setDialogState(() => endYear = v!),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  value: isCurrentlyWorking,
-                  onChanged: (value) {
-                    setDialogState(() => isCurrentlyWorking = value ?? false);
-                  },
-                  title: const Text('I am currently working in this role'),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                if (!isCurrentlyWorking) ...[
-                  const SizedBox(height: 8),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'End Date *',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: endMonth,
-                          decoration: const InputDecoration(
-                            labelText: 'Month',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: months
-                              .map(
-                                (month) => DropdownMenuItem(
-                                  value: month,
-                                  child: Text(month),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setDialogState(() => endMonth = value!);
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: endYear,
-                          decoration: const InputDecoration(
-                            labelText: 'Year',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: years
-                              .map(
-                                (year) => DropdownMenuItem(
-                                  value: year,
-                                  child: Text(year),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setDialogState(() => endYear = value!);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (companyController.text.isEmpty ||
-                    roleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please fill all required fields'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                setState(() {
-                  _workExperiences.add({
-                    'company_name': companyController.text,
-                    'job_role': roleController.text,
-                    'start_month': startMonth,
-                    'start_year': startYear,
-                    'end_month': isCurrentlyWorking ? null : endMonth,
-                    'end_year': isCurrentlyWorking ? null : endYear,
-                    'is_current': isCurrentlyWorking,
-                  });
-                });
-
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-              ),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
-            ),
-          ],
         ),
-      ),
-    );
-  }
 
-  Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
-    String duration =
-        '${experience['start_month']} ${experience['start_year']} - ';
-    if (experience['is_current']) {
-      duration += 'Present';
-    } else {
-      duration += '${experience['end_month']} ${experience['end_year']}';
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.business,
-              color: AppTheme.primary,
-              size: 24,
-            ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  experience['job_role'],
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  experience['company_name'],
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      duration,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-                if (experience['is_current'])
-                  Container(
-                    margin: const EdgeInsets.only(top: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Currently Working',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green.shade700,
-                      ),
-                    ),
-                  ),
-              ],
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () {
+              if (companyController.text.isEmpty ||
+                  roleController.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please fill all required fields'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
               setState(() {
-                _workExperiences.removeAt(index);
+                _workExperiences.add({
+                  'company_name': companyController.text,
+                  'job_role': roleController.text,
+                  'location': locationController.text, // ✅ ADDED
+                  'description': descriptionController.text, // ✅ ADDED
+                  'start_month': startMonth,
+                  'start_year': startYear,
+                  'end_month': isCurrentlyWorking ? null : endMonth,
+                  'end_year': isCurrentlyWorking ? null : endYear,
+                  'is_current': isCurrentlyWorking,
+                });
               });
+
+              Navigator.pop(context);
             },
-            tooltip: 'Remove',
+            child: const Text('Add', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
+
+ Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
+  String duration =
+      '${experience['start_month']} ${experience['start_year']}';
+  duration += experience['is_current']
+      ? ' - Present'
+      : ' - ${experience['end_month']} ${experience['end_year']}';
+
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// HEADER ROW
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// ICON
+            Container(
+              height: 48,
+              width: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.business_center,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            /// TITLE INFO
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    experience['job_role'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    experience['company_name'] ?? '',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// DELETE
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              onPressed: () {
+                setState(() {
+                  _workExperiences.removeAt(index);
+                });
+              },
+            ),
+          ],
+        ),
+
+        /// LOCATION
+        if (experience['location'] != null &&
+            experience['location'].toString().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                Icon(Icons.location_on_outlined,
+                    size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Text(
+                  experience['location'],
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+
+        /// DATE
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_month_outlined,
+                  size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                duration,
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+
+        /// DESCRIPTION
+        if (experience['description'] != null &&
+            experience['description'].toString().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text(
+              experience['description'],
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: Colors.grey[800],
+              ),
+            ),
+          ),
+
+        /// CURRENTLY WORKING BADGE
+        if (experience['is_current'])
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                'Currently Working',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green.shade700,
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
+
+
 
   // ========== Education Methods ==========
 

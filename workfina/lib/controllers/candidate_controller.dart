@@ -84,27 +84,7 @@ class CandidateController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // void setRole(String role) {
-  //   selectedRole = role;
-  //   notifyListeners();
-  // }
-
-  // void setReligion(String religion) {
-  //   selectedReligion = religion;
-  //   notifyListeners();
-  // }
-
-  // void setResumeFile(File? file, String? fileName) {
-  //   resumeFile = file;
-  //   resumeFileName = fileName;
-  //   notifyListeners();
-  // }
-
-  // void setVideoFile(File? file, String? fileName) {
-  //   videoIntroFile = file;
-  //   videoIntroFileName = fileName;
-  //   notifyListeners();
-  // }
+  
 
   String combineEducationData() {
     List<String> educationParts = [];
@@ -341,11 +321,7 @@ class CandidateController extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Personal Info
-    // fullNameController.dispose();
-    // phoneController.dispose();
-    // ageController.dispose();
-    // experienceController.dispose();
+    
 
     // Education - 10th
     class10Controller.dispose();

@@ -2213,7 +2213,28 @@ Widget _buildWorkExperiencePage() {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 16),
+              //   const SizedBox(height: 16),
+              //    TextField(
+              //   controller: locationController,
+              //   decoration: const InputDecoration(
+              //     labelText: 'Location',
+              //     hintText: 'e.g. Gurgaon, Haryana',
+              //     border: OutlineInputBorder(),
+              //   ),
+              // ),
+              // const SizedBox(height: 12),
+
+              // /// ✅ Description
+              // TextField(
+              //   controller: descriptionController,
+              //   maxLines: 3,
+              //   decoration: const InputDecoration(
+              //     labelText: 'Description',
+              //     hintText: 'Briefly describe your role & work',
+              //     border: OutlineInputBorder(),
+              //   ),
+              // ),
+              const SizedBox(height: 16),
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
