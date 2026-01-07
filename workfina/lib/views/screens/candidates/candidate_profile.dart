@@ -252,7 +252,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           const SizedBox(height: 20),
 
           // Education Card
-          _buildEducationCard(profileData, isDark),
+          // _buildEducationCard(profileData, isDark),
 
           const SizedBox(height: 20),
 
@@ -440,7 +440,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           _buildProfileInfoItem(
             icon: Icons.school_outlined,
             title: 'Education',
-            value: _getHighestEducation(profileData['education_details']),
+            value: _getHighestEducation(profileData['educations']),
             isDark: isDark,
             iconColor: const Color.fromARGB(255, 18, 18, 18),
             isLast: true,
@@ -813,94 +813,94 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   // ============================================================================
   // EDUCATION CARD
   // ============================================================================
-  Widget _buildEducationCard(Map<String, dynamic> profileData, bool isDark) {
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: InkWell(
-          onTap: () => _showEducationDetails(context, profileData, isDark),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 24, 24, 24).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.school_rounded,
-                        color: const Color.fromARGB(255, 0, 0, 0),
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Education',
-                        style: AppTheme.getTitleStyle(
-                          context,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 16,
-                      color: isDark ? Colors.grey[600] : Colors.grey[400],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+  // Widget _buildEducationCard(Map<String, dynamic> profileData, bool isDark) {
+  //   return Material(
+  //     color: Colors.transparent,
+  //     child: Container(
+  //       width: double.infinity,
+  //       decoration: BoxDecoration(
+  //         color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+  //         borderRadius: BorderRadius.circular(16),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+  //             blurRadius: 10,
+  //             offset: const Offset(0, 2),
+  //           ),
+  //         ],
+  //       ),
+  //       child: InkWell(
+  //         onTap: () => _showEducationDetails(context, profileData, isDark),
+  //         borderRadius: BorderRadius.circular(16),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(20),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               // Header
+  //               Row(
+  //                 children: [
+  //                   Container(
+  //                     padding: const EdgeInsets.all(10),
+  //                     decoration: BoxDecoration(
+  //                       color: const Color.fromARGB(255, 24, 24, 24).withOpacity(0.1),
+  //                       borderRadius: BorderRadius.circular(10),
+  //                     ),
+  //                     child: Icon(
+  //                       Icons.school_rounded,
+  //                       color: const Color.fromARGB(255, 0, 0, 0),
+  //                       size: 22,
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 12),
+  //                   Expanded(
+  //                     child: Text(
+  //                       'Education',
+  //                       style: AppTheme.getTitleStyle(
+  //                         context,
+  //                         fontSize: 18,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   Icon(
+  //                     Icons.arrow_forward_ios_rounded,
+  //                     size: 16,
+  //                     color: isDark ? Colors.grey[600] : Colors.grey[400],
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 16),
 
-                // Education Info
-                Text(
-                  profileData['education_name'] ?? 'Not provided',
-                  style: AppTheme.getBodyStyle(
-                    context,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (profileData['education_details'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      profileData['education_details'],
-                      style: AppTheme.getSubtitleStyle(
-                        context,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  //               // Education Info
+  //               Text(
+  //                 profileData['education_name'] ?? 'Not provided',
+  //                 style: AppTheme.getBodyStyle(
+  //                   context,
+  //                   fontSize: 15,
+  //                   fontWeight: FontWeight.w500,
+  //                 ),
+  //               ),
+  //               if (profileData['education_details'] != null)
+  //                 Padding(
+  //                   padding: const EdgeInsets.only(top: 8),
+  //                   child: Text(
+  //                     profileData['education_details'],
+  //                     style: AppTheme.getSubtitleStyle(
+  //                       context,
+  //                       color: isDark ? Colors.grey[400] : Colors.grey[600],
+  //                     ),
+  //                     maxLines: 2,
+  //                     overflow: TextOverflow.ellipsis,
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   // ============================================================================
   // LOGOUT CARD
@@ -1184,58 +1184,46 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
     }
   }
 
-  String _getHighestEducation(String? educationDetails) {
-    if (educationDetails == null || educationDetails.isEmpty) {
-      return 'Not specified';
-    }
+  String _getHighestEducation(List<dynamic>? educationList) {
+  if (educationList == null || educationList.isEmpty) {
+    return 'Not specified';
+  }
 
-    try {
-      // Parse new JSON format
-      List<Map<String, dynamic>> educationList = _parseBackendList(educationDetails);
-      
-      if (educationList.isEmpty) {
-        return 'Not specified';
-      }
+  // Find highest degree
+  String? highestDegree;
 
-      // Find highest degree
-      String? highestDegree;
-      
-      for (var edu in educationList) {
-        String degree = edu['degree']?.toString() ?? '';
-        
-        // Priority 1: Post-graduation (MCA, MBA, Master's)
-        if (degree.toLowerCase().contains('master') || 
-            degree.toLowerCase().contains('post') ||
-            degree.toLowerCase().contains('mca') ||
-            degree.toLowerCase().contains('mba') ||
-            degree.toLowerCase().contains('m.tech')) {
-          return degree; // Found highest - return immediately
-        } 
-        // Priority 2: Graduation (BCA, B.Tech, Bachelor's)
-        else if (degree.toLowerCase().contains('bachelor') ||
-                 degree.toLowerCase().contains('graduation') ||
-                 degree.toLowerCase().contains('bca') ||
-                 degree.toLowerCase().contains('b.tech') ||
-                 degree.toLowerCase().contains('b.e')) {
-          if (highestDegree == null) {
-            highestDegree = degree;
-          }
-        } 
-        // Priority 3: Others (12th, 10th, etc.)
-        else {
-          if (highestDegree == null && degree.isNotEmpty) {
-            highestDegree = degree;
-          }
-        }
+  for (var edu in educationList) {
+    String degree = edu['degree']?.toString() ?? '';
+
+    // Priority 1: Post-graduation (MCA, MBA, Master's)
+    if (degree.toLowerCase().contains('master') || 
+        degree.toLowerCase().contains('post') ||
+        degree.toLowerCase().contains('mca') ||
+        degree.toLowerCase().contains('mba') ||
+        degree.toLowerCase().contains('m.tech')) {
+      return degree; // Found highest - return immediately
+    } 
+    // Priority 2: Graduation (BCA, B.Tech, Bachelor's)
+    else if (degree.toLowerCase().contains('bachelor') ||
+             degree.toLowerCase().contains('graduation') ||
+             degree.toLowerCase().contains('bca') ||
+             degree.toLowerCase().contains('b.tech') ||
+             degree.toLowerCase().contains('b.e')) {
+      if (highestDegree == null) {
+        highestDegree = degree;
       }
-      
-      return highestDegree ?? 'Not specified';
-      
-    } catch (e) {
-      print('Error parsing education: $e');
-      return 'Not specified';
+    } 
+    // Priority 3: Others (12th, 10th, etc.)
+    else {
+      if (highestDegree == null && degree.isNotEmpty) {
+        highestDegree = degree;
+      }
     }
   }
+
+  return highestDegree ?? 'Not specified';
+}
+
 
  
   // ============================================================================

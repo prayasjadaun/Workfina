@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
+import 'package:workfina/models/banner_model.dart';
+import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/candidates/candidate_edit_profile.dart';
 
@@ -63,6 +65,108 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: FutureBuilder<BannerModel?>(
+                    future: ApiService.fetchActiveBanner(), 
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return SizedBox(
+                          height:
+                              180, 
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      } else if (snapshot.hasError) {
+                        return SizedBox(
+                          height: 180,
+                          child: Center(
+                            child: Text(
+                              'Error loading banner: ${snapshot.error}',
+                            ),
+                          ),
+                        );
+                      } else if (!snapshot.hasData) {
+                        return SizedBox(
+                          height: 180,
+                          child: const Center(
+                            child: Text('No banner available'),
+                          ),
+                        );
+                      }
+
+                      final banner = snapshot.data!; // Banner data
+
+                      // ✅ Dynamic banner widget
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 7,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                banner.image, 
+                                fit: BoxFit.cover,
+                              ),
+
+                              // Gradient overlay
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.black.withOpacity(0.65),
+                                      Colors.black.withOpacity(0.10),
+                                    ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                ),
+                              ),
+
+                              // Content
+                              Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      banner.title, // API se aaya title
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    ElevatedButton(
+                                      onPressed: () {},
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: Colors.black,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            24,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        banner.buttonText,
+                                      ), 
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
 

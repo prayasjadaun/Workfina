@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workfina/models/banner_model.dart';
 
 class ApiService {
   //   static const String baseUrl =
@@ -607,28 +608,25 @@ class ApiService {
         'education': education,
         'skills': skills,
         if (languages != null && languages.isNotEmpty) 'languages': languages,
-        if (streetAddress != null && streetAddress.isNotEmpty)
-          'street_address': streetAddress,
-        'willing_to_relocate': willingToRelocate,
-        if (workExperience != null && workExperience.isNotEmpty)
-          'work_experience': workExperience,
-        if (careerObjective != null && careerObjective.isNotEmpty)
-          'career_objective': careerObjective,
+      if (streetAddress != null && streetAddress.isNotEmpty) 'street_address': streetAddress,
+      'willing_to_relocate': willingToRelocate,
+      if (workExperience != null && workExperience.isNotEmpty) 'work_experience': workExperience,
+      if (careerObjective != null && careerObjective.isNotEmpty) 'career_objective': careerObjective,
         if (resumeFile != null)
           'resume': await MultipartFile.fromFile(
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-        if (videoIntroFile != null)
+        if (videoIntroFile != null) 
           'video_intro': await MultipartFile.fromFile(
             videoIntroFile.path,
             filename: videoIntroFile.path.split('/').last,
           ),
-        if (profileImage != null)
-          'profile_image': await MultipartFile.fromFile(
-            profileImage.path,
-            filename: profileImage.path.split('/').last,
-          ),
+          if (profileImage != null)  
+        'profile_image': await MultipartFile.fromFile(
+          profileImage.path,
+          filename: profileImage.path.split('/').last,
+        ),
       });
 
       if (kDebugMode) {
@@ -706,12 +704,12 @@ class ApiService {
     int? minAge,
     int? maxAge,
     String? city,
+    String?name,
     String? state,
     String? country,
     String? religion,
     String? education,
     String? skills,
-    String? name,
     double? minCtc,
     double? maxCtc,
     int page = 1,
@@ -730,7 +728,6 @@ class ApiService {
       if (religion != null) queryParams['religion'] = religion;
       if (education != null) queryParams['education'] = education;
       if (skills != null) queryParams['skills'] = skills;
-      if (name != null) queryParams['name'] = name;
       if (minCtc != null) queryParams['min_ctc'] = minCtc;
       if (maxCtc != null) queryParams['max_ctc'] = maxCtc;
       queryParams['page'] = page;
@@ -1147,4 +1144,26 @@ class ApiService {
       };
     }
   }
+
+  static Future<BannerModel?> fetchActiveBanner() async {
+  try {
+    final response = await _dio.get('/banner/active/'); // tumhara endpoint
+
+    if (response.statusCode == 200 && response.data != null) {
+      return BannerModel.fromJson(response.data);
+    }
+  } on DioException catch (e) {
+    if (kDebugMode) {
+      print('[DEBUG] Banner fetch error: ${e.message}');
+      print('[DEBUG] Response: ${e.response?.data}');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('[DEBUG] Unexpected error fetching banner: $e');
+    }
+  }
+
+  return null;
+}
+
 }
