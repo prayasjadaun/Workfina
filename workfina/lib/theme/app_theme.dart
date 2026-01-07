@@ -16,6 +16,13 @@ class AppTheme {
   static const Color blueDark = Color(0xFF1976D2);
   static const Color blueLight = Color(0xFF64B5F6);
 
+  // Green Card Colors
+static const Color greenCardStart = Color(0xFFB7E08A);
+static const Color greenCardEnd   = Color(0xFFA6D96A);
+static const Color greenCardSolid = Color(0xFFCDEDAA);
+static const Color greenCard = Color.fromARGB(255, 82, 134, 34);
+
+
   // Light Theme Colors
   static const Color lightBackground = Color.fromARGB(255, 250, 250, 250);
   static const Color lightSurface = Colors.white;

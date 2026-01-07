@@ -1166,4 +1166,44 @@ class ApiService {
   return null;
 }
 
+
+  static Future<Map<String, dynamic>> getFilterCategories() async {
+    try {
+      final response = await _dio.get('/candidates/filter-categories/');
+      if (kDebugMode) {
+        print('[DEBUG] Filter Categories Response: ${response.data}');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Filter Categories Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load filter categories',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> getCategorySubcategories(String categorySlug) async {
+    try {
+      final response = await _dio.get(
+        '/candidates/filter-options/',
+        queryParameters: {'category': categorySlug},
+      );
+      if (kDebugMode) {
+        print('[DEBUG] Category Subcategories Response: ${response.data}');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Category Subcategories Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error': e.response?.data['message'] ?? 'Failed to load subcategories',
+      };
+    }
+  }
 }
+

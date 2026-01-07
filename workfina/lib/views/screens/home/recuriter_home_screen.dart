@@ -44,7 +44,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
           RecruiterDashboard(
             onNavigateToUnlocked: () => setState(() => _currentIndex = 2),
           ),
-          RecruiterFilterScreen(key: _filterKey, showUnlockedOnly: false),
+          // RecruiterFilterScreen(key: _filterKey, showUnlockedOnly: false),
           RecruiterCandidate(
             onSwitchToWallet: (index) => setState(() => _currentIndex = 3),
             showOnlyUnlocked: true,
@@ -60,10 +60,10 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildCustomTab('assets/svg/home.svg', 'Home', 0, isDark),
-            _buildCustomTab('assets/svg/filter.svg', 'Filters', 1, isDark),
-            _buildCustomTab('assets/svg/unlock.svg', 'Unlocked', 2, isDark),
-            _buildCustomTab('assets/svg/wallet.svg', 'Wallet', 3, isDark),
-            _buildCustomTab('assets/svg/profile.svg', 'Profile', 4, isDark),
+            // _buildCustomTab('assets/svg/filter.svg', 'Filters', 1, isDark),
+            _buildCustomTab('assets/svg/unlock.svg', 'Unlocked', 1, isDark),
+            _buildCustomTab('assets/svg/wallet.svg', 'Wallet', 2, isDark),
+            _buildCustomTab('assets/svg/profile.svg', 'Profile', 3, isDark),
           ],
         ),
       ),

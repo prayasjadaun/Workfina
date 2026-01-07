@@ -290,6 +290,7 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
 
   Widget _buildFilterCategories(bool isDark) {
     final categories = _filterOverview.entries
+        .where((entry) => entry.key != 'all') // Exclude 'all' filter
         .where((entry) {
           final count = widget.showUnlockedOnly
               ? (entry.value as Map<String, dynamic>)['unlocked_count'] ?? 0
@@ -340,12 +341,12 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                     color: AppTheme.getCardColor(context),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isDark 
+                      color: isDark
                           ? Colors.grey.shade800.withOpacity(0.3)
                           : Colors.grey.shade200.withOpacity(0.5),
                       width: 0.5,
                     ),
-                    boxShadow: isDark 
+                    boxShadow: isDark
                         ? []
                         : [
                             BoxShadow(
@@ -609,12 +610,12 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                                 color: AppTheme.getCardColor(context),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: isDark 
+                                  color: isDark
                                       ? Colors.grey.shade800.withOpacity(0.3)
                                       : Colors.grey.shade200.withOpacity(0.6),
                                   width: 0.5,
                                 ),
-                                boxShadow: isDark 
+                                boxShadow: isDark
                                     ? []
                                     : [
                                         BoxShadow(
@@ -662,19 +663,23 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: isDark
-                                                ? Colors.grey.shade800.withOpacity(0.4)
+                                                ? Colors.grey.shade800
+                                                      .withOpacity(0.4)
                                                 : Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             '${widget.showUnlockedOnly ? (option['unlocked_count'] ?? 0) : (option['locked_count'] ?? 0)} candidates',
-                                            style: AppTheme.getCardSubtitleStyle(
-                                              context,
-                                            ).copyWith(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              letterSpacing: 0.2,
-                                            ),
+                                            style:
+                                                AppTheme.getCardSubtitleStyle(
+                                                  context,
+                                                ).copyWith(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  letterSpacing: 0.2,
+                                                ),
                                             textAlign: TextAlign.center,
                                           ),
                                         ),

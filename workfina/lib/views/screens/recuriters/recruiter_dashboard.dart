@@ -5,7 +5,9 @@ import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/views/screens/notification/notification_screen.dart';
+import 'package:workfina/views/screens/recuriters/category_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
+import 'package:workfina/views/screens/widgets/category_card_widget.dart';
 
 class RecruiterDashboard extends StatefulWidget {
   final VoidCallback? onNavigateToUnlocked;
@@ -15,13 +17,72 @@ class RecruiterDashboard extends StatefulWidget {
   State<RecruiterDashboard> createState() => _RecruiterDashboardState();
 }
 
-class _RecruiterDashboardState extends State<RecruiterDashboard> {
+class _RecruiterDashboardState extends State<RecruiterDashboard>
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+  List<String> _categories = [];
+  late Future<Map<String, dynamic>> _filterOptionsFuture;
+  bool _categoriesLoaded = false;
+
   @override
   void initState() {
     super.initState();
+    _filterOptionsFuture = ApiService.getFilterCategories();
+    _tabController = TabController(length: _categories.length, vsync: this);
+    _loadDynamicCategories();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<RecruiterController>().loadCandidates();
     });
+  }
+
+  void _loadDynamicCategories() async {
+    try {
+      final response = await _filterOptionsFuture;
+      final filterCategories = response['filter_categories'] as List? ?? [];
+
+      print(
+        'DEBUG: Filter Categories: ${filterCategories.length}',
+      ); // Debug print
+
+      final availableCategories = filterCategories
+          .where((cat) => (cat['dashboard_display'] ?? 0) != 0)
+          .take(4)
+          .map((cat) => cat['name'] as String)
+          .toList();
+
+      print('DEBUG: Available categories: $availableCategories'); // Debug print
+
+      if (mounted) {
+        final newCategories = availableCategories.cast<String>();
+
+        print('DEBUG: New categories: $newCategories'); // Debug print
+
+        _tabController.dispose();
+        setState(() {
+          _categories = newCategories;
+          _tabController = TabController(
+            length: _categories.length,
+            vsync: this,
+          );
+          _categoriesLoaded = true;
+        });
+
+        print('DEBUG: Categories updated: $_categories'); // Debug print
+      }
+    } catch (e) {
+      print('DEBUG: Error loading categories: $e'); // Debug print
+      if (mounted) {
+        setState(() {
+          _categoriesLoaded = true;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -40,61 +101,92 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
         final totalSpent = profile?['total_spent'] ?? 0;
         final unlockedCount = controller.unlockedCandidateIds.length;
 
-        return Container(
-          height: double.infinity,
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Section
-                _buildHeader(context, controller),
-                // Stats Overview Section
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    children: [
-                      _buildStatsSection(
-                        balance,
-                        unlockedCount,
-                        totalSpent,
-                        controller.candidates.length,
-                      ),
-                      const SizedBox(height: 32),
-                      // Recent Activity Section
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Recent Activity',
-                            style: AppTheme.getTitleStyle(
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              _buildSliverHeader(context, controller),
+            ],
+            body: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
+                    color: AppTheme.primary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                          child: Text(
+                            'What would you like to\nfind today?',
+                            style: AppTheme.getHeadlineStyle(
                               context,
                               fontWeight: FontWeight.w600,
-                              fontSize: 18,
+                              fontSize: 28,
+                              color: Colors.white,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: widget.onNavigateToUnlocked,
-                            child: Text(
-                              'View all',
-                              style: AppTheme.getBodyStyle(
+                        ),
+
+                        // Categories Section
+                        SizedBox(
+                          height: 220,
+                          child: _buildCategoriesSection(controller),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Stats Overview Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      children: [
+                        _buildStatsSection(
+                          balance,
+                          unlockedCount,
+                          totalSpent,
+                          controller.candidates.length,
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Recent Activity Section
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Recent Activity',
+                              style: AppTheme.getTitleStyle(
                                 context,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.blue,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                            GestureDetector(
+                              onTap: widget.onNavigateToUnlocked,
+                              child: Text(
+                                'View all',
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      _buildRecentActivitySection(controller),
-                    ],
+                        _buildRecentActivitySection(controller),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -102,7 +194,10 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, RecruiterController controller) {
+  Widget _buildSliverHeader(
+    BuildContext context,
+    RecruiterController controller,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profile = controller.hrProfile;
     final fullName = profile?['full_name'] ?? 'HR';
@@ -110,120 +205,333 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     final parts = fullName.trim().split(RegExp(r'\s+'));
 
     String displayName;
-
     if (parts.length >= 3) {
       displayName = '${parts[1]} ${parts[2]}';
     } else if (parts.length == 2) {
-      displayName = '${parts[0]}';
+      displayName = parts[0];
     } else {
       displayName = parts[0];
     }
 
-    return Container(
-      color: AppTheme.primary,
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
+    return SliverAppBar(
+      backgroundColor: AppTheme.primary,
+      expandedHeight: 180,
+      floating: false,
+      pinned: true,
+      snap: false,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(110),
+        child: Container(
+          color: AppTheme.primary,
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Container(
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white : Colors.black,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      displayName[0].toUpperCase(),
-                      style: AppTheme.getTitleStyle(
-                        context,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        'Hello 👋',
-                        style: AppTheme.getSubtitleStyle(
-                          context,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w400,
-                          fontSize: 13,
+                      const SizedBox(width: 20),
+                      SvgPicture.asset(
+                        'assets/svgs/search.svg',
+                        width: 20,
+                        height: 20,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
                         ),
                       ),
-                      const SizedBox(height: 1),
-                      Text(
-                        displayName,
-                        style: AppTheme.getBodyStyle(
-                          context,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          color: Colors.white,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Search candidates...',
+                          style: AppTheme.getBodyStyle(
+                            context,
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.all(8),
+                        child: SvgPicture.asset(
+                          'assets/svgs/filter.svg',
+                          width: 16,
+                          height: 16,
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+              ),
+
+              // Tab Bar
+              const SizedBox(height: 20),
+              if (_categoriesLoaded)
+                Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: false,
+                    // tabAlignment: TabAlignment.start,
+                    indicator: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    indicatorPadding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 4,
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    labelColor: AppTheme.primary,
+                    unselectedLabelColor: Colors.white.withOpacity(0.8),
+                    labelStyle: AppTheme.getBodyStyle(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => NotificationScreen(),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    unselectedLabelStyle: AppTheme.getBodyStyle(
+                      context,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                    onTap: (index) {
+                      final selectedCategory = _categories[index];
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CategoryScreen(
+                            categoryKey: selectedCategory.toLowerCase(),
+                            categoryName: selectedCategory,
+                          ),
+                        ),
+                      );
+                    },
+
+                    tabs: _categories
+                        .map(
+                          (category) => Tab(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 0,
+                                vertical: 6,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                category,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                )
+              else
+                const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          color: AppTheme.primary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white : Colors.black,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                  },
-                  child: SizedBox(
-                    // padding: const EdgeInsets.all(8),
-                    // decoration: BoxDecoration(
-                    //   color: Colors.grey,
-                    //   borderRadius: BorderRadius.circular(12),
-                    //   border: Border.all(color: Colors.grey.shade200, width: 1),
-                    // ),
-                    child: SvgPicture.asset(
-                      'assets/svg/bell.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: ColorFilter.mode(
-                        Colors.white,
-                        BlendMode.srcIn,
+                      child: Center(
+                        child: Text(
+                          displayName[0].toUpperCase(),
+                          style: AppTheme.getTitleStyle(
+                            context,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello 👋',
+                            style: AppTheme.getSubtitleStyle(
+                              context,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            displayName,
+                            style: AppTheme.getBodyStyle(
+                              context,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationScreen(),
+                          ),
+                        );
+                      },
+                      child: SvgPicture.asset(
+                        'assets/svg/bell.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'What would you like to\nfind today?',
-                  style: AppTheme.getHeadlineStyle(
-                    context,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 28,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildCategoriesSection(RecruiterController controller) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: ApiService.getFilterCategories(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            height: 220,
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        }
+
+        if (snapshot.hasError || snapshot.data?['error'] != null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            height: 220,
+            child: Center(
+              child: Text(
+                'Error loading categories',
+                style: AppTheme.getBodyStyle(context, color: Colors.white),
+              ),
+            ),
+          );
+        }
+
+        final filterCategories =
+            snapshot.data?['filter_categories'] as List? ?? [];
+
+        if (filterCategories.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Transform API data to the format expected by CategoryCardsWidget
+        final categories = filterCategories.map((cat) {
+          return {
+            'key': cat['slug'],
+            'name': cat['name'],
+            'total_count': cat['options_count'] ?? 0,
+            'candidate_count': cat['options_count'] ?? 0,
+            'unlocked_count': 0,
+            'locked_count': cat['options_count'] ?? 0,
+          };
+        }).toList();
+
+        // Filter out categories where bento_grid is 0
+        final filteredCategories = filterCategories
+            .where((cat) => (cat['bento_grid'] ?? 0) != 0)
+            .map((cat) {
+              return {
+                'key': cat['slug'],
+                'name': cat['name'],
+                'total_count': cat['options_count'] ?? 0,
+                'candidate_count': cat['options_count'] ?? 0,
+                'unlocked_count': 0,
+                'locked_count': cat['options_count'] ?? 0,
+              };
+            })
+            .take(5)
+            .toList();
+
+        if (filteredCategories.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return CategoryCardsWidget(
+          categories: filteredCategories.cast<Map<String, dynamic>>(),
+          onCategoryTap: (categoryKey) {
+            final category = filteredCategories.firstWhere(
+              (c) => c['key'] == categoryKey,
+            );
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CategoryScreen(
+                  categoryKey: categoryKey,
+                  categoryName: category['name'],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -242,10 +550,14 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
       children: [
-        _buildStatCard('assets/svgs/wallet.svg', 'Credits', balance.toString()),
+        _buildStatCard(
+          'assets/svgs/wallet.svg',
+          'Total Credits',
+          balance.toString(),
+        ),
         _buildStatCard(
           'assets/svgs/unlock.svg',
-          'Unlocked',
+          'Total Unlocked',
           unlockedCount.toString(),
         ),
         _buildStatCard(
@@ -255,7 +567,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
         ),
         _buildStatCard(
           'assets/svgs/candidates.svg',
-          'Candidates',
+          'Total Candidates',
           totalCandidates.toString(),
         ),
       ],
@@ -443,7 +755,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
                   const SizedBox(height: 2),
 
                   Text(
-                    '$experienceYears years exp • $city',
+                    '$experienceYears years exp $city',
                     style: AppTheme.getSubtitleStyle(
                       context,
                       fontWeight: FontWeight.w400,
@@ -476,7 +788,6 @@ class _RecruiterDashboardState extends State<RecruiterDashboard> {
     );
   }
 
-  // Add this helper method:
   String _getFullImageUrl(String imageUrl) {
     if (imageUrl.startsWith('http')) {
       return imageUrl;
