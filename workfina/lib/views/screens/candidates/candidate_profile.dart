@@ -269,107 +269,117 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   // PROFILE HEADER
   // ============================================================================
   Widget _buildProfileHeader(Map<String, dynamic> profileData, bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Profile Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: AppTheme.primary,
-              shape: BoxShape.circle,
-              image: profileData['profile_image_url'] != null
-                  ? DecorationImage(
-                      image: NetworkImage(profileData['profile_image_url']),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: profileData['profile_image_url'] == null
-                ? Center(
-                    child: Text(
-                      (profileData['full_name']?[0] ?? 'C').toUpperCase(),
-                      style: AppTheme.getHeadlineStyle(
-                        context,
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+  final firstName = (profileData['first_name'] ?? '').trim();
+final lastName = (profileData['last_name'] ?? '').trim();
+  final fullName = firstName.isNotEmpty||lastName.isNotEmpty ? '$firstName $lastName'.trim() 
+      : 'Candidate';
+  
+  String firstLetter = 'C';
+  
+  if (fullName.isNotEmpty && fullName != 'Candidate') {
+    firstLetter = fullName[0].toUpperCase();
+  }
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        // Profile Avatar
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            shape: BoxShape.circle,
+            image: profileData['profile_image_url'] != null
+                ? DecorationImage(
+                    image: NetworkImage(profileData['profile_image_url']),
+                    fit: BoxFit.cover,
                   )
                 : null,
           ),
-          const SizedBox(height: 16),
-
-          // Name
-          Text(
-            profileData['full_name'] ?? 'Candidate',
-            style: AppTheme.getTitleStyle(
-              context,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Email
-          Text(
-            profileData['email'] ?? 'N/A',
-            style: AppTheme.getSubtitleStyle(
-              context,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          // Role Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppTheme.primary.withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.work_outline_rounded,
-                  color: AppTheme.primary,
-                  size: 14,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  _formatRole(profileData['role_name']),
-                  style: AppTheme.getLabelStyle(
-                    context,
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w500,
+          child: profileData['profile_image_url'] == null
+              ? Center(
+                  child: Text(
+                    firstLetter,
+                    style: AppTheme.getHeadlineStyle(
+                      context,
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                )
+              : null,
+        ),
+        const SizedBox(height: 16),
+
+        // Name
+        Text(
+          fullName,
+          style: AppTheme.getTitleStyle(
+            context,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+
+        // Email
+        Text(
+          profileData['email'] ?? 'N/A',
+          style: AppTheme.getSubtitleStyle(
+            context,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Role Badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppTheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppTheme.primary.withOpacity(0.3),
             ),
           ),
-        ],
-      ),
-    );
-  }
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.work_outline_rounded,
+                color: AppTheme.primary,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _formatRole(profileData['role_name']),
+                style: AppTheme.getLabelStyle(
+                  context,
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   // ============================================================================
   // STATISTICS CARD

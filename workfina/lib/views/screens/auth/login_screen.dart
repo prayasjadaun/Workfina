@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/auth_controller.dart';
+import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -388,34 +389,46 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin(AuthController authController) async {
-    if (_formKey.currentState!.validate()) {
-      final success = await authController.login(
-        _emailController.text,
-        _passwordController.text,
-      );
+  if (_formKey.currentState!.validate()) {
+    final success = await authController.login(
+      _emailController.text,
+      _passwordController.text,
+    );
 
-      if (success && mounted) {
-        final userRole = authController.user?['role'];
-        if (userRole == 'candidate') {
+    if (success && mounted) {
+      final userRole = authController.user?['role'];
+      
+      if (userRole == 'candidate') {
+        // Check profile status
+        final profile = await ApiService.getCandidateProfile();
+        
+        if (profile.containsKey('error') || profile['is_profile_completed'] == false) {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            '/candidate-home',
-            (route) => false,
-          );
-        } else if (userRole == 'hr') {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/hr-home',
+            '/candidate-setup',
             (route) => false,
           );
         } else {
           Navigator.pushNamedAndRemoveUntil(
             context,
-            '/role-selection',
+            '/candidate-home',
             (route) => false,
           );
         }
+      } else if (userRole == 'hr') {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/hr-home',
+          (route) => false,
+        );
+      } else {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/role-selection',
+          (route) => false,
+        );
       }
     }
   }
+}
 }

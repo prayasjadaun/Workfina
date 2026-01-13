@@ -4,6 +4,36 @@ import 'package:workfina/services/api_service.dart';
 import 'dart:io';
 
 class CandidateController extends ChangeNotifier {
+  List<Map<String, dynamic>> workExperiences = [];
+  bool get hasCurrentJob => workExperiences.any((exp) => exp['is_current'] == true);
+  
+  void addWorkExperience(Map<String, dynamic> experience) {
+    // ✅ LOGIC: Agar already current job hai toh prevent karo
+    if (experience['is_current'] == true && hasCurrentJob) {
+      throw Exception('You can only have ONE current job at a time');
+    }
+    
+    workExperiences.add(experience);
+    notifyListeners();
+  }
+  
+  void updateWorkExperience(int index, Map<String, dynamic> updatedExp) {
+    // ✅ Current job toggle logic
+    if (updatedExp['is_current'] == true && hasCurrentJob && index != _getCurrentJobIndex()) {
+      throw Exception('You can only have ONE current job. Please unmark your current job first.');
+    }
+    
+    workExperiences[index] = updatedExp;
+    notifyListeners();
+  }
+  
+  int _getCurrentJobIndex() {
+    for (int i = 0; i < workExperiences.length; i++) {
+      if (workExperiences[i]['is_current'] == true) return i;
+    }
+    return -1;
+  }
+
   bool _isLoading = false;
   String? _error;
   Map<String, dynamic>? _candidateProfile;
@@ -161,6 +191,8 @@ class CandidateController extends ChangeNotifier {
     bool willingToRelocate = false,
     String? workExperience,
     String? careerObjective,
+    String joiningAvailability = 'IMMEDIATE',
+    String? noticePeriodDetails,
   }) async {
     _isLoading = true;
     _error = null;
@@ -179,7 +211,7 @@ class CandidateController extends ChangeNotifier {
         country: country,
         state: state,
         city: city,
-        education: combineEducationData(),
+        education: education,
         skills: skills,
         resumeFile: resumeFile,
         videoIntroFile: videoIntroFile,
@@ -189,6 +221,8 @@ class CandidateController extends ChangeNotifier {
         willingToRelocate: willingToRelocate,
         workExperience: workExperience,
         careerObjective: careerObjective,
+        joiningAvailability: joiningAvailability,
+        noticePeriodDetails: noticePeriodDetails,
       );
 
       if (response.containsKey('error')) {
@@ -244,7 +278,6 @@ class CandidateController extends ChangeNotifier {
     }
   }
 
-  // Add this method to your CandidateController class
 
   Future<bool> updateProfile({
     String? fullName,
@@ -271,6 +304,7 @@ class CandidateController extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
+    
 
     try {
       final response = await ApiService.updateCandidateProfile(
@@ -283,6 +317,7 @@ class CandidateController extends ChangeNotifier {
         expectedCtc: expectedCtc,
         religion: religion,
         state: state,
+        
         city: city,
         education: education, // Use passed education instead of combineEducationData()
         skills: skills,
@@ -295,6 +330,7 @@ class CandidateController extends ChangeNotifier {
         workExperience: workExperience,
         careerObjective: careerObjective,
       );
+      
 
       if (response.containsKey('error')) {
         _error = response['error'];
