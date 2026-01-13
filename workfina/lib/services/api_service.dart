@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workfina/models/banner_model.dart';
+import 'package:workfina/services/notification_service.dart';
 
 class ApiService {
   //   static const String baseUrl =
@@ -18,12 +19,23 @@ class ApiService {
   static String get baseUrl {
     if (kDebugMode) {
       if (testingOnRealDevice) {
-        return 'http://192.168.1.3:8000/api'; // Your Mac's IP
+        return 'http://192.168.0.130:8000/api'; // Your Mac's IP
       } else {
         return 'http://localhost:8000/api'; // For Mac or iOS Simulator
       }
     }
     return 'http://localhost:8000/api'; // Production
+  }
+
+  static String get mediaBaseUrl {
+    if (kDebugMode) {
+      if (testingOnRealDevice) {
+        return 'http://192.168.0.130:8000';
+      } else {
+        return 'http://localhost:8000';
+      }
+    }
+    return 'http://localhost:8000';
   }
 
   static late Dio _dio;
@@ -471,6 +483,9 @@ class ApiService {
           response.data['refresh'] ?? '',
         );
         await saveUserData(response.data['user']);
+
+        // Upload FCM token after successful login
+        await uploadFCMToken();
       }
 
       return response.data;
@@ -652,9 +667,6 @@ class ApiService {
             profileImage.path,
             filename: profileImage.path.split('/').last,
           ),
-        'joining_availability': joiningAvailability,
-        if (noticePeriodDetails != null && noticePeriodDetails.isNotEmpty)
-          'notice_period_details': noticePeriodDetails,
       });
 
       if (kDebugMode) {
@@ -663,24 +675,23 @@ class ApiService {
           print('[DEBUG] Resume file: ${resumeFile.path}');
         }
       }
-          if (kDebugMode) {
-      print('[DEBUG] ===== REGISTRATION DATA =====');
-      print('[DEBUG] Full Name: $fullName');
-      print('[DEBUG] Phone: $phone');
-      print('[DEBUG] Age: $age');
-      print('[DEBUG] Role: $role');
-      print('[DEBUG] Experience Years: $experienceYears');
-      print('[DEBUG] Skills: $skills');
-      print('[DEBUG] State: $state');
-      print('[DEBUG] City: $city');
-      print('[DEBUG] Education: $education');
-      print('[DEBUG] Work Experience: $workExperience');
-      print('[DEBUG] Joining Availability: $joiningAvailability');
-      print('[DEBUG] Notice Period: $noticePeriodDetails');
-      print('[DEBUG] Resume: ${resumeFile?.path}');
-      print('[DEBUG] ===========================');
-    }
-
+      if (kDebugMode) {
+        print('[DEBUG] ===== REGISTRATION DATA =====');
+        print('[DEBUG] Full Name: $fullName');
+        print('[DEBUG] Phone: $phone');
+        print('[DEBUG] Age: $age');
+        print('[DEBUG] Role: $role');
+        print('[DEBUG] Experience Years: $experienceYears');
+        print('[DEBUG] Skills: $skills');
+        print('[DEBUG] State: $state');
+        print('[DEBUG] City: $city');
+        print('[DEBUG] Education: $education');
+        print('[DEBUG] Work Experience: $workExperience');
+        print('[DEBUG] Joining Availability: $joiningAvailability');
+        print('[DEBUG] Notice Period: $noticePeriodDetails');
+        print('[DEBUG] Resume: ${resumeFile?.path}');
+        print('[DEBUG] ===========================');
+      }
 
       final response = await _dio.post(
         '/candidates/register/',
@@ -872,8 +883,6 @@ class ApiService {
       return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
     }
   }
-
-
 
   static Future<Map<String, dynamic>> updateCandidateProfile({
     String? fullName,
@@ -1234,15 +1243,13 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> getDepartmentsAndReligions() async {
-  try {
-    final response = await _dio.get('/candidates/public/filter-options/');
-    return response.data;
-  } on DioException catch (e) {
-    return {
-      'error': e.response?.data['message'] ?? 'Failed to load options',
-    };
+    try {
+      final response = await _dio.get('/candidates/public/filter-options/');
+      return response.data;
+    } on DioException catch (e) {
+      return {'error': e.response?.data['message'] ?? 'Failed to load options'};
+    }
   }
-}
 
   static Future<Map<String, dynamic>> getCategorySubcategories(
     String categorySlug,
@@ -1317,6 +1324,81 @@ class ApiService {
             e.response?.data['message'] ??
             'Failed to save step',
       };
+    }
+  }
+
+  static Future<void> uploadFCMToken() async {
+    try {
+      final token = await NotificationService.getToken();
+      if (token != null) {
+        await _dio.post('/auth/update-fcm-token/', data: {'token': token});
+        if (kDebugMode) print('[DEBUG] FCM Token uploaded');
+      }
+    } catch (e) {
+      if (kDebugMode) print('[DEBUG] FCM Token upload failed: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getUserNotifications({
+    int page = 1,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '/notifications/',
+        queryParameters: {'page': page},
+      );
+      return List<Map<String, dynamic>>.from(response.data);
+    } catch (e) {
+      print('Error fetching notifications: $e');
+      throw Exception('Failed to fetch notifications');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getNotificationCount() async {
+    try {
+      final response = await _dio.get('/notifications/count/');
+      return response.data;
+    } catch (e) {
+      print('Error fetching notification count: $e');
+      throw Exception('Failed to fetch notification count');
+    }
+  }
+
+  static Future<Map<String, dynamic>> markNotificationAsRead(
+    String notificationId,
+  ) async {
+    try {
+      final response = await _dio.post('/notifications/$notificationId/read/');
+      return response.data;
+    } catch (e) {
+      print('Error marking notification as read: $e');
+      throw Exception('Failed to mark notification as read');
+    }
+  }
+
+  static Future<Map<String, dynamic>> markAllNotificationsAsRead() async {
+    try {
+      final response = await _dio.post('/notifications/mark-all-read/');
+      return response.data;
+    } catch (e) {
+      print('Error marking all notifications as read: $e');
+      throw Exception('Failed to mark all notifications as read');
+    }
+  }
+
+  static Future<Map<String, dynamic>> sendTestNotification(
+    String title,
+    String body,
+  ) async {
+    try {
+      final response = await _dio.post(
+        '/notifications/test/',
+        data: {'title': title, 'body': body},
+      );
+      return response.data;
+    } catch (e) {
+      print('Error sending test notification: $e');
+      throw Exception('Failed to send test notification');
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_filter_screen.dart';
 import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
+import 'package:workfina/views/screens/widgets/search_bar.dart';
 
 class RecruiterCandidate extends StatefulWidget {
   final ValueChanged<int>? onSwitchToWallet;
@@ -22,21 +23,28 @@ class RecruiterCandidate extends StatefulWidget {
 class _RecruiterCandidateState extends State<RecruiterCandidate>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedRole = 'All';
-  String _selectedLocation = 'All';
-  String _selectedExperience = 'All';
-  String _selectedEducation = 'All';
-  String _selectedReligion = 'All';
+  final String _selectedRole = 'All';
+  final String _selectedLocation = 'All';
+  final String _selectedExperience = 'All';
+  final String _selectedEducation = 'All';
+  final String _selectedReligion = 'All';
   late TabController _tabController;
 
-  Map<String, dynamic> _appliedFilters = {};
+  final Map<String, dynamic> _appliedFilters = {};
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecruiterController>().loadCandidates();
+      final controller = context.read<RecruiterController>();
+
+      if (widget.showOnlyUnlocked) {
+        controller.loadUnlockedCandidates();
+      } else {
+        controller.loadCandidates();
+      }
     });
   }
 
@@ -49,7 +57,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Theme.of(context).colorScheme.background,
+      // backgroundColor: AppTheme.primary,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
           ? AppTheme.darkBackground
           : Colors.white,
@@ -83,10 +91,10 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search_outlined, color: Colors.white),
-            onPressed: () => _showSearchBottomSheet(context),
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.search_outlined, color: Colors.white),
+          //   onPressed: () => _showSearchBottomSheet(context),
+          // ),
           IconButton(
             icon: const Icon(Icons.tune_outlined, color: Colors.white),
             onPressed: () => Navigator.push(
@@ -128,6 +136,17 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       ),
       body: Column(
         children: [
+          Container(
+            padding: EdgeInsets.only(bottom: 10),
+            color: AppTheme.primary,
+            child: GlobalSearchBar(
+              onSearch: (query) {
+                setState(() {
+                  _searchQuery = query;
+                });
+              },
+            ),
+          ),
           if (!widget.showOnlyUnlocked) _buildFilterBanner(),
           Expanded(
             child: widget.showOnlyUnlocked
@@ -211,11 +230,8 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
             child: CircularProgressIndicator(color: AppTheme.primary),
           );
         }
-
         final unlockedCandidates = _getFilteredCandidates(
-          hrController.candidates
-              .where((c) => hrController.isCandidateUnlocked(c['id']))
-              .toList(),
+          hrController.unlockedCandidates,
         );
 
         if (unlockedCandidates.isEmpty) {
@@ -264,9 +280,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
         }
 
         final unlockedCandidates = _getFilteredCandidates(
-          hrController.candidates
-              .where((c) => hrController.isCandidateUnlocked(c['id']))
-              .toList(),
+          hrController.unlockedCandidates,
         );
 
         if (unlockedCandidates.isEmpty) {
@@ -379,208 +393,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
     );
   }
 
-  void _showSearchBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setSheetState) => Container(
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            top: 60,
-          ),
-          decoration: BoxDecoration(
-            color: AppTheme.getCardColor(context),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Search Candidates',
-                  style: AppTheme.getHeadlineStyle(
-                    context,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  style: AppTheme.getBodyStyle(context),
-                  decoration: InputDecoration(
-                    hintText: 'Search by name, skills, role, location...',
-                    hintStyle: AppTheme.getBodyStyle(
-                      context,
-                      color: Colors.grey.shade500,
-                    ),
-                    prefixIcon: Icon(Icons.search_outlined),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setSheetState(() {});
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade800
-                        : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  onChanged: (value) => setSheetState(() {}),
-                  onSubmitted: (value) {
-                    _filterCandidates();
-                    Navigator.pop(context);
-                  },
-                ),
-                if (_searchController.text.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    'Search in:',
-                    style: AppTheme.getLabelStyle(
-                      context,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildSearchCategories(setSheetState),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      _filterCandidates();
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Text(
-                      'Search',
-                      style: AppTheme.getPrimaryButtonTextStyle(context),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchCategories(StateSetter setSheetState) {
-    final query = _searchController.text.toLowerCase();
-    final categories = <Map<String, dynamic>>[];
-
-    // Check where search term might match
-    if (query.isNotEmpty) {
-      categories.addAll([
-        {
-          'label': 'Name',
-          'icon': Icons.person_outline,
-          'description': 'Search in candidate names',
-          'type': 'name',
-        },
-        {
-          'label': 'Role/Position',
-          'icon': Icons.work_outline,
-          'description': 'Search in job roles',
-          'type': 'role',
-        },
-        {
-          'label': 'Skills',
-          'icon': Icons.star_outline,
-          'description': 'Search in technical skills',
-          'type': 'skills',
-        },
-        {
-          'label': 'Location',
-          'icon': Icons.location_on_outlined,
-          'description': 'Search in cities/states',
-          'type': 'location',
-        },
-        {
-          'label': 'Education',
-          'icon': Icons.school_outlined,
-          'description': 'Search in qualifications',
-          'type': 'education',
-        },
-      ]);
-    }
-
-    return Column(
-      children: categories.map((category) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey.shade800.withOpacity(0.5)
-                : Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300.withOpacity(0.5)),
-          ),
-          child: ListTile(
-            leading: Icon(category['icon'], color: AppTheme.primary, size: 20),
-            title: Text(
-              '${category['label']}: "${_searchController.text}"',
-              style: AppTheme.getBodyStyle(
-                context,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: Text(
-              category['description'],
-              style: AppTheme.getLabelStyle(
-                context,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey.shade400,
-            ),
-            onTap: () {
-              _performCategorySearch(category['type']);
-              Navigator.pop(context);
-            },
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // Add this after the search bar in the candidates list
   Widget _buildFilterBanner() {
     if (_appliedFilters.isEmpty) return const SizedBox.shrink();
 
@@ -620,31 +432,6 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
     context.read<RecruiterController>().loadCandidates();
   }
 
-  void _performCategorySearch(String categoryType) {
-    final query = _searchController.text;
-    final hrController = context.read<RecruiterController>();
-
-    switch (categoryType) {
-      case 'name':
-        hrController.loadCandidates(name: query);
-        break;
-      case 'role':
-        hrController.loadCandidates(role: query);
-        break;
-      case 'skills':
-        hrController.loadCandidates(skills: query);
-        break;
-      case 'location':
-        hrController.loadCandidates(city: query);
-        break;
-      case 'education':
-        hrController.loadCandidates(education: query);
-        break;
-      default:
-        hrController.loadCandidates(skills: query);
-    }
-  }
-
   List<Map<String, dynamic>> _getFilteredCandidates(
     List<Map<String, dynamic>> candidates,
   ) {
@@ -656,7 +443,7 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
 
       // Location filter
       if (_selectedLocation != 'All' &&
-          candidate['city'] != _selectedLocation) {
+          candidate['city_name'] != _selectedLocation) {
         return false;
       }
 
@@ -689,17 +476,17 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
       }
 
       // Search filter
-      if (_searchController.text.isNotEmpty) {
-        final query = _searchController.text.toLowerCase();
-        final name = (candidate['masked_name'] ?? '').toLowerCase();
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final name = (candidate['full_name'] ?? '').toLowerCase();
         final role = (candidate['role_name'] ?? '').toLowerCase();
         final skills = (candidate['skills'] ?? '').toLowerCase();
-        final education = (candidate['education'] ?? '').toLowerCase();
+        final city = (candidate['city_name'] ?? '').toLowerCase();
 
         if (!name.contains(query) &&
             !role.contains(query) &&
             !skills.contains(query) &&
-            !education.contains(query)) {
+            !city.contains(query)) {
           return false;
         }
       }

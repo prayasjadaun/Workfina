@@ -5,7 +5,8 @@ import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/theme/app_theme.dart';
 
 class RecruiterWalletScreen extends StatefulWidget {
-  const RecruiterWalletScreen({super.key});
+  final VoidCallback? onNavigateToWallet;
+  const RecruiterWalletScreen({super.key, this.onNavigateToWallet});
 
   @override
   State<RecruiterWalletScreen> createState() => _RecruiterWalletScreenState();
@@ -214,7 +215,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                           'Total Spent',
                           '${hrController.hrProfile?['total_spent'] ?? 0}',
                           "assets/svgs/spend.svg",
-                          const Color(0xFFEF5350),
+                          AppTheme.primary,
                           isDark,
                         ),
                       ),
@@ -390,7 +391,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
     bool isDark,
   ) {
     final isRecharge = transaction['transaction_type'] == 'RECHARGE';
-    final color = isRecharge ? AppTheme.primary : const Color(0xFFEF5350);
+    final color = AppTheme.blue;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -446,7 +447,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: isRecharge ? Colors.green : Colors.red,
             ),
           ),
         ],

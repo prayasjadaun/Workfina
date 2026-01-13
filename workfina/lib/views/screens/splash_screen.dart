@@ -69,6 +69,17 @@ class _SplashScreenState extends State<SplashScreen>
           }
         } catch (e) {
           print('[DEBUG] Candidate profile check failed: $e');
+          // Check if it's an auth error (401/404 means user deleted from backend)
+          if (e.toString().contains('401') ||
+              e.toString().contains('404') ||
+              candidateController.error?.contains('Failed to load profile') == true) {
+            print('[DEBUG] Authentication failed - clearing tokens and redirecting to login');
+            await authController.logout();
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, '/login');
+            }
+            return;
+          }
           if (mounted) {
             _showNetworkErrorDialog('Failed to load candidate profile');
           }
@@ -86,6 +97,15 @@ class _SplashScreenState extends State<SplashScreen>
             );
           } catch (e) {
             print('[DEBUG] HR profile check failed: $e');
+            // Check if it's an auth error (401/404 means user deleted from backend)
+            if (e.toString().contains('401') || e.toString().contains('404')) {
+              print('[DEBUG] Authentication failed - clearing tokens and redirecting to login');
+              await authController.logout();
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+              return;
+            }
             if (mounted) {
               _showNetworkErrorDialog('Failed to load HR profile');
             }

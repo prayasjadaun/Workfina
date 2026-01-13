@@ -1,8 +1,12 @@
+// ignore_for_file: unused_field
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/filter_candidate_screen.dart';
+import 'package:workfina/views/screens/widgets/category_card_widget.dart';
+import 'package:workfina/views/screens/widgets/search_bar.dart';
 
 class RecruiterFilterScreen extends StatefulWidget {
   final bool showUnlockedOnly;
@@ -30,6 +34,8 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
   String? _searchQuery;
   final TextEditingController _searchController = TextEditingController();
 
+  List<Map<String, dynamic>> _selectedSubcategories = [];
+
   @override
   void initState() {
     super.initState();
@@ -49,19 +55,23 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     });
 
     try {
-      final response = await ApiService.getFilterOptions();
+      final response = await ApiService.getFilterCategories();
+
       if (response.containsKey('error')) {
         setState(() {
           _error = response['error'];
           _isLoading = false;
         });
-      } else {
-        // API response has 'results' wrapper
-        setState(() {
-          _filterOverview = response['results'] ?? {};
-          _isLoading = false;
-        });
+        return;
       }
+
+      final List categories = response['filter_categories'] as List? ?? [];
+
+      // 🔥 KEY CHANGE: store list instead of map
+      setState(() {
+        _filterOverview = {'categories': categories};
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
         _error = 'Network error. Please try again.';
@@ -134,6 +144,7 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     }
   }
 
+  // ignore: unused_element
   void _loadNextPage() {
     if (!_isLoadingMore && _hasMore) {
       _currentPage++;
@@ -151,6 +162,7 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     _fetchFilterData();
   }
 
+  // ignore: unused_element
   void _onFilterCategoryTap(String filterType) {
     _loadSpecificFilter(filterType);
   }
@@ -178,9 +190,10 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? AppTheme.darkBackground
-          : AppTheme.lightBackground,
+      backgroundColor: AppTheme.primary,
+      // backgroundColor: isDark
+      //     ? AppTheme.darkBackground
+      //     : AppTheme.lightBackground,
       appBar: AppBar(
         title: Text(
           _selectedFilterType ??
@@ -208,7 +221,10 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
                   onPressed: () {
                     setState(() {
                       _selectedFilterType = null;
-                      _currentFilterData = [];
+                      _currentFilterKey = null;
+                      _selectedSubcategories.clear();
+                      _searchQuery = null;
+                      _searchController.clear();
                     });
                   },
                 ),
@@ -289,414 +305,115 @@ class RecruiterFilterScreenState extends State<RecruiterFilterScreen> {
   }
 
   Widget _buildFilterCategories(bool isDark) {
-    final categories = _filterOverview.entries
-        .where((entry) => entry.key != 'all') // Exclude 'all' filter
-        .where((entry) {
-          final count = widget.showUnlockedOnly
-              ? (entry.value as Map<String, dynamic>)['unlocked_count'] ?? 0
-              : (entry.value as Map<String, dynamic>)['locked_count'] ?? 0;
-          return count > 0;
-        })
-        .map((entry) {
+    final List<Map<String, dynamic>> categories =
+        (_filterOverview['categories'] as List?)
+            ?.cast<Map<String, dynamic>>() ??
+        [];
+
+    final query = _searchQuery?.toLowerCase() ?? '';
+
+    final filteredData = categories
+        .map((cat) {
+          final List<Map<String, dynamic>> subcategories =
+              (cat['subcategories'] as List?)?.cast<Map<String, dynamic>>() ??
+              [];
+
+          final filteredSubcategories = subcategories.where((sub) {
+            final subName = (sub['name'] ?? '').toString().toLowerCase();
+            return query.isEmpty || subName.contains(query);
+          }).toList();
+
+          if (filteredSubcategories.isEmpty) return null;
+
           return {
-            'key': entry.key,
-            'title': _getDisplayName(entry.key),
-            'svg': _getSvgPath(entry.key),
-            'count': widget.showUnlockedOnly
-                ? (entry.value as Map<String, dynamic>)['unlocked_count'] ?? 0
-                : (entry.value as Map<String, dynamic>)['locked_count'] ?? 0,
+            'key': cat['slug'],
+            'name': cat['name'],
+            'icon': _getSvgPath(cat['slug']),
+            'locked_count': widget.showUnlockedOnly
+                ? filteredSubcategories
+                      .where((e) => (e['unlocked_candidates'] ?? 0) > 0)
+                      .length
+                : filteredSubcategories
+                      .where((e) => (e['locked_candidates'] ?? 0) > 0)
+                      .length,
+            'subcategories': filteredSubcategories,
+            'subcategory_count': filteredSubcategories.length,
           };
         })
+        .whereType<Map<String, dynamic>>()
         .toList();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Find your perfect candidate match!',
-            style: AppTheme.getHeadlineStyle(
-              context,
-              fontWeight: FontWeight.w700,
-              fontSize: 24,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1,
-              ),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-                final count = category['count'] ?? 0;
+    return Column(
+      children: [
+        GlobalSearchBar(
+          onSearch: (query) {
+            setState(() {
+              _searchQuery = query;
+            });
+          },
+        ),
+        Expanded(
+          child: CategoryCardsWidget(
+            categories: filteredData,
+            twoColumnLayout: true,
+            isCategoryMode: true,
+            onCategoryTap: (key) {
+              final selectedCategory = categories.firstWhere(
+                (c) => c['slug'] == key,
+              );
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: AppTheme.getCardColor(context),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.grey.shade800.withOpacity(0.3)
-                          : Colors.grey.shade200.withOpacity(0.5),
-                      width: 0.5,
-                    ),
-                    boxShadow: isDark
-                        ? []
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () =>
-                          _onFilterCategoryTap(category['title'] as String),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppTheme.primary.withOpacity(0.15)
-                                    : AppTheme.primary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Center(
-                                child: SvgPicture.asset(
-                                  category['svg'] as String,
-                                  width: 28,
-                                  height: 28,
-                                  colorFilter: ColorFilter.mode(
-                                    AppTheme.primary,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Text(
-                              category['title'] as String,
-                              style: AppTheme.getCardTitleStyle(context)
-                                  .copyWith(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: -0.2,
-                                  ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? Colors.grey.shade800.withOpacity(0.6)
-                                    : Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '$count candidates',
-                                style: AppTheme.getCardSubtitleStyle(context)
-                                    .copyWith(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.3,
-                                    ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+              setState(() {
+                _selectedFilterType = selectedCategory['name'];
+                _currentFilterKey = selectedCategory['slug'];
+                _selectedSubcategories =
+                    (selectedCategory['subcategories'] as List?)
+                        ?.cast<Map<String, dynamic>>() ??
+                    [];
+                _searchQuery = null;
+                _searchController.clear();
+              });
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildSubFilters(bool isDark) {
+    final query = _searchQuery?.toLowerCase() ?? '';
+
+    final filteredSubcategories = _selectedSubcategories.where((sub) {
+      final name = (sub['name'] ?? '').toString().toLowerCase();
+      return query.isEmpty || name.contains(query);
+    }).toList();
+
     return Column(
       children: [
-        // Search bar
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.darkCardBackground : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            child: TextField(
-              controller: _searchController,
-              style: AppTheme.getBodyStyle(
-                context,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search ${_selectedFilterType?.toLowerCase()}...',
-                hintStyle: AppTheme.getBodyStyle(
-                  context,
-                  color: Colors.grey.shade500,
-                ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: SvgPicture.asset(
-                    'assets/svgs/search.svg',
-                    width: 20,
-                    height: 20,
-                    colorFilter: ColorFilter.mode(
-                      Colors.grey.shade500,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: SvgPicture.asset(
-                          'assets/svgs/close.svg',
-                          width: 16,
-                          height: 16,
-                          colorFilter: ColorFilter.mode(
-                            Colors.grey.shade500,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          _performSearch('');
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-              ),
-              onSubmitted: _performSearch,
-            ),
+        GlobalSearchBar(
+          onSearch: (query) {
+            setState(() {
+              _searchQuery = query;
+            });
+          },
+        ),
+
+        Expanded(
+          child: CategoryCardsWidget(
+            isGridLayout: true,
+            twoColumnLayout: true,
+            categories: filteredSubcategories.map((sub) {
+              return {
+                'key': sub['slug'],
+                'name': sub['name'],
+                'icon': _getSvgPath(_currentFilterKey ?? ''),
+                'locked_count': widget.showUnlockedOnly
+                    ? sub['unlocked_candidates'] ?? 0
+                    : sub['locked_candidates'] ?? 0,
+              };
+            }).toList(),
+            onCategoryTap: _onSubFilterTap,
           ),
         ),
-
-        // Filter results
-        Expanded(
-          child: _currentFilterData.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SvgPicture.asset(
-                        'assets/svgs/empty.svg',
-                        width: 80,
-                        height: 80,
-                        colorFilter: ColorFilter.mode(
-                          Colors.grey.shade400,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No results found',
-                        style: AppTheme.getBodyStyle(
-                          context,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : NotificationListener<ScrollNotification>(
-                  onNotification: (ScrollNotification scrollInfo) {
-                    if (scrollInfo.metrics.pixels ==
-                            scrollInfo.metrics.maxScrollExtent &&
-                        _hasMore &&
-                        !_isLoadingMore) {
-                      _loadNextPage();
-                    }
-                    return false;
-                  },
-                  child: Builder(
-                    builder: (context) {
-                      // Filter out options with zero count based on unlocked status
-                      final filteredData = _currentFilterData.where((option) {
-                        final count = widget.showUnlockedOnly
-                            ? (option['unlocked_count'] ?? 0)
-                            : (option['locked_count'] ?? 0);
-                        return count > 0;
-                      }).toList();
-
-                      if (filteredData.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/svgs/empty.svg',
-                                width: 80,
-                                height: 80,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.grey.shade400,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No locked candidates found',
-                                style: AppTheme.getBodyStyle(
-                                  context,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 14,
-                                mainAxisSpacing: 14,
-                                childAspectRatio: 1.5,
-                              ),
-                          itemCount:
-                              filteredData.length + (_isLoadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == filteredData.length) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              );
-                            }
-
-                            final option = filteredData[index];
-
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.getCardColor(context),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isDark
-                                      ? Colors.grey.shade800.withOpacity(0.3)
-                                      : Colors.grey.shade200.withOpacity(0.6),
-                                  width: 0.5,
-                                ),
-                                boxShadow: isDark
-                                    ? []
-                                    : [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.03),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () => _onSubFilterTap(option['value']),
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 12,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          option['label'],
-                                          style:
-                                              AppTheme.getCardTitleStyle(
-                                                context,
-                                              ).copyWith(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.w600,
-                                                letterSpacing: -0.1,
-                                              ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 1,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? Colors.grey.shade800
-                                                      .withOpacity(0.4)
-                                                : Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '${widget.showUnlockedOnly ? (option['unlocked_count'] ?? 0) : (option['locked_count'] ?? 0)} candidates',
-                                            style:
-                                                AppTheme.getCardSubtitleStyle(
-                                                  context,
-                                                ).copyWith(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  letterSpacing: 0.2,
-                                                ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-        ),
-        const SizedBox(height: 20),
       ],
     );
   }

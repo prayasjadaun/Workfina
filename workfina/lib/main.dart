@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/services/api_service.dart';
+import 'package:workfina/services/notification_service.dart';
 import 'package:workfina/views/screens/splash_screen.dart';
 import 'controllers/theme_controller.dart';
 import 'controllers/auth_controller.dart';
@@ -9,8 +10,18 @@ import 'controllers/candidate_controller.dart';
 import 'theme/app_theme.dart';
 import 'routes/app_routes.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   ApiService.initialize();
+
+  await NotificationService.initializeWithoutPermissions();
+
+  // Get FCM token on app start
+  final fcmToken = await NotificationService.getToken();
+  final hasPermissions = await NotificationService.checkPermissions();
+  await NotificationService.requestPermissionsLater();
+
   runApp(const WorkfinaApp());
 }
 

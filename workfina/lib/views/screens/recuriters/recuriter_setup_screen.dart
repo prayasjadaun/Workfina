@@ -329,7 +329,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    final theme = Theme.of(context);
+    Theme.of(context);
     
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),

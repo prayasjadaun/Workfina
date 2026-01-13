@@ -42,14 +42,17 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         index: _currentIndex,
         children: [
           RecruiterDashboard(
-            onNavigateToUnlocked: () => setState(() => _currentIndex = 2),
+            onNavigateToUnlocked: () => setState(() => _currentIndex = 1),
+              onNavigateToWallet: () => setState(() => _currentIndex = 2),
           ),
           // RecruiterFilterScreen(key: _filterKey, showUnlockedOnly: false),
           RecruiterCandidate(
-            onSwitchToWallet: (index) => setState(() => _currentIndex = 3),
+            onSwitchToWallet: (index) => setState(() => _currentIndex = 2),
             showOnlyUnlocked: true,
           ),
-          const RecruiterWalletScreen(),
+          RecruiterWalletScreen(
+            onNavigateToWallet: () => setState(() => _currentIndex = 2),
+          ),
           const RecruiterProfileScreen(),
         ],
       ),

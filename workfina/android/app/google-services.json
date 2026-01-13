@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "131458792472",
+    "project_id": "workfina-80f30",
+    "storage_bucket": "workfina-80f30.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131458792472:android:9674859066f6266030976d",
+        "android_client_info": {
+          "package_name": "com.housypoint.workfina"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLRPe_1ZSUBu20XYQ6MOR4i7bJBUCrdKI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

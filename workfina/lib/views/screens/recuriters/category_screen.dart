@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
+import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/widgets/category_card_widget.dart';
 import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
+import 'package:workfina/views/screens/widgets/search_bar.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryKey;
@@ -24,7 +28,14 @@ class CategoryScreen extends StatefulWidget {
 class _CategoryScreenState extends State<CategoryScreen>
     with TickerProviderStateMixin {
   late Future<Map<String, dynamic>> _filterCategoriesFuture;
-  late Future<Map<String, dynamic>> _filterOptionsFuture;
+
+  Timer? _hintTimer;
+  Timer? _searchDebounce;
+  late final ValueNotifier<int> _hintNotifier;
+
+  late final AnimationController _hintController;
+  late final Animation<double> _fadeAnimation;
+  String _searchQuery = '';
 
   // State for subcategory mode
   bool _isSubcategoryMode = false;
@@ -40,9 +51,19 @@ class _CategoryScreenState extends State<CategoryScreen>
   void initState() {
     super.initState();
     _filterCategoriesFuture = ApiService.getFilterCategories();
-    _filterOptionsFuture = ApiService.getFilterOptions();
     _selectedCategory = widget.categoryName;
     _tabController = TabController(length: 1, vsync: this);
+    _hintNotifier = ValueNotifier<int>(0);
+    _hintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _hintController,
+      curve: Curves.easeInOut,
+    );
+
     _initializeTabController();
   }
 
@@ -51,14 +72,22 @@ class _CategoryScreenState extends State<CategoryScreen>
       final response = await _filterCategoriesFuture;
       final filterCategories = response['filter_categories'] as List? ?? [];
 
-      final availableCategories = filterCategories
-          .where((cat) => (cat['inner_filter'] ?? 0) != 0)
+      final availableCategories =
+          filterCategories
+              .where((cat) => (cat['inner_filter'] ?? 0) != 0)
+              .toList()
+            ..sort(
+              (a, b) =>
+                  (a['inner_filter'] ?? 0).compareTo(b['inner_filter'] ?? 0),
+            );
+
+      final categoryNames = availableCategories
           .take(5)
           .map((cat) => cat['name'] as String)
           .toList();
 
       if (mounted) {
-        final newCategories = availableCategories.cast<String>();
+        final newCategories = categoryNames.cast<String>();
         _tabController.dispose();
         setState(() {
           _tabCategories = newCategories;
@@ -86,6 +115,9 @@ class _CategoryScreenState extends State<CategoryScreen>
 
   @override
   void dispose() {
+    _hintTimer?.cancel();
+    _hintController.dispose();
+    _hintNotifier.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -105,8 +137,13 @@ class _CategoryScreenState extends State<CategoryScreen>
   }
 
   void _onCategorySelected(String categoryKey, String categoryValue) {
+    if (_selectedFilters[categoryKey] == categoryValue) {
+      return;
+    }
     setState(() {
       _selectedFilters[categoryKey] = categoryValue;
+      _selectedCategoryKey = categoryValue;
+
       _selectedCards.clear();
       _selectedCards.add(categoryValue);
     });
@@ -123,23 +160,44 @@ class _CategoryScreenState extends State<CategoryScreen>
     _loadCandidates();
   }
 
+  bool _matchCandidateSearch(Map<String, dynamic> candidate) {
+    final q = _searchQuery;
+    if (q.isEmpty) return true;
+
+    return [
+      candidate['full_name'],
+      candidate['masked_name'],
+      candidate['city_name'],
+      candidate['state_name'],
+      candidate['department'],
+      candidate['religion'],
+    ].any(
+      (field) => field != null && field.toString().toLowerCase().contains(q),
+    );
+  }
+
+  bool _matchSubcategorySearch(Map<String, dynamic> subcategory) {
+    final q = _searchQuery;
+    if (q.isEmpty) return true;
+
+    return [subcategory['name'], subcategory['key']].any(
+      (field) => field != null && field.toString().toLowerCase().contains(q),
+    );
+  }
+
   void _onCategoryTap(String subcategoryKey) {
+    if (_selectedCategoryKey == subcategoryKey && _isSubcategoryMode) {
+      return;
+    }
     setState(() {
       _isSubcategoryMode = true;
       _selectedCategoryKey = subcategoryKey;
-      // Set the selected category for tab controller
-      _selectedCategory = widget.categoryName;
-      final tabIndex = _tabCategories.indexOf(widget.categoryName);
-      if (tabIndex >= 0) {
-        _tabController.animateTo(tabIndex);
-      }
-      // Pre-select the category that was clicked
-      _selectedFilters[widget.categoryKey.toLowerCase()] = subcategoryKey;
       _selectedCards.clear();
-      _selectedCards.add(subcategoryKey);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadCandidates();
+      // Set first category as selected instead of current widget.categoryName
+      if (_tabCategories.isNotEmpty) {
+        _selectedCategory = _tabCategories[0];
+        _tabController.animateTo(0);
+      }
     });
   }
 
@@ -207,57 +265,12 @@ class _CategoryScreenState extends State<CategoryScreen>
                 child: Column(
                   children: [
                     // Search Bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            SvgPicture.asset(
-                              'assets/svgs/search.svg',
-                              width: 20,
-                              height: 20,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Search in $_selectedCategory...',
-                                style: AppTheme.getBodyStyle(
-                                  context,
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.all(8),
-                              child: SvgPicture.asset(
-                                'assets/svgs/filter.svg',
-                                width: 16,
-                                height: 16,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    GlobalSearchBar(
+                      onSearch: (query) {
+                        setState(() {
+                          _searchQuery = query;
+                        });
+                      },
                     ),
 
                     // Tab Bar
@@ -334,57 +347,12 @@ class _CategoryScreenState extends State<CategoryScreen>
                 child: Column(
                   children: [
                     // Search Bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 20),
-                            SvgPicture.asset(
-                              'assets/svgs/search.svg',
-                              width: 20,
-                              height: 20,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Search in ${widget.categoryName}...',
-                                style: AppTheme.getBodyStyle(
-                                  context,
-                                  color: Colors.white.withOpacity(0.8),
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.all(8),
-                              child: SvgPicture.asset(
-                                'assets/svgs/filter.svg',
-                                width: 16,
-                                height: 16,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    GlobalSearchBar(
+                      onSearch: (query) {
+                        setState(() {
+                          _searchQuery = query;
+                        });
+                      },
                     ),
                     const SizedBox(height: 20),
                   ],
@@ -392,19 +360,43 @@ class _CategoryScreenState extends State<CategoryScreen>
               ),
             ),
       title: Text(
-        _isSubcategoryMode ? _selectedCategory : widget.categoryName,
+        _appBarTitle,
         style: AppTheme.getTitleStyle(
           context,
           color: Colors.white,
           fontWeight: FontWeight.w600,
+          fontSize: 20,
         ),
       ),
     );
   }
 
+  String get _appBarTitle {
+    if (!_isSubcategoryMode) {
+      return widget.categoryName;
+    }
+
+    final category = _selectedCategory;
+    final subCategory = _selectedCategoryKey;
+
+    if (subCategory == null || subCategory.isEmpty) {
+      return category;
+    }
+
+    return '$category (${_formatKey(subCategory)})';
+  }
+
+  String _formatKey(String value) {
+    // IT, HR jaise cases ke liye
+    if (value.length <= 3) return value.toUpperCase();
+
+    // normal text ke liye
+    return value[0].toUpperCase() + value.substring(1);
+  }
+
   Widget _buildSubcategoriesSection() {
     return FutureBuilder<Map<String, dynamic>>(
-      future: _filterOptionsFuture,
+      future: _filterCategoriesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -427,24 +419,18 @@ class _CategoryScreenState extends State<CategoryScreen>
           );
         }
 
-        final results = snapshot.data?['results'] ?? {};
-        final all = results['all'] as Map<String, dynamic>?;
+        final filterCategories =
+            snapshot.data?['filter_categories'] as List? ?? [];
 
-        if (all == null) {
-          return const SizedBox.shrink();
-        }
-
-        final subcategories = all['subcategories'] as Map<String, dynamic>?;
-        if (subcategories == null) {
+        if (filterCategories.isEmpty) {
           return const SizedBox.shrink();
         }
 
         final categoryKey = widget.categoryKey.toLowerCase();
-        print('DEBUG: Looking for categoryKey: $categoryKey');
-        print('DEBUG: Available subcategories keys: ${subcategories.keys}');
-
-        final categoryData =
-            subcategories[categoryKey] as Map<String, dynamic>?;
+        final categoryData = filterCategories.firstWhere(
+          (cat) => (cat['slug'] as String?)?.toLowerCase() == categoryKey,
+          orElse: () => null,
+        );
 
         if (categoryData == null) {
           return Container(
@@ -458,30 +444,74 @@ class _CategoryScreenState extends State<CategoryScreen>
           );
         }
 
-        final categoryOptions =
-            categoryData['options'] as Map<String, dynamic>?;
-        if (categoryOptions == null || categoryOptions.isEmpty) {
+        final subcategories = categoryData['subcategories'] as List? ?? [];
+
+        if (subcategories.isEmpty) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
               child: Text(
-                'No options available',
+                'No subcategories available',
                 style: AppTheme.getBodyStyle(context, color: Colors.white),
               ),
             ),
           );
         }
 
-        final options = <Map<String, dynamic>>[];
-        categoryOptions.forEach((key, value) {
-          final optionData = value as Map<String, dynamic>;
-          options.add({
-            'key': key,
-            'name': optionData['name'] ?? key,
-            'locked_count': optionData['locked_count'] ?? 0,
+        var options = subcategories.map((sub) {
+          return {
+            'key': sub['slug'],
+            'name': sub['name'],
+            'locked_count': sub['locked_candidates'] ?? 0,
+            'unlocked_count': sub['unlocked_candidates'] ?? 0,
+            'total_count': sub['total_candidates'] ?? 0,
             'icon': getCategoryIcon(categoryKey),
-          });
-        });
+          };
+        }).toList();
+
+        options = options
+            .where((subcategory) => _matchSubcategorySearch(subcategory))
+            .toList();
+
+        if (options.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(40),
+            child: Center(
+              child: Column(
+                children: [
+                  SvgPicture.asset(
+                    'assets/svgs/empty.svg',
+                    width: 80,
+                    height: 80,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'No subcategories available'
+                        : 'No results found for "$_searchQuery"',
+                    style: AppTheme.getHeadlineStyle(
+                      context,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'Try selecting a different category'
+                        : 'Try a different search term',
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return CategoryCardsWidget(
           categories: options,
@@ -515,7 +545,7 @@ class _CategoryScreenState extends State<CategoryScreen>
 
   Widget _buildCategoriesSection() {
     return FutureBuilder<Map<String, dynamic>>(
-      future: _filterOptionsFuture,
+      future: _filterCategoriesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
@@ -533,29 +563,26 @@ class _CategoryScreenState extends State<CategoryScreen>
           );
         }
 
-        final results = snapshot.data?['results'] ?? {};
-        final all = results['all'] as Map<String, dynamic>?;
+        final filterCategories =
+            snapshot.data?['filter_categories'] as List? ?? [];
 
-        if (all == null) {
-          return const SizedBox.shrink();
-        }
-
-        final subcategories = all['subcategories'] as Map<String, dynamic>?;
-        if (subcategories == null) {
+        if (filterCategories.isEmpty) {
           return const SizedBox.shrink();
         }
 
         final categoryKey = _selectedCategory.toLowerCase();
-        final categoryData =
-            subcategories[categoryKey] as Map<String, dynamic>?;
+        final categoryData = filterCategories.firstWhere(
+          (cat) => (cat['slug'] as String?)?.toLowerCase() == categoryKey,
+          orElse: () => null,
+        );
 
         if (categoryData == null) {
           return const SizedBox.shrink();
         }
 
-        final categoryOptions =
-            categoryData['options'] as Map<String, dynamic>?;
-        if (categoryOptions == null || categoryOptions.isEmpty) {
+        final subcategories = categoryData['subcategories'] as List? ?? [];
+
+        if (subcategories.isEmpty) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
@@ -567,16 +594,60 @@ class _CategoryScreenState extends State<CategoryScreen>
           );
         }
 
-        final options = <Map<String, dynamic>>[];
-        categoryOptions.forEach((key, value) {
-          final optionData = value as Map<String, dynamic>;
-          options.add({
-            'key': key,
-            'name': optionData['name'] ?? key,
-            'locked_count': optionData['locked_count'] ?? 0,
+        var options = subcategories.map((sub) {
+          return {
+            'key': sub['slug'],
+            'name': sub['name'],
+            'locked_count': sub['locked_candidates'] ?? 0,
+            'unlocked_count': sub['unlocked_candidates'] ?? 0,
+            'total_count': sub['total_candidates'] ?? 0,
             'icon': getCategoryIcon(categoryKey),
-          });
-        });
+          };
+        }).toList();
+
+        options = options
+            .where((subcategory) => _matchSubcategorySearch(subcategory))
+            .toList();
+
+        if (options.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(40),
+            child: Center(
+              child: Column(
+                children: [
+                  SvgPicture.asset(
+                    'assets/svgs/empty.svg',
+                    width: 80,
+                    height: 80,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'No options available'
+                        : 'No results found for "$_searchQuery"',
+                    style: AppTheme.getHeadlineStyle(
+                      context,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? 'Try a different category'
+                        : 'Try a different search term',
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      color: Colors.white70,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
         return CategoryCardsWidget(
           categories: options,
@@ -636,7 +707,7 @@ class _CategoryScreenState extends State<CategoryScreen>
                       ),
                     ),
                     const SizedBox(width: 4),
-                    GestureDetector(
+                    InkWell(
                       onTap: () => _clearFilter(entry.key),
                       child: Icon(
                         Icons.close,
@@ -686,11 +757,15 @@ class _CategoryScreenState extends State<CategoryScreen>
           );
         }
 
-        final lockedCandidates = recruiterController.candidates
+        var lockedCandidates = recruiterController.candidates
             .where(
               (candidate) =>
                   !recruiterController.isCandidateUnlocked(candidate['id']),
             )
+            .toList();
+
+        lockedCandidates = lockedCandidates
+            .where((candidate) => _matchCandidateSearch(candidate))
             .toList();
 
         if (lockedCandidates.isEmpty) {
@@ -706,7 +781,9 @@ class _CategoryScreenState extends State<CategoryScreen>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No locked candidates found',
+                    _searchQuery.isEmpty
+                        ? 'No locked candidates found'
+                        : 'No results found for "$_searchQuery"',
                     style: AppTheme.getHeadlineStyle(
                       context,
                       fontSize: 18,
@@ -715,7 +792,9 @@ class _CategoryScreenState extends State<CategoryScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Try adjusting your filters to find more candidates',
+                    _searchQuery.isEmpty
+                        ? 'Try adjusting your filters to find more candidates'
+                        : 'Try a different search term',
                     style: AppTheme.getBodyStyle(context, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
@@ -781,23 +860,13 @@ class _CategoryScreenState extends State<CategoryScreen>
                     candidate: candidate,
                     isUnlocked: isUnlocked,
                     canAffordUnlock: canAfford,
-                    onUnlock: () async {
-                      final result = await recruiterController.unlockCandidate(
-                        candidate['id'],
-                      );
-                      if (result != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Profile unlocked successfully!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        _loadCandidates();
-                      }
-                    },
-                    onViewProfile: () {
-                      print('View profile: ${candidate['id']}');
-                    },
+                    onUnlock: () => _unlockCandidate(
+                      context,
+                      candidate,
+                      recruiterController,
+                    ),
+                    onViewProfile: () =>
+                        _navigateToDetail(context, candidate, isUnlocked),
                   );
                 },
               ),
@@ -805,6 +874,207 @@ class _CategoryScreenState extends State<CategoryScreen>
           ),
         );
       },
+    );
+  }
+
+  void _navigateToDetail(
+    BuildContext context,
+    Map<String, dynamic> candidate,
+    bool isAlreadyUnlocked,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CandidateDetailScreen(
+          candidate: candidate,
+          isAlreadyUnlocked: isAlreadyUnlocked,
+        ),
+      ),
+    );
+  }
+
+  void _unlockCandidate(
+    BuildContext context,
+    Map<String, dynamic> candidate,
+    RecruiterController recruiterController,
+  ) {
+    if (!recruiterController.canUnlockCandidate()) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.getCardColor(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.account_balance_wallet_outlined, color: Colors.red),
+              const SizedBox(width: 12),
+              Text(
+                'Insufficient Credits',
+                style: AppTheme.getHeadlineStyle(
+                  context,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'You need 10 credits to unlock this profile but you have ${recruiterController.walletBalance} credits.\n\nPlease recharge your wallet first.',
+            style: AppTheme.getBodyStyle(context),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: AppTheme.getBodyStyle(
+                  context,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Recharge',
+                style: AppTheme.getPrimaryButtonTextStyle(context),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.getCardColor(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.lock_open_outlined, color: AppTheme.primary),
+            const SizedBox(width: 12),
+            Text(
+              'Unlock Profile',
+              style: AppTheme.getHeadlineStyle(
+                context,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Unlock ${candidate['masked_name']} for 10 credits?',
+              style: AppTheme.getBodyStyle(context),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: AppTheme.primary,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Current balance: ${recruiterController.walletBalance} credits',
+                    style: AppTheme.getLabelStyle(
+                      context,
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: AppTheme.getBodyStyle(
+                context,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final result = await recruiterController.unlockCandidate(
+                candidate['id'].toString(),
+              );
+              if (result != null) {
+                _navigateToDetail(
+                  context,
+                  result['candidate'],
+                  result['already_unlocked'],
+                );
+                if (!result['already_unlocked']) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Profile unlocked! ${result['credits_used']} credits deducted.',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      backgroundColor: AppTheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } else if (recruiterController.error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      recruiterController.error!,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Unlock',
+              style: AppTheme.getPrimaryButtonTextStyle(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

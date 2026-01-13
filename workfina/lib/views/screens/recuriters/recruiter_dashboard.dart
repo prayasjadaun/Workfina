@@ -1,17 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/services/api_service.dart';
+import 'package:workfina/services/notification_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
 import 'package:workfina/views/screens/notification/notification_screen.dart';
 import 'package:workfina/views/screens/recuriters/category_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/widgets/category_card_widget.dart';
+import 'package:workfina/views/screens/widgets/refresh_indicator_wrapper.dart';
+import 'package:workfina/views/screens/widgets/search_bar.dart';
 
 class RecruiterDashboard extends StatefulWidget {
   final VoidCallback? onNavigateToUnlocked;
-  const RecruiterDashboard({super.key, this.onNavigateToUnlocked});
+  final VoidCallback? onNavigateToWallet;
+  const RecruiterDashboard({
+    super.key,
+    this.onNavigateToUnlocked,
+    this.onNavigateToWallet,
+  });
 
   @override
   State<RecruiterDashboard> createState() => _RecruiterDashboardState();
@@ -23,19 +33,88 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
   List<String> _categories = [];
   late Future<Map<String, dynamic>> _filterOptionsFuture;
   bool _categoriesLoaded = false;
+  Timer? _hintTimer;
+  Timer? _searchDebounce;
+  bool _isExpanded = false;
+
+  Timer? _typeTimer;
+  int _charIndex = 0;
+
+  final ValueNotifier<String> _animatedHint = ValueNotifier<String>('');
+
+  Future<Map<String, dynamic>>? _unlockedCandidatesFuture;
+  late final ValueNotifier<int> _hintNotifier;
+
+  String _searchQuery = '';
+
+  int _hintIndex = 0;
+  late final AnimationController _hintController;
+  late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _unlockedCandidatesFuture = ApiService.getUnlockedCandidates();
+    _hintNotifier = ValueNotifier<int>(0);
+    _hintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _hintController,
+      curve: Curves.easeInOut,
+    );
+
     _filterOptionsFuture = ApiService.getFilterCategories();
     _tabController = TabController(length: _categories.length, vsync: this);
+
     _loadDynamicCategories();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecruiterController>().loadCandidates();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final controller = context.read<RecruiterController>();
+      await controller.loadCandidates();
+      controller.totalCandidatesCount = controller.candidates.length;
+
+      // Request notification permissions after dashboard loads
+      await NotificationService.requestPermissionsLater();
     });
   }
 
-  void _loadDynamicCategories() async {
+  bool _matchSearch(Map<String, dynamic> candidate) {
+    final q = _searchQuery;
+    if (q.isEmpty) return true;
+
+    return [
+      candidate['full_name'],
+      candidate['city_name'],
+      candidate['state_name'],
+      candidate['department'],
+      candidate['religion'],
+    ].any(
+      (field) => field != null && field.toString().toLowerCase().contains(q),
+    );
+  }
+
+  Future<void> _handleRefresh() async {
+    final controller = context.read<RecruiterController>();
+
+    setState(() {
+      _unlockedCandidatesFuture = ApiService.getUnlockedCandidates();
+      _filterOptionsFuture = ApiService.getFilterCategories();
+    });
+
+    await Future.wait<void>([
+      controller.loadCandidates(),
+      controller.loadHRProfile(),
+      controller.loadWalletBalance(),
+      controller.loadUnlockedCandidates(),
+    ]);
+
+    await _loadDynamicCategories();
+  }
+
+  Future<void> _loadDynamicCategories() async {
     try {
       final response = await _filterOptionsFuture;
       final filterCategories = response['filter_categories'] as List? ?? [];
@@ -44,8 +123,24 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         'DEBUG: Filter Categories: ${filterCategories.length}',
       ); // Debug print
 
-      final availableCategories = filterCategories
-          .where((cat) => (cat['dashboard_display'] ?? 0) != 0)
+      final availableCategories =
+          filterCategories
+              .where((cat) => (cat['dashboard_display'] ?? 0) != 0)
+              .toList()
+            ..sort(
+              (a, b) => (a['dashboard_display'] ?? 0).compareTo(
+                b['dashboard_display'] ?? 0,
+              ),
+            );
+
+      print('DEBUG: Sorted categories with dashboard_display:');
+      for (var cat in availableCategories) {
+        print(
+          '${cat['name']}: dashboard_display = ${cat['dashboard_display']}',
+        );
+      }
+
+      final categoryNames = availableCategories
           .take(4)
           .map((cat) => cat['name'] as String)
           .toList();
@@ -53,7 +148,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       print('DEBUG: Available categories: $availableCategories'); // Debug print
 
       if (mounted) {
-        final newCategories = availableCategories.cast<String>();
+        final newCategories = categoryNames.cast<String>();
 
         print('DEBUG: New categories: $newCategories'); // Debug print
 
@@ -81,6 +176,10 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
   @override
   void dispose() {
+    _typeTimer?.cancel();
+    _hintTimer?.cancel();
+    _hintController.dispose();
+    _hintNotifier.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -107,85 +206,88 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
             headerSliverBuilder: (context, innerBoxIsScrolled) => [
               _buildSliverHeader(context, controller),
             ],
-            body: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
-                    color: AppTheme.primary,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
-                          child: Text(
-                            'What would you like to\nfind today?',
-                            style: AppTheme.getHeadlineStyle(
-                              context,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 28,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-
-                        // Categories Section
-                        SizedBox(
-                          height: 220,
-                          child: _buildCategoriesSection(controller),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Stats Overview Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        _buildStatsSection(
-                          balance,
-                          unlockedCount,
-                          totalSpent,
-                          controller.candidates.length,
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Recent Activity Section
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Recent Activity',
-                              style: AppTheme.getTitleStyle(
+            body: RefreshIndicatorWrapper(
+              onRefresh: _handleRefresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.fromLTRB(0, 0, 0, 10),
+                      color: AppTheme.primary,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                            child: Text(
+                              'What would you like to\nfind today?',
+                              style: AppTheme.getHeadlineStyle(
                                 context,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 18,
+                                fontSize: 28,
+                                color: Colors.white,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: widget.onNavigateToUnlocked,
-                              child: Text(
-                                'View all',
-                                style: AppTheme.getBodyStyle(
+                          ),
+
+                          // Categories Section
+                          SizedBox(
+                            height: 220,
+                            child: _buildCategoriesSection(controller),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Stats Overview Section
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          _buildStatsSection(
+                            balance,
+                            unlockedCount,
+                            totalSpent,
+                            controller.totalCandidatesCount,
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Recent Activity Section
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Recent Activity',
+                                style: AppTheme.getTitleStyle(
                                   context,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
+                              GestureDetector(
+                                onTap: widget.onNavigateToUnlocked,
+                                child: Text(
+                                  'View all',
+                                  style: AppTheme.getBodyStyle(
+                                    context,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
 
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                        _buildRecentActivitySection(controller),
-                      ],
+                          _buildRecentActivitySection(controller),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -225,61 +327,15 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         preferredSize: const Size.fromHeight(110),
         child: Container(
           color: AppTheme.primary,
-          padding: const EdgeInsets.only(bottom: 20),
           child: Column(
             children: [
               // Search Bar
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Container(
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 20),
-                      SvgPicture.asset(
-                        'assets/svgs/search.svg',
-                        width: 20,
-                        height: 20,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Search candidates...',
-                          style: AppTheme.getBodyStyle(
-                            context,
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.all(8),
-                        child: SvgPicture.asset(
-                          'assets/svgs/filter.svg',
-                          width: 16,
-                          height: 16,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              GlobalSearchBar(
+                onSearch: (query) {
+                  setState(() {
+                    _searchQuery = query;
+                  });
+                },
               ),
 
               // Tab Bar
@@ -419,6 +475,19 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                       ),
                     ),
                     GestureDetector(
+                      onTap: widget.onNavigateToWallet,
+                      child: SvgPicture.asset(
+                        'assets/svg/wallet.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
@@ -449,7 +518,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
   Widget _buildCategoriesSection(RecruiterController controller) {
     return FutureBuilder<Map<String, dynamic>>(
-      future: ApiService.getFilterCategories(),
+      future: _filterOptionsFuture,
+
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -481,42 +551,52 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
           return const SizedBox.shrink();
         }
 
-        // Transform API data to the format expected by CategoryCardsWidget
-        final categories = filterCategories.map((cat) {
-          return {
-            'key': cat['slug'],
-            'name': cat['name'],
-            'total_count': cat['options_count'] ?? 0,
-            'candidate_count': cat['options_count'] ?? 0,
-            'unlocked_count': 0,
-            'locked_count': cat['options_count'] ?? 0,
-          };
-        }).toList();
+        final filteredCategories =
+            filterCategories
+                .where((cat) => (cat['bento_grid'] ?? 0) != 0)
+                .toList()
+              ..sort(
+                (a, b) =>
+                    (a['bento_grid'] ?? 0).compareTo(b['bento_grid'] ?? 0),
+              );
 
-        // Filter out categories where bento_grid is 0
-        final filteredCategories = filterCategories
-            .where((cat) => (cat['bento_grid'] ?? 0) != 0)
+        final categories = filteredCategories
             .map((cat) {
+              final subcategories = cat['subcategories'] as List? ?? [];
+              final totalCandidates = subcategories.fold<int>(
+                0,
+                (sum, sub) => sum + (sub['total_candidates'] as int? ?? 0),
+              );
+              final lockedCandidates = subcategories.fold<int>(
+                0,
+                (sum, sub) => sum + (sub['locked_candidates'] as int? ?? 0),
+              );
+              final unlockedCandidates = subcategories.fold<int>(
+                0,
+                (sum, sub) => sum + (sub['unlocked_candidates'] as int? ?? 0),
+              );
+
               return {
                 'key': cat['slug'],
                 'name': cat['name'],
-                'total_count': cat['options_count'] ?? 0,
-                'candidate_count': cat['options_count'] ?? 0,
-                'unlocked_count': 0,
-                'locked_count': cat['options_count'] ?? 0,
+                'total_count': totalCandidates,
+                'candidate_count': totalCandidates,
+                'unlocked_count': unlockedCandidates,
+                'locked_count': lockedCandidates,
+                'subcategory_count': subcategories.length,
               };
             })
             .take(5)
             .toList();
 
-        if (filteredCategories.isEmpty) {
+        if (categories.isEmpty) {
           return const SizedBox.shrink();
         }
 
         return CategoryCardsWidget(
-          categories: filteredCategories.cast<Map<String, dynamic>>(),
+          categories: categories.cast<Map<String, dynamic>>(),
           onCategoryTap: (categoryKey) {
-            final category = filteredCategories.firstWhere(
+            final category = categories.firstWhere(
               (c) => c['key'] == categoryKey,
             );
 
@@ -643,7 +723,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     }
 
     return FutureBuilder<Map<String, dynamic>>(
-      future: _fetchUnlockedCandidates(controller),
+      future: _unlockedCandidatesFuture,
+
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingState();
@@ -652,12 +733,16 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         final unlockedCandidates =
             snapshot.data?['unlocked_candidates'] as List? ?? [];
 
-        if (unlockedCandidates.isEmpty) {
+        final filteredCandidates = unlockedCandidates
+            .where((c) => _matchSearch(c))
+            .toList();
+
+        if (filteredCandidates.isEmpty) {
           return _buildEmptyState();
         }
 
         return Column(
-          children: unlockedCandidates
+          children: filteredCandidates
               .map((candidate) => _buildActivityCard(candidate))
               .toList(),
         );
@@ -665,8 +750,19 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
     );
   }
 
+  String _getCandidateName(Map<String, dynamic> candidate) {
+    final firstName = candidate['first_name'] ?? '';
+    final lastName = candidate['last_name'] ?? '';
+
+    if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      return '$firstName $lastName'.trim();
+    }
+
+    return candidate['full_name'] ?? candidate['masked_name'] ?? 'Unknown';
+  }
+
   Widget _buildActivityCard(Map<String, dynamic> candidate) {
-    final fullName = candidate['full_name'] ?? 'Unknown';
+    final fullName = _getCandidateName(candidate);
     final experienceYears = candidate['experience_years'] ?? 0;
     final city = candidate['city_name'] ?? 'N/A';
     final creditsUsed = candidate['credits_used'] ?? 10;

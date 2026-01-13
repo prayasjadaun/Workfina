@@ -6,6 +6,7 @@ import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
+import 'package:workfina/views/screens/widgets/search_bar.dart';
 
 class FilteredCandidatesScreen extends StatefulWidget {
   final String filterType;
@@ -28,7 +29,7 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
   List<dynamic> _filteredCandidates = [];
   bool _isLoading = false;
   String? _error;
-
+  String _searchQuery = '';
   @override
   void initState() {
     super.initState();
@@ -95,6 +96,16 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
     }
   }
 
+  String formatTitle(String value) {
+    return value
+        .replaceAll('-', ' ')
+        .replaceAll('_', ' ')
+        .trim()
+        .split(' ')
+        .map((e) => e.isNotEmpty ? '${e[0].toUpperCase()}${e.substring(1)}' : e)
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -104,77 +115,130 @@ class _FilteredCandidatesScreenState extends State<FilteredCandidatesScreen> {
           ? AppTheme.darkBackground
           : Colors.white,
       appBar: AppBar(
-        title: Text(
-          widget.showUnlockedOnly
-              ? "${widget.filterValue} (Unlocked)"
-              : widget.filterValue,
-          style: AppTheme.getAppBarTextStyle(),
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              formatTitle(widget.filterValue),
+              style: AppTheme.getAppBarTextStyle(),
+            ),
+            // if (widget.showUnlockedOnly)
+            //   Text(
+            //     "Unlocked",
+            //     style: TextStyle(
+            //       fontSize: 12,
+            //       color: Colors.greenAccent,
+            //       fontWeight: FontWeight.w500,
+            //     ),
+            //   ),
+          ],
         ),
+
         backgroundColor: AppTheme.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Consumer<RecruiterController>(
-        builder: (context, hrController, child) {
-          if (_isLoading) {
-            return Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isDark ? Colors.white : Colors.black,
-                ),
-              ),
-            );
-          }
+      body: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.only(bottom: 10),
+            color: AppTheme.primary,
+            child: GlobalSearchBar(
+              onSearch: (query) {
+                setState(() {
+                  _searchQuery = query;
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: Consumer<RecruiterController>(
+              builder: (context, hrController, child) {
+                if (_isLoading) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  );
+                }
 
-          if (_error != null) {
-            return _buildErrorState(isDark);
-          }
+                if (_error != null) {
+                  return _buildErrorState(isDark);
+                }
 
-          final lockedCandidates = widget.showUnlockedOnly
-              ? _filteredCandidates
-                    .where(
-                      (c) =>
-                          hrController.isCandidateUnlocked(c['id'].toString()),
-                    )
-                    .toList()
-              : _filteredCandidates
-                    .where(
-                      (c) =>
-                          !hrController.isCandidateUnlocked(c['id'].toString()),
-                    )
-                    .toList();
+                List<dynamic> candidatesWithUnlockFilter =
+                    widget.showUnlockedOnly
+                    ? _filteredCandidates
+                          .where(
+                            (c) => hrController.isCandidateUnlocked(
+                              c['id'].toString(),
+                            ),
+                          )
+                          .toList()
+                    : _filteredCandidates
+                          .where(
+                            (c) => !hrController.isCandidateUnlocked(
+                              c['id'].toString(),
+                            ),
+                          )
+                          .toList();
 
-          if (lockedCandidates.isEmpty) {
-            return _buildEmptyState(isDark);
-          }
+                final lockedCandidates = _searchQuery.isEmpty
+                    ? candidatesWithUnlockFilter
+                    : candidatesWithUnlockFilter.where((candidate) {
+                        final name = (candidate['full_name'] ?? '')
+                            .toLowerCase(); 
+                        final role = (candidate['role_name'] ?? '')
+                            .toLowerCase(); 
+                        final city = (candidate['city_name'] ?? '').toLowerCase();
+                        final searchLower = _searchQuery.toLowerCase();
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: lockedCandidates.length,
-            itemBuilder: (context, index) {
-              final candidate = lockedCandidates[index];
-              return CandidateCardWidget(
-                candidate: candidate,
-                isUnlocked: widget.showUnlockedOnly,
-                canAffordUnlock: hrController.canUnlockCandidate(),
-                onUnlock: widget.showUnlockedOnly
-                    ? null
-                    : () => _unlockCandidate(context, candidate, hrController),
-                onViewProfile: widget.showUnlockedOnly
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CandidateDetailScreen(
-                            candidate: candidate,
-                            isAlreadyUnlocked: true,
-                          ),
-                        ),
-                      )
-                    : null,
-              );
-            },
-          );
-        },
+                        return name.contains(searchLower) ||
+                            role.contains(searchLower) ||
+                            city.contains(searchLower);
+                      }).toList();
+
+                if (lockedCandidates.isEmpty) {
+                  return _buildEmptyState(isDark);
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: lockedCandidates.length,
+                  itemBuilder: (context, index) {
+                    final candidate = lockedCandidates[index];
+                    return CandidateCardWidget(
+                      candidate: candidate,
+                      isUnlocked: widget.showUnlockedOnly,
+                      canAffordUnlock: hrController.canUnlockCandidate(),
+                      onUnlock: widget.showUnlockedOnly
+                          ? null
+                          : () => _unlockCandidate(
+                              context,
+                              candidate,
+                              hrController,
+                            ),
+                      onViewProfile: widget.showUnlockedOnly
+                          ? () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CandidateDetailScreen(
+                                  candidate: candidate,
+                                  isAlreadyUnlocked: true,
+                                ),
+                              ),
+                            )
+                          : null,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

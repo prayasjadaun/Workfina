@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
@@ -32,7 +31,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
   final FocusNode _notesFocusNode = FocusNode();
   bool _isLoadingNotes = false;
   bool _isObjectiveExpanded = false;
-  Map<int, bool> _workExpDescriptionExpanded = {};
+  // ignore: unused_field
+  final Map<int, bool> _workExpDescriptionExpanded = {};
 
   @override
   void initState() {
@@ -375,14 +375,14 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   ),
                   child: Container(
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withOpacity(0.3),
-                          Colors.black.withOpacity(0.8),
-                        ],
-                      ),
+                      // gradient: LinearGradient(
+                      //   begin: Alignment.center,
+                      //   end: Alignment.bottomCenter,
+                      //   colors: [
+                      //     Colors.black.withOpacity(0.3),
+                      //     Colors.black.withOpacity(0.8),
+                      //   ],
+                      // ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -396,7 +396,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 5),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withOpacity(0.7),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -675,7 +675,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       // backgroundColor: isDark ? Colors.white : Colors.black,
-                      backgroundColor: AppTheme.blueDark,
+                      backgroundColor: AppTheme.blue,
                       foregroundColor: Colors.black,
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -741,9 +741,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.candidate['full_name'] ??
-              widget.candidate['masked_name'] ??
-              'Unknown',
+          _getCandidateName(widget.candidate),
           style: AppTheme.getHeadlineStyle(
             context,
             fontSize: 28,
@@ -844,6 +842,17 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
         ),
       ],
     );
+  }
+
+  String _getCandidateName(Map<String, dynamic> candidate) {
+    final firstName = candidate['first_name'] ?? '';
+    final lastName = candidate['last_name'] ?? '';
+
+    if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      return '$firstName $lastName'.trim();
+    }
+
+    return candidate['masked_name'] ?? 'Unknown';
   }
 
   Widget _buildSkillsSection(BuildContext context) {
@@ -1090,7 +1099,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               const SizedBox(width: 12),
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white : AppTheme.blueDark,
+                  color: isDark ? Colors.white : AppTheme.blue,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -1449,7 +1458,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
 
   Widget _buildEducationSection(BuildContext context) {
     final educations = widget.candidate['educations'];
-    
+
     if (educations == null || educations.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -1564,7 +1573,8 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                           ),
                           TextSpan(
-                            text: '$degree${fieldOfStudy.isNotEmpty ? ' in $fieldOfStudy' : ''}\n',
+                            text:
+                                '$degree${fieldOfStudy.isNotEmpty ? ' in $fieldOfStudy' : ''}\n',
                             style: AppTheme.getBodyStyle(context, fontSize: 14),
                           ),
                           TextSpan(
@@ -1588,7 +1598,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                           ),
                           TextSpan(
-                            text: isOngoing ? '$startYear - Ongoing' : '$startYear - $endYear',
+                            text: isOngoing
+                                ? '$startYear - Ongoing'
+                                : '$startYear - $endYear',
                             style: AppTheme.getBodyStyle(context, fontSize: 14),
                           ),
                           if (gradePercentage.isNotEmpty) ...[
@@ -1602,7 +1614,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                             TextSpan(
                               text: '$gradePercentage%',
-                              style: AppTheme.getBodyStyle(context, fontSize: 14),
+                              style: AppTheme.getBodyStyle(
+                                context,
+                                fontSize: 14,
+                              ),
                             ),
                           ],
                           if (location.isNotEmpty) ...[
@@ -1616,7 +1631,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                             ),
                             TextSpan(
                               text: location,
-                              style: AppTheme.getBodyStyle(context, fontSize: 14),
+                              style: AppTheme.getBodyStyle(
+                                context,
+                                fontSize: 14,
+                              ),
                             ),
                           ],
                         ],
@@ -1683,6 +1701,20 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           ),
           const SizedBox(height: 16),
           _buildRelocateInfoRow(context),
+          const SizedBox(height: 16),
+          _buildContactInfoRow(
+            context,
+            'Joining Availability',
+            widget.candidate['joining_availability'] ?? 'Not Specified',
+          ),
+          if (widget.candidate['joining_availability'] != 'IMMEDIATE') ...[
+            const SizedBox(height: 16),
+            _buildContactInfoRow(
+              context,
+              'Notice Period',
+              widget.candidate['notice_period_details'] ?? 'Not Specified',
+            ),
+          ],
         ],
       ),
     );
@@ -1759,7 +1791,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
               try {
                 final start = DateTime.parse(startDate);
                 final startFormatted = DateFormat('MMM yyyy').format(start);
-                
+
                 if (isCurrent) {
                   duration = '$startFormatted - Present';
                 } else if (endDate.isNotEmpty) {
@@ -1770,7 +1802,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                   duration = startFormatted;
                 }
               } catch (e) {
-                duration = isCurrent ? '$startDate - Present' : '$startDate - $endDate';
+                duration = isCurrent
+                    ? '$startDate - Present'
+                    : '$startDate - $endDate';
               }
             }
 
@@ -1830,7 +1864,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               ),
                               TextSpan(
                                 text: '$companyName\n',
-                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                ),
                               ),
                               TextSpan(
                                 text: 'Role: ',
@@ -1842,7 +1879,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               ),
                               TextSpan(
                                 text: '$roleTitle\n',
-                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                ),
                               ),
                               TextSpan(
                                 text: 'Duration: ',
@@ -1854,7 +1894,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                               ),
                               TextSpan(
                                 text: duration,
-                                style: AppTheme.getBodyStyle(context, fontSize: 14),
+                                style: AppTheme.getBodyStyle(
+                                  context,
+                                  fontSize: 14,
+                                ),
                               ),
                               if (location.isNotEmpty) ...[
                                 TextSpan(
@@ -1867,7 +1910,10 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                                 ),
                                 TextSpan(
                                   text: location,
-                                  style: AppTheme.getBodyStyle(context, fontSize: 14),
+                                  style: AppTheme.getBodyStyle(
+                                    context,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ],
                             ],
@@ -1941,42 +1987,6 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
       ),
     );
   }
-
-  // Widget _buildCareerObjectiveSection(BuildContext context) {
-  //   final objective = widget.candidate['career_objective'];
-  //   if (objective == null || objective.toString().isEmpty) {
-  //     return const SizedBox.shrink();
-  //   }
-
-  //   return Container(
-  //     width: double.infinity,
-  //     padding: const EdgeInsets.all(20),
-  //     decoration: BoxDecoration(
-  //       color: AppTheme.getCardColor(context),
-  //       borderRadius: BorderRadius.circular(16),
-  //       boxShadow: [AppTheme.getCardShadow(context)],
-  //     ),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Career Objective',
-  //           style: AppTheme.getTitleStyle(
-  //             context,
-  //             fontSize: 18,
-  //             fontWeight: FontWeight.w600,
-  //           ),
-  //         ),
-  //         const SizedBox(height: 16),
-  //         Text(
-  //           objective.toString(),
-  //           style: AppTheme.getBodyStyle(context, fontSize: 14),
-  //           textAlign: TextAlign.justify,
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Widget _buildContactInfoRow(
     BuildContext context,

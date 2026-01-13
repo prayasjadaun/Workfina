@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
 class CandidateCardWidget extends StatelessWidget {
@@ -19,6 +20,12 @@ class CandidateCardWidget extends StatelessWidget {
     this.onViewProfile,
   });
 
+  String _getProfileImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http')) return url;
+    return '${ApiService.mediaBaseUrl}$url';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -29,16 +36,16 @@ class CandidateCardWidget extends StatelessWidget {
         color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark 
-            ? Colors.grey.withOpacity(0.2)
-            : Colors.grey.withOpacity(0.08),
+          color: isDark
+              ? Colors.grey.withOpacity(0.2)
+              : Colors.grey.withOpacity(0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark 
-              ? Colors.black.withOpacity(0.4)
-              : Colors.grey.withOpacity(0.25),
+            color: isDark
+                ? Colors.black.withOpacity(0.4)
+                : Colors.grey.withOpacity(0.25),
             blurRadius: 24,
             offset: const Offset(0, 8),
             spreadRadius: 2,
@@ -140,9 +147,7 @@ class CandidateCardWidget extends StatelessWidget {
                       // Name and designation
                       Text(
                         isUnlocked
-                            ? (candidate['full_name'] ??
-                                  candidate['masked_name'] ??
-                                  'Unknown')
+                            ? _getCandidateName(candidate)
                             : (candidate['masked_name'] ?? 'Unknown'),
                         style: TextStyle(
                           fontSize: 18,
@@ -205,7 +210,9 @@ class CandidateCardWidget extends StatelessWidget {
                       children: [
                         candidate['profile_image_url'] != null
                             ? Image.network(
-                                candidate['profile_image_url'],
+                                _getProfileImageUrl(
+                                  candidate['profile_image_url'],
+                                ),
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 height: double.infinity,
@@ -217,7 +224,10 @@ class CandidateCardWidget extends StatelessWidget {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(16),
                             child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+                              filter: ImageFilter.blur(
+                                sigmaX: 4.0,
+                                sigmaY: 4.0,
+                              ),
                               child: Container(
                                 color: Colors.black.withOpacity(0.1),
                               ),
@@ -330,6 +340,17 @@ class CandidateCardWidget extends StatelessWidget {
     );
   }
 
+  String _getCandidateName(Map<String, dynamic> candidate) {
+    final firstName = candidate['first_name'] ?? '';
+    final lastName = candidate['last_name'] ?? '';
+
+    if (firstName.isNotEmpty || lastName.isNotEmpty) {
+      return '$firstName $lastName'.trim();
+    }
+
+    return candidate['masked_name'] ?? 'Unknown';
+  }
+
   Widget _buildInitialAvatar(bool isDark) {
     return Container(
       decoration: BoxDecoration(
@@ -394,9 +415,7 @@ class CandidateCardWidget extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: isDark 
-                        ? const Color(0xFF2D2D2D) 
-                        : Colors.white,
+                      color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(

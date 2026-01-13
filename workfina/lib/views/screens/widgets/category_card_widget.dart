@@ -8,6 +8,7 @@ class CategoryCardsWidget extends StatelessWidget {
   final bool isGridLayout;
   final Set<String> selectedCards;
   final bool isCategoryMode;
+  final bool twoColumnLayout;
 
   const CategoryCardsWidget({
     super.key,
@@ -15,12 +16,17 @@ class CategoryCardsWidget extends StatelessWidget {
     this.onCategoryTap,
     this.isGridLayout = false,
     this.isCategoryMode = false,
+    this.twoColumnLayout = false,
     this.selectedCards = const {},
   });
 
   @override
   Widget build(BuildContext context) {
     if (categories.isEmpty) return const SizedBox.shrink();
+    if (twoColumnLayout) {
+      return _buildTwoColumnLayout(context);
+    }
+
     if (isCategoryMode) {
       return _buildCategoryGrid(context);
     }
@@ -43,7 +49,7 @@ class CategoryCardsWidget extends StatelessWidget {
             /// ================= LEFT BIG CARD =================
             Expanded(
               flex: 2,
-              child: GestureDetector(
+              child: InkWell(
                 onTap: () => onCategoryTap?.call(mainCategory['key']),
                 child: Container(
                   padding: const EdgeInsets.all(16),
@@ -88,7 +94,7 @@ class CategoryCardsWidget extends StatelessWidget {
                               const SizedBox(height: 10),
                               _CountChip(
                                 text:
-                                    '${mainCategory['locked_count']} candidates',
+                                    '${mainCategory['subcategory_count'] ?? 0} subcategories',
                                 dark: true,
                               ),
                             ],
@@ -179,7 +185,7 @@ class CategoryCardsWidget extends StatelessWidget {
               final isSelected = selectedCards.contains(category['key']);
               return Padding(
                 padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
+                child: InkWell(
                   onTap: () => onCategoryTap?.call(category['key']),
                   child: Container(
                     width: 120,
@@ -190,7 +196,7 @@ class CategoryCardsWidget extends StatelessWidget {
                       // color: Colors.red,
                       borderRadius: BorderRadius.circular(22),
                       border: isSelected
-                          ? Border.all(color: AppTheme.greenCard, width: 2)
+                          ? Border.all(color: AppTheme.blue, width: 2)
                           : null,
                     ),
                     child: Column(
@@ -246,7 +252,7 @@ class CategoryCardsWidget extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         itemCount: categories.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, 
+          crossAxisCount: 3,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
           childAspectRatio: 1, // card size same feel
@@ -255,7 +261,7 @@ class CategoryCardsWidget extends StatelessWidget {
           final category = categories[index];
           final isSelected = selectedCards.contains(category['key']);
 
-          return GestureDetector(
+          return InkWell(
             onTap: () => onCategoryTap?.call(category['key']),
             child: Container(
               padding: const EdgeInsets.all(12),
@@ -306,13 +312,81 @@ class CategoryCardsWidget extends StatelessWidget {
     );
   }
 
+  Widget _buildTwoColumnLayout(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: GridView.builder(
+        itemCount: categories.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3, 
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1,
+        ),
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final isSelected = selectedCards.contains(category['key']);
+
+          return InkWell(
+            onTap: () => onCategoryTap?.call(category['key']),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.greenCardSolid,
+                borderRadius: BorderRadius.circular(22),
+                border: isSelected
+                    ? Border.all(color: AppTheme.blue, width: 2)
+                    : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    category['icon'] ?? getCategoryIcon(category['key']),
+                    width: 28,
+                    height: 28,
+                    color: Colors.black,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    category['name'] ?? '',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    isCategoryMode
+                        ? '${(category['subcategories'] as List?)?.length ?? 0} subcategories'
+                        : '${category['locked_count'] ?? 0} candidates',
+                    style: AppTheme.getLabelStyle(
+                      context,
+                      fontSize: 11,
+                      color: Colors.black.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   /// ================= ICON MAPPER =================
   String getCategoryIcon(String key) {
     switch (key) {
       case 'department':
         return 'assets/svg/work.svg';
       case 'religion':
-        return 'assets/svgs/religion.svg';
+        return 'assets/svgs/users.svg';
       case 'country':
         return 'assets/svgs/country.svg';
       case 'state':
@@ -337,7 +411,7 @@ class _SmallCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: () => onTap?.call(data['key']),
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -377,7 +451,7 @@ class _SmallCategoryCard extends StatelessWidget {
                 const SizedBox(height: 4),
 
                 Text(
-                  '${data['locked_count']} candidates',
+                  '${data['subcategory_count']} subcategories',
                   style: AppTheme.getLabelStyle(
                     context,
                     fontSize: 10,
@@ -397,7 +471,7 @@ class _SmallCategoryCard extends StatelessWidget {
       case 'department':
         return 'assets/svgs/department.svg';
       case 'religion':
-        return 'assets/svgs/religion.svg';
+        return 'assets/svgs/user.svg';
       case 'country':
         return 'assets/svgs/country.svg';
       case 'state':

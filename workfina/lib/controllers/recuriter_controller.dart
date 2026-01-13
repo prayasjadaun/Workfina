@@ -21,6 +21,9 @@ class RecruiterController extends ChangeNotifier {
   List<dynamic> get transactions => _transactions;
   Set<String> get unlockedCandidateIds => _unlockedCandidateIds;
   Map<String, dynamic>? get pagination => _pagination;
+  int totalCandidatesCount = 0;
+  List<Map<String, dynamic>> _unlockedCandidates = [];
+  List<Map<String, dynamic>> get unlockedCandidates => _unlockedCandidates;
 
   bool isCandidateUnlocked(String candidateId) {
     return _unlockedCandidateIds.contains(candidateId);
@@ -323,18 +326,20 @@ class RecruiterController extends ChangeNotifier {
   Future<void> loadUnlockedCandidates() async {
     try {
       final response = await ApiService.getUnlockedCandidates();
+
       if (!response.containsKey('error')) {
-        // Extract IDs from the unlocked_candidates array
-        final List<dynamic> unlockedCandidates =
-            response['unlocked_candidates'] ?? [];
-        final List<String> unlockedIds = unlockedCandidates
-            .map((c) => c['id'] as String)
-            .toList();
-        _unlockedCandidateIds.addAll(unlockedIds);
+        final List<dynamic> data = response['unlocked_candidates'] ?? [];
+
+        _unlockedCandidates = data.cast<Map<String, dynamic>>();
+
+        _unlockedCandidateIds = _unlockedCandidates
+            .map((c) => c['id'].toString())
+            .toSet();
+
         notifyListeners();
       }
     } catch (e) {
-      // Handle error silently
+      // silent fail
     }
   }
 
