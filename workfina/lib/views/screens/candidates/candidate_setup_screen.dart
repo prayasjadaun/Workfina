@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:convert';
 
+import 'package:workfina/views/screens/candidates/candidate_experience_screen.dart';
+
 class CandidateSetupScreen extends StatefulWidget {
   const CandidateSetupScreen({super.key});
 
@@ -22,7 +24,7 @@ class CandidateSetupScreen extends StatefulWidget {
 class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
-  final _personalFormKey = GlobalKey<FormState>();  
+  final _personalFormKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -53,6 +55,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   List<String> _selectedLanguages = [];
   String? _currentLanguageValue;
   String _joiningAvailability = 'NOTICE_PERIOD';
+  String? _noticePeriodError;
 
   List<Map<String, String>> _states = [];
   List<Map<String, String>> _cities = [];
@@ -260,27 +263,27 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   }
 
   void _handleContinue() {
-  bool isValid = false;
-  switch (_currentPage) {
-    case 0:
-      isValid = _personalFormKey.currentState!.validate();
-      break;
-    // Add cases for other pages similarly
-    default:
-      isValid = _validateCurrentPage();  // Fallback for other pages
-  }
+    bool isValid = false;
+    switch (_currentPage) {
+      case 0:
+        isValid = _personalFormKey.currentState!.validate();
+        break;
+      // Add cases for other pages similarly
+      default:
+        isValid = _validateCurrentPage(); // Fallback for other pages
+    }
 
-  if (isValid) {
-    _nextPage();
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please fill all required fields'),
-        backgroundColor: Colors.red,
-      ),
-    );
+    if (isValid) {
+      _nextPage();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
 
   void _pickResumeFile() async {
     try {
@@ -984,505 +987,563 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
   // PAGE 1: Personal Information
   Widget _buildPersonalInfoPage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPageHeader(
-            icon: Icons.person_outline,
-            title: 'Personal Information',
-            subtitle: 'Tell us about yourself',
-          ),
-          const SizedBox(height: 20),
-          // Profile Picture
-          Center(
-            child: GestureDetector(
-              onTap: _showImageSourceBottomSheet,
-              child: Stack(
-                children: [
-                  Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.grey[100],
-                      border: Border.all(
-                        color: AppTheme.primary.withOpacity(0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: _profileImage != null
-                        ? ClipOval(
-                            child: Image.file(
-                              _profileImage!,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Icon(
-                            Icons.person_outline,
-                            size: 40,
-                            color: Colors.grey[400],
-                          ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return Form(
+      key: _personalFormKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPageHeader(
+              icon: Icons.person_outline,
+              title: 'Personal Information',
+              subtitle: 'Tell us about yourself',
             ),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              _profileImage != null ? 'Change photo' : 'Add photo ',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-          ),
-          const SizedBox(height: 32),
-
-          // Basic Info
-          // NEW
-          _buildTextField(
-            controller: _firstNameController,
-            label: 'First Name',
-            icon: Icons.person_outline,
-            isRequired: true,
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _lastNameController,
-            label: 'Last Name',
-            icon: Icons.person_outline,
-            isRequired: true,
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _phoneController,
-            label: 'Phone Number',
-            icon: Icons.phone_outlined,
-            isRequired: true,
-            keyboardType: TextInputType.phone,
-            maxLength: 10,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          ),
-          const SizedBox(height: 16),
-
-          _buildTextField(
-            controller: _ageController,
-            label: 'Age',
-            icon: Icons.cake_outlined,
-            isRequired: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          ),
-          const SizedBox(height: 16),
-
-          // Languages
-          _loadingOptions
-              ? _buildLoadingField('Loading languages...')
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 20),
+            // Profile Picture
+            Center(
+              child: GestureDetector(
+                onTap: _showImageSourceBottomSheet,
+                child: Stack(
                   children: [
-                    DropdownButtonFormField<String>(
-                      key: ValueKey(_selectedLanguages.length),
-                      value: _currentLanguageValue,
-                      dropdownColor: Colors.white,
-                      style: const TextStyle(
-                        color: Color(0xFF1A1A1A),
-                        fontSize: 15,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Languages',
-                        labelStyle: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.language_outlined,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: AppTheme.primary),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 14,
+                    Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[100],
+                        border: Border.all(
+                          color: AppTheme.primary.withOpacity(0.3),
+                          width: 2,
                         ),
                       ),
-                      hint: Text(
-                        _availableLanguages.isEmpty
-                            ? 'No languages available'
-                            : 'Select language',
-                      ),
-                      items: _availableLanguages
-                          .where((lang) => !_selectedLanguages.contains(lang))
-                          .map(
-                            (lang) => DropdownMenuItem(
-                              value: lang,
-                              child: Text(lang),
+                      child: _profileImage != null
+                          ? ClipOval(
+                              child: Image.file(
+                                _profileImage!,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : Icon(
+                              Icons.person_outline,
+                              size: 40,
+                              color: Colors.grey[400],
                             ),
-                          )
-                          .toList(),
-                      onChanged: _availableLanguages.isEmpty
-                          ? null
-                          : (value) {
-                              if (value != null) {
-                                if (value.toLowerCase() == 'other') {
-                                  // Show dialog to enter custom language
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Add Custom Language'),
-                                      content: TextField(
-                                        controller: _otherLanguageController,
-                                        decoration: const InputDecoration(
-                                          hintText: 'Enter language name',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        textCapitalization:
-                                            TextCapitalization.words,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            if (_otherLanguageController
-                                                .text
-                                                .isNotEmpty) {
-                                              setState(() {
-                                                _selectedLanguages.add(
-                                                  _otherLanguageController.text,
-                                                );
-                                                _currentLanguageValue = null;
-                                                _otherLanguageController
-                                                    .clear();
-                                              });
-                                              Navigator.pop(context);
-                                            }
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppTheme.primary,
-                                          ),
-                                          child: const Text(
-                                            'Add',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                } else {
-                                  setState(() {
-                                    _selectedLanguages.add(value);
-                                    _currentLanguageValue = null;
-                                  });
-                                }
-                              }
-                            },
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-          if (_selectedLanguages.isNotEmpty) ...[
+              ),
+            ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _selectedLanguages
-                  .map(
-                    (lang) => Chip(
-                      label: Text(lang, style: const TextStyle(fontSize: 13)),
-                      deleteIcon: const Icon(Icons.close, size: 16),
-                      onDeleted: () =>
-                          setState(() => _selectedLanguages.remove(lang)),
-                      backgroundColor: AppTheme.primary.withOpacity(0.1),
-                      labelStyle: const TextStyle(color: AppTheme.primary),
-                      side: BorderSide.none,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                    ),
-                  )
-                  .toList(),
+            Center(
+              child: Text(
+                _profileImage != null ? 'Change photo' : 'Add photo ',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
             ),
-          ],
-          const SizedBox(height: 24),
-
-          // Address Section
-          Text(
-            'Address',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-
-          _buildTextField(
-            controller: _streetAddressController,
-            label: 'Street Address',
-            icon: Icons.home_outlined,
-            hintText: 'House no., Street, Area',
-            minLines: 1,
-            maxLines: 2,
-          ),
-          const SizedBox(height: 16),
-
-          _loadingStates
-              ? _buildLoadingField('Loading states...')
-              : DropdownButtonFormField<String>(
-                  value: _selectedStateId,
-                  dropdownColor: Colors.white,
-                  isExpanded: true,
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 15,
+            if (_profileImage == null &&
+                _personalFormKey.currentState != null &&
+                !_personalFormKey.currentState!.validate())
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Profile image is required',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
-                  decoration: _buildDropdownDecoration(
-                    'State',
-                    Icons.location_on_outlined,
-                    true,
-                  ),
-                  hint: const Text('Select State'),
-                  items: _states
-                      .map(
-                        (state) => DropdownMenuItem(
-                          value: state['id'],
-                          child: Text(state['name']!),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      final selectedState = _states.firstWhere(
-                        (s) => s['id'] == value,
-                      );
-                      setState(() {
-                        _selectedStateId = value;
-                        _stateController.text = selectedState['name']!;
-                        _isOtherState = selectedState['slug'] == 'other';
-                        if (!_isOtherState) {
-                          _otherStateController.clear();
-                          _fetchCities(selectedState['slug']!);
-                        }
-                      });
-                    }
-                  },
                 ),
+              ),
+            const SizedBox(height: 32),
 
-          if (_isOtherState) ...[
+            // Basic Info
+            // NEW
+            _buildTextField(
+              controller: _firstNameController,
+              label: 'First Name',
+              icon: Icons.person_outline,
+              isRequired: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'First name is required';
+                }
+                return null;
+              },
+            ),
             const SizedBox(height: 16),
             _buildTextField(
-              controller: _otherStateController,
-              label: 'Specify State',
-              icon: Icons.edit_outlined,
+              controller: _lastNameController,
+              label: 'Last Name',
+              icon: Icons.person_outline,
               isRequired: true,
-              hintText: 'Enter your state',
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'last name is required';
+                }
+                return null;
+              },
             ),
-          ],
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          _loadingCities
-              ? _buildLoadingField('Loading cities...')
-              : DropdownButtonFormField<String>(
-                  value: _selectedCityId,
-                  dropdownColor: Colors.white,
-                  style: const TextStyle(
-                    color: Color(0xFF1A1A1A),
-                    fontSize: 15,
-                  ),
-                  decoration: _buildDropdownDecoration(
-                    'City',
-                    Icons.location_city_outlined,
-                    true,
-                  ),
-                  hint: Text(
-                    _selectedStateId == null
-                        ? 'Select a state first'
-                        : 'Select City',
-                  ),
-                  items: _cities
-                      .map(
-                        (city) => DropdownMenuItem(
-                          value: city['id'],
-                          child: Text(city['name']!),
+            _buildTextField(
+              controller: _phoneController,
+              label: 'Phone Number',
+              icon: Icons.phone_outlined,
+              isRequired: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Phone number is required';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _ageController,
+              label: 'Age',
+              icon: Icons.cake_outlined,
+              isRequired: true,
+              maxLength: 2,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Age is required';
+                }
+                if (value.length != 2) {
+                  return 'Age must be valid';
+                }
+                final age = int.tryParse(value);
+                if (age == null || age < 18 || age > 99) {
+                  // Change to 99 for consistency with maxLength=2
+                  return 'Enter a valid age (18-99)';
+                }
+                return null;
+              },
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Languages
+            _loadingOptions
+                ? _buildLoadingField('Loading languages...')
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        key: ValueKey(_selectedLanguages.length),
+                        value: _currentLanguageValue,
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(
+                          color: Color(0xFF1A1A1A),
+                          fontSize: 15,
                         ),
-                      )
-                      .toList(),
-                  onChanged: _selectedStateId == null || _isOtherState
-                      ? null
-                      : (value) {
-                          if (value != null) {
-                            final selectedCity = _cities.firstWhere(
-                              (c) => c['id'] == value,
-                            );
-                            setState(() {
-                              _selectedCityId = value;
-                              _cityController.text = selectedCity['name']!;
-                              _isOtherCity = selectedCity['slug']!.endsWith(
-                                '-other',
-                              );
-                              if (!_isOtherCity) {
-                                _otherCityController.clear();
-                              }
-                            });
+                        decoration: InputDecoration(
+                          labelText: 'Languages',
+                          labelStyle: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                          prefixIcon: Icon(
+                            Icons.language_outlined,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
+                        hint: Text(
+                          _availableLanguages.isEmpty
+                              ? 'No languages available'
+                              : 'Select language',
+                        ),
+                        items: _availableLanguages
+                            .where((lang) => !_selectedLanguages.contains(lang))
+                            .map(
+                              (lang) => DropdownMenuItem(
+                                value: lang,
+                                child: Text(lang),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _availableLanguages.isEmpty
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  if (value.toLowerCase() == 'other') {
+                                    // Show dialog to enter custom language
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text(
+                                          'Add Custom Language',
+                                        ),
+                                        content: TextField(
+                                          controller: _otherLanguageController,
+                                          decoration: const InputDecoration(
+                                            hintText: 'Enter language name',
+                                            border: OutlineInputBorder(),
+                                          ),
+                                          textCapitalization:
+                                              TextCapitalization.words,
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              if (_otherLanguageController
+                                                  .text
+                                                  .isNotEmpty) {
+                                                setState(() {
+                                                  _selectedLanguages.add(
+                                                    _otherLanguageController
+                                                        .text,
+                                                  );
+                                                  _currentLanguageValue = null;
+                                                  _otherLanguageController
+                                                      .clear();
+                                                });
+                                                Navigator.pop(context);
+                                              }
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppTheme.primary,
+                                            ),
+                                            child: const Text(
+                                              'Add',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  } else {
+                                    setState(() {
+                                      _selectedLanguages.add(value);
+                                      _currentLanguageValue = null;
+                                    });
+                                  }
+                                }
+                              },
+                        validator: (value) {
+                          if (_selectedLanguages.isEmpty) {
+                            return 'At least one language is required';
                           }
+                          return null;
                         },
-                ),
-
-          if (_isOtherCity) ...[
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _otherCityController,
-              label: 'Specify City',
-              icon: Icons.edit_outlined,
-              isRequired: true,
-              hintText: 'Enter your city',
-            ),
-          ],
-          const SizedBox(height: 16),
-
-          // Willing to Relocate
-          _buildDropdownField(
-            value: _willingToRelocate ? 'YES' : 'NO',
-            label: 'Willing to Relocate?',
-            icon: Icons.location_on,
-            items: [
-              {'value': 'YES', 'label': 'Yes'},
-              {'value': 'NO', 'label': 'No'},
+                      ),
+                    ],
+                  ),
+            if (_selectedLanguages.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _selectedLanguages
+                    .map(
+                      (lang) => Chip(
+                        label: Text(lang, style: const TextStyle(fontSize: 13)),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () =>
+                            setState(() => _selectedLanguages.remove(lang)),
+                        backgroundColor: AppTheme.primary.withOpacity(0.1),
+                        labelStyle: const TextStyle(color: AppTheme.primary),
+                        side: BorderSide.none,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    )
+                    .toList(),
+              ),
             ],
-            onChanged: (value) {
-              setState(() {
-                _willingToRelocate = value == 'YES';
-              });
-            },
-          ),
+            const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
-
-          _loadingOptions
-              ? _buildLoadingField('Loading roles...')
-              : _buildDropdownField(
-                  value: _selectedRole,
-                  label: 'Role/Department',
-                  icon: Icons.work_outline,
-                  items: _roles,
-                  onChanged: (value) => setState(() {
-                    _selectedRole = value!;
-                    _isOtherRole = value == 'other';
-                    if (!_isOtherRole) {
-                      _otherRoleController.clear();
-                    }
-                  }),
-                ),
-
-          if (_isOtherRole) ...[
-            const SizedBox(height: 16),
-            _buildTextField(
-              controller: _otherRoleController,
-              label: 'Specify Role',
-              icon: Icons.edit_outlined,
-              isRequired: true,
-              hintText: 'Enter your role',
+            // Address Section
+            Text(
+              'Address',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-          ],
-          const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-          _buildTextField(
-            controller: _careerObjectiveController,
-            label: 'Career Objective',
-            icon: Icons.flag_outlined,
-            hintText: 'Describe your career goals...',
-            maxLines: 3,
-            minLines: 1,
-          ),
-          const SizedBox(height: 16),
-
-          // Row(
-          //   children: [
-          //     Expanded(
-          //       child: _buildTextField(
-          //         controller: _currentCtcController,
-          //         label: 'Current CTC',
-          //         icon: Icons.currency_rupee,
-          //         keyboardType: TextInputType.number,
-          //         hintText: 'Annual',
-          //       ),
-          //     ),
-          //     const SizedBox(width: 12),
-          //     Expanded(
-          //       child: _buildTextField(
-          //         controller: _expectedCtcController,
-          //         label: 'Expected CTC',
-          //         icon: Icons.trending_up,
-          //         keyboardType: TextInputType.number,
-          //         hintText: 'Expected',
-          //       ),
-          //     ),
-          //   ],
-          // ),
-          const SizedBox(height: 16),
-
-          _loadingOptions
-              ? _buildLoadingField('Loading religions...')
-              : _buildDropdownField(
-                  value: _selectedReligion,
-                  label: 'Religion ',
-                  icon: Icons.account_circle_outlined,
-                  items: _religions,
-                  onChanged: (value) => setState(() {
-                    _selectedReligion = value!;
-                    _isOtherReligion = value == 'other';
-                    if (!_isOtherReligion) {
-                      _otherReligionController.clear();
-                    }
-                  }),
-                ),
-
-          if (_isOtherReligion) ...[
-            const SizedBox(height: 16),
             _buildTextField(
-              controller: _otherReligionController,
-              label: 'Specify Religion',
-              icon: Icons.edit_outlined,
-              isRequired: true,
-              hintText: 'Enter your religion',
+              controller: _streetAddressController,
+              label: 'Street Address',
+              icon: Icons.home_outlined,
+              hintText: 'House no., Street, Area',
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Street Address is required';
+                }
+                return null;
+              },
+              minLines: 1,
+              maxLines: 2,
             ),
+            const SizedBox(height: 16),
+
+            _loadingStates
+                ? _buildLoadingField('Loading states...')
+                : DropdownButtonFormField<String>(
+                    value: _selectedStateId,
+                    dropdownColor: Colors.white,
+                    isExpanded: true,
+                    style: const TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 15,
+                    ),
+                    decoration: _buildDropdownDecoration(
+                      'State',
+                      Icons.location_on_outlined,
+                      true,
+                    ),
+                    hint: const Text('Select State'),
+                    items: _states
+                        .map(
+                          (state) => DropdownMenuItem(
+                            value: state['id'],
+                            child: Text(state['name']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        final selectedState = _states.firstWhere(
+                          (s) => s['id'] == value,
+                        );
+                        setState(() {
+                          _selectedStateId = value;
+                          _stateController.text = selectedState['name']!;
+                          _isOtherState = selectedState['slug'] == 'other';
+                          if (!_isOtherState) {
+                            _otherStateController.clear();
+                            _fetchCities(selectedState['slug']!);
+                          }
+                        });
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null && !_isOtherState) {
+                        return 'State is required';
+                      }
+                      return null;
+                    },
+                  ),
+
+            if (_isOtherState) ...[
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _otherStateController,
+                label: 'Specify State',
+                icon: Icons.edit_outlined,
+                isRequired: true,
+                hintText: 'Enter your state',
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            _loadingCities
+                ? _buildLoadingField('Loading cities...')
+                : DropdownButtonFormField<String>(
+                    value: _selectedCityId,
+                    dropdownColor: Colors.white,
+                    style: const TextStyle(
+                      color: Color(0xFF1A1A1A),
+                      fontSize: 15,
+                    ),
+                    decoration: _buildDropdownDecoration(
+                      'City',
+                      Icons.location_city_outlined,
+                      true,
+                    ),
+                    hint: Text(
+                      _selectedStateId == null
+                          ? 'Select a state first'
+                          : 'Select City',
+                    ),
+                    items: _cities
+                        .map(
+                          (city) => DropdownMenuItem(
+                            value: city['id'],
+                            child: Text(city['name']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: _selectedStateId == null || _isOtherState
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              final selectedCity = _cities.firstWhere(
+                                (c) => c['id'] == value,
+                              );
+                              setState(() {
+                                _selectedCityId = value;
+                                _cityController.text = selectedCity['name']!;
+                                _isOtherCity = selectedCity['slug']!.endsWith(
+                                  '-other',
+                                );
+                                if (!_isOtherCity) {
+                                  _otherCityController.clear();
+                                }
+                              });
+                            }
+                          },
+                    validator: (value) {
+                      if (value == null && !_isOtherCity) {
+                        return 'City is required';
+                      }
+                      return null;
+                    },
+                  ),
+
+            if (_isOtherCity) ...[
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _otherCityController,
+                label: 'Specify City',
+                icon: Icons.edit_outlined,
+                isRequired: true,
+                hintText: 'Enter your city',
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Willing to Relocate
+            _buildDropdownField(
+              value: _willingToRelocate ? 'YES' : 'NO',
+              label: 'Willing to Relocate?',
+              icon: Icons.location_on,
+              items: [
+                {'value': 'YES', 'label': 'Yes'},
+                {'value': 'NO', 'label': 'No'},
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _willingToRelocate = value == 'YES';
+                });
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            _loadingOptions
+                ? _buildLoadingField('Loading roles...')
+                : _buildDropdownField(
+                    value: _selectedRole,
+                    label: 'Role/Department',
+                    icon: Icons.work_outline,
+                    items: _roles,
+                    onChanged: (value) => setState(() {
+                      _selectedRole = value!;
+                      _isOtherRole = value == 'other';
+                      if (!_isOtherRole) {
+                        _otherRoleController.clear();
+                      }
+                    }),
+                  ),
+
+            if (_isOtherRole) ...[
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _otherRoleController,
+                label: 'Specify Role',
+                icon: Icons.edit_outlined,
+                isRequired: true,
+                hintText: 'Enter your role',
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              controller: _careerObjectiveController,
+              label: 'Career Objective',
+              icon: Icons.flag_outlined,
+              hintText: 'Describe your career goals...',
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Career Objective is required';
+                }
+                return null;
+              },
+              maxLines: 3,
+              minLines: 1,
+            ),
+            const SizedBox(height: 16),
+
+            // const SizedBox(height: 16),
+            _loadingOptions
+                ? _buildLoadingField('Loading religions...')
+                : _buildDropdownField(
+                    value: _selectedReligion,
+                    label: 'Religion ',
+                    icon: Icons.account_circle_outlined,
+                    items: _religions,
+                    onChanged: (value) => setState(() {
+                      _selectedReligion = value!;
+                      _isOtherReligion = value == 'other';
+                      if (!_isOtherReligion) {
+                        _otherReligionController.clear();
+                      }
+                    }),
+                  ),
+
+            if (_isOtherReligion) ...[
+              const SizedBox(height: 16),
+              _buildTextField(
+                controller: _otherReligionController,
+                label: 'Specify Religion',
+                icon: Icons.edit_outlined,
+                isRequired: true,
+                hintText: 'Enter your religion',
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
-
-  
 
   InputDecoration _buildDropdownDecoration(
     String label,
@@ -1568,21 +1629,34 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppTheme.primary,
-                  size: 28,
-                ),
-                onPressed: _showAddExperienceDialog,
+                icon: const Icon(Icons.add, color: AppTheme.primary, size: 28),
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddExperienceScreen(),
+                    ),
+                  );
+
+                  if (result != null && result is Map<String, dynamic>) {
+                    setState(() {
+                      if (result['is_current'] == true) {
+                        for (var exp in _workExperiences) {
+                          exp['is_current'] = false;
+                        }
+                      }
+                      _workExperiences.add(result);
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Experience added')),
+                    );
+                  }
+                },
                 tooltip: 'Add Experience',
               ),
             ],
           ),
-          // const SizedBox(height: 4),
-          // Text(
-          //   'Add your work experience (Optional - but recommended)',
-          //   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-          // ),
           const SizedBox(height: 16),
 
           // Display Work Experiences
@@ -1651,17 +1725,20 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                       ),
                     ),
                     Switch(
-                      value:
-                          _joiningAvailability ==
-                          'IMMEDIATE', // This will now be false initially
+                      value: _joiningAvailability == 'IMMEDIATE',
                       onChanged: (value) {
                         setState(() {
                           _joiningAvailability = value
                               ? 'IMMEDIATE'
                               : 'NOTICE_PERIOD';
+
                           if (value) {
-                            // Clear notice period when switching to immediate
+                            // Immediate → clear notice + remove error
                             _noticePeriodController.clear();
+                            _noticePeriodError = null;
+                          } else {
+                            // Not immediate → validate right away (good UX)
+                            _noticePeriodError = _validateNoticePeriod();
                           }
                         });
                       },
@@ -1675,8 +1752,8 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                   TextField(
                     controller: _noticePeriodController,
                     decoration: InputDecoration(
-                      labelText: 'Notice Period Details',
-                      hintText: 'e.g., 30 days, 2 months',
+                      labelText: 'Notice Period Details *', // ← added *
+                      hintText: 'e.g. 30 days, 2 months, serving notice period',
                       prefixIcon: const Icon(
                         Icons.calendar_today_outlined,
                         size: 20,
@@ -1686,7 +1763,33 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                       ),
                       filled: true,
                       fillColor: Colors.white,
+
+                      // ── These three lines make it show red error ──
+                      errorText: _noticePeriodError,
+                      errorStyle: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.red,
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Colors.red),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
                     ),
+                    onChanged: (value) {
+                      // Live validation — feels modern & helpful
+                      if (_joiningAvailability == 'NOTICE_PERIOD') {
+                        setState(() {
+                          _noticePeriodError = _validateNoticePeriod();
+                        });
+                      }
+                    },
                   ),
                 ],
               ],
@@ -1695,6 +1798,20 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         ],
       ),
     );
+  }
+
+  String? _validateNoticePeriod() {
+    if (_joiningAvailability != 'NOTICE_PERIOD') {
+      return null;
+    }
+
+    final text = _noticePeriodController.text.trim();
+
+    if (text.isEmpty) {
+      return 'Notice period is required if not joining immediately';
+    }
+
+    return null;
   }
 
   // PAGE 2: Professional Information
@@ -2573,10 +2690,12 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     bool isRequired = false,
     String? hintText,
     TextInputType? keyboardType,
+
     List<TextInputFormatter>? inputFormatters,
     int? maxLines = 1,
     int? minLines,
     int? maxLength,
+    String? Function(String?)? validator, // Add this new parameter
   }) {
     return TextFormField(
       controller: controller,
@@ -2603,12 +2722,16 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: Colors.red),
         ),
+
         filled: true,
         fillColor: Colors.grey[50],
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 14,
         ),
+        suffixText: isRequired
+            ? '*'
+            : null, // Optional: Add asterisk for required fields
         counterText: '',
       ),
       keyboardType: keyboardType,
@@ -2616,6 +2739,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
       maxLines: maxLines,
       minLines: minLines,
       maxLength: maxLength,
+      validator: validator, // Pass the validator here
     );
   }
 
