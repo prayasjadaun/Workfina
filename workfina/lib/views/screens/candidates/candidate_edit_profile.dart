@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
+import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -21,7 +23,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
-  late TextEditingController _fullNameController;
+  // late TextEditingController _fullNameController;
+  final TextEditingController firstNameController = TextEditingController();
+  final TextEditingController lastNameController = TextEditingController();
+
   late TextEditingController _phoneController;
   late TextEditingController _ageController;
   late TextEditingController _experienceController;
@@ -44,32 +49,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ImagePicker _imagePicker = ImagePicker();
 
   bool _willingToRelocate = false;
+  List<Map<String, String>> _roles = [];
+  List<Map<String, String>> _religions = [];
+  bool _loadingOptions = false;
 
   // Dynamic lists
   List<Map<String, dynamic>> _workExperiences = [];
   List<Map<String, dynamic>> _educationList = [];
-
-  final List<Map<String, String>> _roles = [
-    {'value': 'IT', 'label': 'Information Technology'},
-    {'value': 'HR', 'label': 'Human Resources'},
-    {'value': 'SUPPORT', 'label': 'Customer Support'},
-    {'value': 'SALES', 'label': 'Sales'},
-    {'value': 'MARKETING', 'label': 'Marketing'},
-    {'value': 'FINANCE', 'label': 'Finance'},
-    {'value': 'DESIGN', 'label': 'Design'},
-    {'value': 'OTHER', 'label': 'Other'},
-  ];
-
-  final List<Map<String, String>> _religions = [
-    {'value': 'HINDU', 'label': 'Hindu'},
-    {'value': 'MUSLIM', 'label': 'Muslim'},
-    {'value': 'CHRISTIAN', 'label': 'Christian'},
-    {'value': 'SIKH', 'label': 'Sikh'},
-    {'value': 'BUDDHIST', 'label': 'Buddhist'},
-    {'value': 'JAIN', 'label': 'Jain'},
-    {'value': 'OTHER', 'label': 'Other'},
-    {'value': 'PREFER_NOT_TO_SAY', 'label': 'Prefer not to say'},
-  ];
 
   // Helper method to parse backend list format
   List<Map<String, dynamic>> _parseBackendList(String? data) {
@@ -161,9 +147,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
 
     // Initialize controllers with existing data
-    _fullNameController = TextEditingController(
-      text: widget.profileData['full_name'] ?? '',
-    );
+    firstNameController.text = widget.profileData['first_name'] ?? '';
+    lastNameController.text = widget.profileData['last_name'] ?? '';
     _phoneController = TextEditingController(
       text: widget.profileData['phone'] ?? '',
     );
@@ -207,8 +192,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .map<Map<String, dynamic>>(
             (exp) => {
               'company_name': exp['company_name'] ?? '',
-              'job_role':
-                  exp['role_title'] ?? '', // Note: role_title -> job_role
+              // 'job_role': exp['role_title'] ?? '',
+              // 'job_role': exp['role_title'] ?? exp['job_role'] ?? '', // FIX: Handle both keys
+              // 'role_title':
+              //     exp['role_title'] ?? '', 
+              'role_title': exp['role_title'] ?? '',
+
+
               'start_month': _getMonthFromDate(exp['start_date']),
               'start_year': _getYearFromDate(exp['start_date']),
               'end_month': exp['end_date'] != null
@@ -218,6 +208,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ? _getYearFromDate(exp['end_date'])
                   : null,
               'is_current': exp['is_current'] ?? false,
+              'location': exp['location'] ?? '',
+              'description': exp['description'] ?? '',
             },
           )
           .toList();
@@ -237,14 +229,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               'end_month': 'December', // Default
               'end_year': edu['end_year']?.toString() ?? '',
               'grade': edu['grade_percentage']?.toString() ?? '',
+              'location': edu['location'] ?? '',
             },
           )
           .toList();
     }
     _willingToRelocate = widget.profileData['willing_to_relocate'] ?? false;
-    _selectedRole = widget.profileData['role_name'] ?? 'IT';
-    _selectedReligion =
-        widget.profileData['religion_name'] ?? 'PREFER_NOT_TO_SAY';
+
+    _selectedRole = '';
+    _selectedReligion = '';
+    _fetchDepartmentsAndReligions();
   }
 
   String _getMonthFromDate(String? dateStr) {
@@ -281,9 +275,69 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _fetchDepartmentsAndReligions() async {
+    setState(() => _loadingOptions = true);
+    try {
+      final response = await ApiService.getDepartmentsAndReligions();
+      if (response.containsKey('error')) {
+        throw Exception(response['error']);
+      }
+
+      final departments = response['departments'] as List;
+      final Map<String, Map<String, String>> uniqueDepts = {};
+      for (var dept in departments) {
+        final value = dept['value'].toString();
+        uniqueDepts[value] = {
+          'value': value,
+          'label': dept['label'].toString(),
+        };
+      }
+      _roles = uniqueDepts.values.toList();
+
+      // _roles.add({'value': 'OTHER', 'label': 'Other'});
+
+      final religions = response['religions'] as List;
+      final Map<String, Map<String, String>> uniqueReligions = {};
+      for (var relig in religions) {
+        final value = relig['value'].toString();
+        uniqueReligions[value] = {
+          'value': value,
+          'label': relig['label'].toString(),
+        };
+      }
+      _religions = uniqueReligions.values.toList();
+
+      if (_roles.isNotEmpty) {
+        // If _selectedRole is empty or not in list, set to first item
+        final roleExists = _roles.any((r) => r['value'] == _selectedRole);
+        if (_selectedRole.isEmpty || !roleExists) {
+          _selectedRole = _roles[0]['value']!;
+        }
+      }
+
+      if (_religions.isNotEmpty && _selectedReligion.isEmpty) {
+        _selectedReligion = _religions[0]['value']!;
+      }
+
+      setState(() => _loadingOptions = false);
+    } catch (e) {
+      setState(() => _loadingOptions = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load options: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
-    _fullNameController.dispose();
+    // _fullNameController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
     _phoneController.dispose();
     _ageController.dispose();
     _experienceController.dispose();
@@ -604,387 +658,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // ========== Work Experience Methods ==========
 
-  void _showAddExperienceDialog() {
-  final companyController = TextEditingController();
-  final roleController = TextEditingController();
-  final locationController = TextEditingController(); // ✅ NEW
-  final descriptionController = TextEditingController(); // ✅ NEW
+  void _showAddExperienceDialog({
+    Map<String, dynamic>? experience,
+    int? index,
+  }) {
+    final companyController = TextEditingController(
+      text: experience?['company_name'] ?? '',
+    );
+    final roleController = TextEditingController(
+      text: experience?['job_role'] ?? '',
+    );
+    final locationController = TextEditingController(
+      text: experience?['location'] ?? '',
+    );
+    final descriptionController = TextEditingController(
+      text: experience?['description'] ?? '',
+    );
 
-  String startMonth = 'January';
-  String startYear = DateTime.now().year.toString();
-  String endMonth = 'January';
-  String endYear = DateTime.now().year.toString();
-  bool isCurrentlyWorking = false;
-
-  final months = [
-    'January','February','March','April','May','June',
-    'July','August','September','October','November','December',
-  ];
-
-  final years = List.generate(
-    50,
-    (index) => (DateTime.now().year - index).toString(),
-  );
-
-  showDialog(
-    context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setDialogState) => AlertDialog(
-        title: const Text('Add Work Experience'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-
-              /// Company
-              TextField(
-                controller: companyController,
-                decoration: const InputDecoration(
-                  labelText: 'Company Name *',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              /// Role
-              TextField(
-                controller: roleController,
-                decoration: const InputDecoration(
-                  labelText: 'Job Role / Position *',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              /// ✅ Location
-              TextField(
-                controller: locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  hintText: 'e.g. Gurgaon, Haryana',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              /// ✅ Description
-              TextField(
-                controller: descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Briefly describe your role & work',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              /// Start Date
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Start Date *',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 8),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: startMonth,
-                      decoration: const InputDecoration(
-                        labelText: 'Month',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: months
-                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                          .toList(),
-                      onChanged: (v) => setDialogState(() => startMonth = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: startYear,
-                      decoration: const InputDecoration(
-                        labelText: 'Year',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: years
-                          .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                          .toList(),
-                      onChanged: (v) => setDialogState(() => startYear = v!),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              CheckboxListTile(
-                value: isCurrentlyWorking,
-                onChanged: (v) =>
-                    setDialogState(() => isCurrentlyWorking = v ?? false),
-                title: const Text('I am currently working in this role'),
-                controlAffinity: ListTileControlAffinity.leading,
-                contentPadding: EdgeInsets.zero,
-              ),
-
-              if (!isCurrentlyWorking) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: endMonth,
-                        decoration: const InputDecoration(
-                          labelText: 'End Month',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: months
-                            .map((m) =>
-                                DropdownMenuItem(value: m, child: Text(m)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setDialogState(() => endMonth = v!),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: endYear,
-                        decoration: const InputDecoration(
-                          labelText: 'End Year',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: years
-                            .map((y) =>
-                                DropdownMenuItem(value: y, child: Text(y)))
-                            .toList(),
-                        onChanged: (v) =>
-                            setDialogState(() => endYear = v!),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
-            ),
-            onPressed: () {
-              if (companyController.text.isEmpty ||
-                  roleController.text.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please fill all required fields'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
-              setState(() {
-                _workExperiences.add({
-                  'company_name': companyController.text,
-                  'job_role': roleController.text,
-                  'location': locationController.text, // ✅ ADDED
-                  'description': descriptionController.text, // ✅ ADDED
-                  'start_month': startMonth,
-                  'start_year': startYear,
-                  'end_month': isCurrentlyWorking ? null : endMonth,
-                  'end_year': isCurrentlyWorking ? null : endYear,
-                  'is_current': isCurrentlyWorking,
-                });
-              });
-
-              Navigator.pop(context);
-            },
-            child: const Text('Add', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
- Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
-  String duration =
-      '${experience['start_month']} ${experience['start_year']}';
-  duration += experience['is_current']
-      ? ' - Present'
-      : ' - ${experience['end_month']} ${experience['end_year']}';
-
-  return Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.06),
-          blurRadius: 12,
-          offset: const Offset(0, 6),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// HEADER ROW
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// ICON
-            Container(
-              height: 48,
-              width: 48,
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.business_center,
-                color: AppTheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-
-            /// TITLE INFO
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    experience['job_role'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    experience['company_name'] ?? '',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            /// DELETE
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              onPressed: () {
-                setState(() {
-                  _workExperiences.removeAt(index);
-                });
-              },
-            ),
-          ],
-        ),
-
-        /// LOCATION
-        if (experience['location'] != null &&
-            experience['location'].toString().isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Row(
-              children: [
-                Icon(Icons.location_on_outlined,
-                    size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  experience['location'],
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-
-        /// DATE
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Row(
-            children: [
-              Icon(Icons.calendar_month_outlined,
-                  size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                duration,
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-        ),
-
-        /// DESCRIPTION
-        if (experience['description'] != null &&
-            experience['description'].toString().isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(
-              experience['description'],
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.5,
-                color: Colors.grey[800],
-              ),
-            ),
-          ),
-
-        /// CURRENTLY WORKING BADGE
-        if (experience['is_current'])
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Currently Working',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green.shade700,
-                ),
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
-}
-
-
-
-  // ========== Education Methods ==========
-
-  void _showAddEducationDialog() {
-    final schoolController = TextEditingController();
-    final degreeController = TextEditingController();
-    final fieldController = TextEditingController();
-    final gradeController = TextEditingController();
-    String startMonth = 'January';
-    String startYear = DateTime.now().year.toString();
-    String endMonth = 'January';
-    String endYear = DateTime.now().year.toString();
+    String startMonth = experience?['start_month'] ?? 'January';
+    String startYear =
+        experience?['start_year'] ?? DateTime.now().year.toString();
+    String endMonth = experience?['end_month'] ?? 'January';
+    String endYear = experience?['end_year'] ?? DateTime.now().year.toString();
+    bool isCurrentlyWorking = experience?['is_current'] ?? false;
 
     final months = [
       'January',
@@ -1003,14 +699,434 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final years = List.generate(
       50,
-      (index) => (DateTime.now().year - index).toString(),
+      (i) => (DateTime.now().year - i).toString(),
     );
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Add Education'),
+          title: Text(
+            experience == null ? 'Add Work Experience' : 'Edit Work Experience',
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Same input fields as before...
+                TextField(
+                  controller: companyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Company Name *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: roleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Job Role / Position *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: locationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Location',
+                    hintText: 'e.g. Gurgaon, Haryana',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    hintText: 'Briefly describe your role & work',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Start Date *',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'Month',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: months
+                            .map(
+                              (m) => DropdownMenuItem(value: m, child: Text(m)),
+                            )
+                            .toList(),
+                        onChanged: (v) => setDialogState(() => startMonth = v!),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: startYear,
+                        decoration: const InputDecoration(
+                          labelText: 'Year',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: years
+                            .map(
+                              (y) => DropdownMenuItem(value: y, child: Text(y)),
+                            )
+                            .toList(),
+                        onChanged: (v) => setDialogState(() => startYear = v!),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  value: isCurrentlyWorking,
+                  onChanged: (v) =>
+                      setDialogState(() => isCurrentlyWorking = v ?? false),
+                  title: const Text('I am currently working in this role'),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+                if (!isCurrentlyWorking) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: endMonth,
+                          decoration: const InputDecoration(
+                            labelText: 'End Month',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: months
+                              .map(
+                                (m) =>
+                                    DropdownMenuItem(value: m, child: Text(m)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setDialogState(() => endMonth = v!),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: endYear,
+                          decoration: const InputDecoration(
+                            labelText: 'End Year',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: years
+                              .map(
+                                (y) =>
+                                    DropdownMenuItem(value: y, child: Text(y)),
+                              )
+                              .toList(),
+                          onChanged: (v) => setDialogState(() => endYear = v!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+              ),
+              onPressed: () {
+                if (companyController.text.isEmpty ||
+                    roleController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please fill all required fields'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  final workData = {
+                    'company_name': companyController.text,
+                    // 'job_role': roleController.text,
+                    'role_title':
+                        roleController.text, // ✅ FIXED: 'role_title' use karo
+
+                    'location': locationController.text,
+                    'description': descriptionController.text,
+                    'start_month': startMonth,
+                    'start_year': startYear,
+                    'end_month': isCurrentlyWorking ? null : endMonth,
+                    'end_year': isCurrentlyWorking ? null : endYear,
+                    'is_current': isCurrentlyWorking,
+                  };
+
+                  if (index != null) {
+                    // EDIT existing experience
+                    _workExperiences[index] = workData;
+                  } else {
+                    // ADD new experience
+                    _workExperiences.add(workData);
+                  }
+                });
+
+                Navigator.pop(context);
+              },
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExperienceCard(Map<String, dynamic> experience, int index) {
+    String duration =
+        '${experience['start_month']} ${experience['start_year']}';
+    duration += experience['is_current']
+        ? ' - Present'
+        : ' - ${experience['end_month']} ${experience['end_year']}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// HEADER ROW
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// ICON
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.business_center,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              /// TITLE INFO
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      experience['role_title'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      experience['company_name'] ?? '',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
+
+              /// delete and add
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: Colors.blueAccent,
+                    ),
+                    onPressed: () => _showAddExperienceDialog(
+                      experience: experience,
+                      index: index,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _workExperiences.removeAt(index);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          /// LOCATION
+          if (experience['location'] != null &&
+              experience['location'].toString().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    experience['location'],
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+          /// DATE
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_month_outlined,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  duration,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+
+          /// DESCRIPTION
+          if (experience['description'] != null &&
+              experience['description'].toString().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(
+                experience['description'],
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.5,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+
+          /// CURRENTLY WORKING BADGE
+          if (experience['is_current'])
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Currently Working',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ========== Education Methods ==========
+
+  void _showAddEducationDialog({Map<String, dynamic>? education, int? index}) {
+    final schoolController = TextEditingController(
+      text: education?['school'] ?? '',
+    );
+    final degreeController = TextEditingController(
+      text: education?['degree'] ?? '',
+    );
+    final fieldController = TextEditingController(
+      text: education?['field'] ?? '',
+    );
+    final gradeController = TextEditingController(
+      text: education?['grade'] ?? '',
+    );
+    final locationController = TextEditingController(
+      text: education?['location'] ?? '',
+    );
+
+    String startMonth = education?['start_month'] ?? 'January';
+    String startYear =
+        education?['start_year'] ?? DateTime.now().year.toString();
+    String endMonth = education?['end_month'] ?? 'January';
+    String endYear = education?['end_year'] ?? DateTime.now().year.toString();
+
+    final months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    final years = List.generate(
+      50,
+      (i) => (DateTime.now().year - i).toString(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(education == null ? 'Add Education' : 'Edit Education'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1024,6 +1140,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                  controller: locationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Location',
+                    hintText: 'e.g., Gurugram, Haryana',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
                 TextField(
                   controller: degreeController,
                   decoration: const InputDecoration(
@@ -1061,15 +1188,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         items: months
                             .map(
-                              (month) => DropdownMenuItem(
-                                value: month,
-                                child: Text(month),
-                              ),
+                              (m) => DropdownMenuItem(value: m, child: Text(m)),
                             )
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => startMonth = value!);
-                        },
+                        onChanged: (v) => setDialogState(() => startMonth = v!),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1082,15 +1204,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         items: years
                             .map(
-                              (year) => DropdownMenuItem(
-                                value: year,
-                                child: Text(year),
-                              ),
+                              (y) => DropdownMenuItem(value: y, child: Text(y)),
                             )
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => startYear = value!);
-                        },
+                        onChanged: (v) => setDialogState(() => startYear = v!),
                       ),
                     ),
                   ],
@@ -1115,15 +1232,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         items: months
                             .map(
-                              (month) => DropdownMenuItem(
-                                value: month,
-                                child: Text(month),
-                              ),
+                              (m) => DropdownMenuItem(value: m, child: Text(m)),
                             )
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => endMonth = value!);
-                        },
+                        onChanged: (v) => setDialogState(() => endMonth = v!),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1136,15 +1248,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         items: years
                             .map(
-                              (year) => DropdownMenuItem(
-                                value: year,
-                                child: Text(year),
-                              ),
+                              (y) => DropdownMenuItem(value: y, child: Text(y)),
                             )
                             .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => endYear = value!);
-                        },
+                        onChanged: (v) => setDialogState(() => endYear = v!),
                       ),
                     ),
                   ],
@@ -1180,7 +1287,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 }
 
                 setState(() {
-                  _educationList.add({
+                  final educationData = {
                     'school': schoolController.text,
                     'degree': degreeController.text,
                     'field': fieldController.text,
@@ -1189,7 +1296,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     'end_month': endMonth,
                     'end_year': endYear,
                     'grade': gradeController.text,
-                  });
+                    'location': locationController.text,
+                  };
+
+                  if (index != null) {
+                    _educationList[index] = educationData;
+                  } else {
+                    _educationList.add(educationData);
+                  }
                 });
 
                 Navigator.pop(context);
@@ -1197,7 +1311,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
               ),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
+              child: const Text('Save', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1245,6 +1359,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
+                if (education['location'] != null &&
+                    education['location'].toString().isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    education['location'],
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   degreeText,
@@ -1282,12 +1404,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () {
-              setState(() {
-                _educationList.removeAt(index);
-              });
-            },
+            icon: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+            onPressed: () =>
+                _showAddEducationDialog(education: education, index: index),
+            tooltip: 'Edit',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+            onPressed: () => setState(() => _educationList.removeAt(index)),
             tooltip: 'Remove',
           ),
         ],
@@ -1296,57 +1420,76 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+    final age = int.tryParse(_ageController.text);
+    if (age == null || age < 18 || age > 100) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid age (18-100)'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
     final controller = context.read<CandidateController>();
 
-    // Convert work experiences to JSON string
-    String workExperienceJson = '';
+    /// ---------------- WORK EXPERIENCE JSON ----------------
+    String? workExperienceJson;
+
     if (_workExperiences.isNotEmpty) {
-      workExperienceJson = _workExperiences
-          .map(
-            (exp) => {
-              'company_name': exp['company_name'],
-              'job_role': exp['job_role'],
-              'start_month': exp['start_month'],
-              'start_year': exp['start_year'],
-              'end_month': exp['end_month'],
-              'end_year': exp['end_year'],
-              'is_current': exp['is_current'],
-            },
-          )
-          .toList()
-          .toString();
+      workExperienceJson = jsonEncode(
+        _workExperiences.map((exp) {
+          return {
+            'company_name': exp['company_name'],
+            // 'job_role': exp['job_role'],
+            // 'role_title': exp['job_role'],
+            'role_title': exp['role_title'], // ✅ FIXED: 'role_title' use karo
+
+            'location': exp['location'],
+            'description': exp['description'],
+            'start_month': exp['start_month'],
+            'start_year': exp['start_year'],
+            'end_month': exp['is_current'] ? null : exp['end_month'],
+            'end_year': exp['is_current'] ? null : exp['end_year'],
+            'is_current': exp['is_current'],
+          };
+        }).toList(),
+      );
     }
 
-    // Convert education list to JSON string
-    String educationJson = '';
+    /// ---------------- EDUCATION JSON ----------------
+    String? educationJson;
+
     if (_educationList.isNotEmpty) {
-      educationJson = _educationList
-          .map(
-            (edu) => {
-              'school': edu['school'],
-              'degree': edu['degree'],
-              'field': edu['field'],
-              'start_month': edu['start_month'],
-              'start_year': edu['start_year'],
-              'end_month': edu['end_month'],
-              'end_year': edu['end_year'],
-              'grade': edu['grade'],
-            },
-          )
-          .toList()
-          .toString();
+      educationJson = jsonEncode(
+        _educationList.map((edu) {
+          return {
+            'school': edu['school'],
+            'degree': edu['degree'],
+            'field': edu['field'],
+            'start_month': edu['start_month'],
+            'start_year': edu['start_year'],
+            'end_month': edu['end_month'],
+            'end_year': edu['end_year'],
+            'grade': edu['grade'],
+            'location': edu['location'],
+          };
+        }).toList(),
+      );
     }
 
+    final String fullName =
+        '${firstNameController.text.trim()} ${lastNameController.text.trim()}';
+
+    /// ---------------- API CALL ----------------
     final success = await controller.updateProfile(
-      fullName: _fullNameController.text,
+      fullName: fullName, // Use the combined fullName
+
       phone: _phoneController.text,
-      age: int.tryParse(_ageController.text),
+      age: age,
       role: _selectedRole,
-      experienceYears: int.tryParse(_experienceController.text),
+      // experienceYears: int.tryParse(_experienceController.text),
       currentCtc: _currentCtcController.text.isEmpty
           ? null
           : double.tryParse(_currentCtcController.text),
@@ -1374,6 +1517,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           : _careerObjectiveController.text,
     );
 
+    /// ---------------- RESPONSE ----------------
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1501,14 +1645,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   _buildSectionTitle('Personal Information'),
                   const SizedBox(height: 16),
 
-                  _buildTextField(
-                    controller: _fullNameController,
-                    label: 'Full Name',
-                    icon: Icons.person,
-                    isRequired: true,
-                    validator: (value) =>
-                        value?.isEmpty == true ? 'Name is required' : null,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          controller: firstNameController,
+                          icon: Icons.person,
+
+                          label: 'First Name',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTextField(
+                          controller: lastNameController,
+                          icon: Icons.person,
+                          label: 'Last Name',
+                        ),
+                      ),
+                    ],
                   ),
+
                   const SizedBox(height: 16),
 
                   _buildTextField(
@@ -1541,32 +1698,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               value?.isEmpty == true ? 'Age is required' : null,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _experienceController,
-                          label: 'Experience (Years)',
-                          icon: Icons.work_history,
-                          isRequired: true,
-                          keyboardType: TextInputType.number,
-                          validator: (value) => value?.isEmpty == true
-                              ? 'Experience is required'
-                              : null,
-                        ),
-                      ),
+                      // const SizedBox(width: 16),
+                      // Expanded(
+                      //   child: _buildTextField(
+                      //     controller: _experienceController,
+                      //     label: 'Experience (Years)',
+                      //     icon: Icons.work_history,
+                      //     isRequired: true,
+                      //     keyboardType: TextInputType.number,
+                      //     validator: (value) => value?.isEmpty == true
+                      //         ? 'Experience is required'
+                      //         : null,
+                      //   ),
+                      // ),
                     ],
                   ),
 
                   const SizedBox(height: 16),
 
-                  _buildDropdownField(
-                    value: _selectedRole,
-                    label: 'Role/Department',
-                    icon: Icons.business_center,
-                    items: _roles,
-                    onChanged: (value) =>
-                        setState(() => _selectedRole = value!),
-                  ),
+                  _loadingOptions
+                      ? _buildLoadingField('Loading roles...')
+                      : _buildDropdownField(
+                          value: _selectedRole,
+                          label: 'Role/Department',
+                          icon: Icons.business_center,
+                          items: _roles,
+                          onChanged: (value) =>
+                              setState(() => _selectedRole = value!),
+                        ),
 
                   const SizedBox(height: 24),
 
@@ -1730,32 +1889,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Compensation & Location Section
-                  _buildSectionTitle('Compensation & Location'),
+                  _buildSectionTitle(' Location'),
                   const SizedBox(height: 16),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _currentCtcController,
-                          label: 'Current CTC',
-                          icon: Icons.currency_rupee,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _expectedCtcController,
-                          label: 'Expected CTC',
-                          icon: Icons.trending_up,
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: _buildTextField(
+                  //         controller: _currentCtcController,
+                  //         label: 'Current CTC',
+                  //         icon: Icons.currency_rupee,
+                  //         keyboardType: TextInputType.number,
+                  //       ),
+                  //     ),
+                  //     const SizedBox(width: 16),
+                  //     Expanded(
+                  //       child: _buildTextField(
+                  //         controller: _expectedCtcController,
+                  //         label: 'Expected CTC',
+                  //         icon: Icons.trending_up,
+                  //         keyboardType: TextInputType.number,
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
+                  // const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -1785,14 +1943,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  _buildDropdownField(
-                    value: _selectedReligion,
-                    label: 'Religion (Optional)',
-                    icon: Icons.account_circle,
-                    items: _religions,
-                    onChanged: (value) =>
-                        setState(() => _selectedReligion = value!),
-                  ),
+                  _loadingOptions
+                      ? _buildLoadingField('Loading religions...')
+                      : _buildDropdownField(
+                          value: _selectedReligion,
+                          label: 'Religion (Optional)',
+                          icon: Icons.account_circle,
+                          items: _religions,
+                          onChanged: (value) =>
+                              setState(() => _selectedReligion = value!),
+                        ),
 
                   const SizedBox(height: 24),
 
@@ -1970,6 +2130,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLoadingField(String message) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            height: 16,
+            width: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            message,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+          ),
+        ],
       ),
     );
   }

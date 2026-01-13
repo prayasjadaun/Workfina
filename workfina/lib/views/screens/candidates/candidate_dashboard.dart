@@ -15,6 +15,8 @@ class CandidateDashboard extends StatefulWidget {
 }
 
 class _CandidateDashboardState extends State<CandidateDashboard> {
+    bool _isJobSearchActive = true; 
+
   @override
   void initState() {
     super.initState();
@@ -70,12 +72,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: FutureBuilder<BannerModel?>(
-                    future: ApiService.fetchActiveBanner(), 
+                    future: ApiService.fetchActiveBanner(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return SizedBox(
-                          height:
-                              180, 
+                          height: 180,
                           child: const Center(
                             child: CircularProgressIndicator(),
                           ),
@@ -108,10 +109,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.network(
-                                banner.image, 
-                                fit: BoxFit.cover,
-                              ),
+                              Image.network(banner.image, fit: BoxFit.cover),
 
                               // Gradient overlay
                               Container(
@@ -155,9 +153,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                                           ),
                                         ),
                                       ),
-                                      child: Text(
-                                        banner.buttonText,
-                                      ), 
+                                      child: Text(banner.buttonText),
                                     ),
                                   ],
                                 ),
@@ -198,7 +194,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
 
                       _buildQuickActionsSection(profileData),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
+
+                      _buildJobSearchToggleSection(),
+
+const SizedBox(height: 24),
 
                       // Profile Tips Section
                       Row(
@@ -229,95 +229,138 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Map<String, dynamic> profileData) {
-    final fullName = profileData['full_name'] ?? 'User';
-    final parts = fullName.trim().split(RegExp(r'\s+'));
+ Widget _buildHeader(BuildContext context, Map<String, dynamic> profileData) {
+  // final fullName = profileData['full_name'] ?? 'User';
+  final firstName = profileData['first_name'] ?? '';
+  final lastName = profileData['last_name'] ?? '';
+    final fullName = '$firstName $lastName'.trim();
 
-    String displayName;
-    if (parts.length >= 2) {
-      displayName = parts[0];
-    } else {
-      displayName = parts[0];
+  final parts = fullName.trim().split(RegExp(r'\s+'));
+
+  String displayName = parts.isNotEmpty && parts[0].isNotEmpty 
+      ? parts[0] 
+      : 'User';
+
+
+    return AppBar(
+  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+  elevation: 0,
+  toolbarHeight: 60,
+  title: Row(
+    children: [
+      // Profile Avatar
+      Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppTheme.primaryDark,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            displayName[0].toUpperCase(),
+            style: AppTheme.getTitleStyle(
+              context,
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 20,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      // Greeting
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Hello 👋',
+              style: AppTheme.getSubtitleStyle(
+                context,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Text(
+              displayName,
+              style: AppTheme.getBodyStyle(
+                context,
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+  actions: [
+    Container(
+      margin: const EdgeInsets.only(right: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SvgPicture.asset(
+        'assets/svg/bell.svg',
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(
+          Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.grey.shade600,
+          BlendMode.srcIn,
+        ),
+      ),
+    ),
+  ],
+);
+  }
+
+  Map<String, int> _calculateTotalExperience(Map<String, dynamic> profileData) {
+    final workExperiences = profileData['work_experiences'] as List<dynamic>?;
+    if (workExperiences == null || workExperiences.isEmpty) {
+      return {'years': 0, 'months': 0};
     }
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 16),
-      child: Row(
-        children: [
-          // Profile Avatar
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryDark,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                displayName[0].toUpperCase(),
-                style: AppTheme.getTitleStyle(
-                  context,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                ),
-              ),
-            ),
-          ),
+    int totalMonths = 0;
+    final now = DateTime.now();
 
-          const SizedBox(width: 12),
+    for (var exp in workExperiences) {
+      try {
+        final startDate = DateTime.parse(exp['start_date']);
+        final endDate = exp['is_current'] == true
+            ? now
+            : (exp['end_date'] != null ? DateTime.parse(exp['end_date']) : now);
 
-          // Greeting
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Hello 👋',
-                  style: AppTheme.getSubtitleStyle(
-                    context,
-                    color: Colors.grey.shade600,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                Text(
-                  displayName,
-                  style: AppTheme.getBodyStyle(
-                    context,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        totalMonths +=
+            ((endDate.year - startDate.year) * 12) +
+            (endDate.month - startDate.month);
+      } catch (e) {
+        continue;
+      }
+    }
 
-          // Notification Icon
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SvgPicture.asset(
-              'assets/svg/bell.svg',
-              width: 30,
-              height: 30,
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.grey.shade600,
-                BlendMode.srcIn,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return {'years': totalMonths ~/ 12, 'months': totalMonths % 12};
+  }
+
+  String _formatExperience(Map<String, dynamic> profileData) {
+    final exp = _calculateTotalExperience(profileData);
+    final years = exp['years']!;
+    final months = exp['months']!;
+
+    if (years == 0 && months == 0) return '0 Yrs';
+    if (years == 0) return '$months Mo';
+    if (months == 0) return '$years Yrs';
+
+    return '$years Yrs $months Mo';
   }
 
   Widget _buildStatsSection(Map<String, dynamic> profileData) {
     final completeness = _calculateProfileCompleteness(profileData);
-    final experienceYears = profileData['experience_years'] ?? 0;
+    final experienceYears = _calculateTotalExperience(profileData);
     final skillsCount = _getSkillsCount(profileData);
 
     Color statusColor;
@@ -347,7 +390,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
         _buildStatCard(
           Icons.work_outline_rounded,
           'Experience',
-          '$experienceYears Yrs',
+          _formatExperience(profileData),
           AppTheme.secondary,
         ),
         _buildStatCard(
@@ -693,7 +736,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
   }
 
   int _calculateProfileCompleteness(Map<String, dynamic> profileData) {
-    int totalFields = 12;
+    int totalFields = 16;
     int completedFields = 0;
 
     if (profileData['full_name']?.toString().isNotEmpty == true) {
@@ -711,15 +754,27 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     if (profileData['city_name']?.toString().isNotEmpty == true) {
       completedFields++;
     }
-    if (profileData['education_name']?.toString().isNotEmpty == true) {
-      completedFields++;
-    }
+    // if (profileData['education_name']?.toString().isNotEmpty == true) {
+    //   completedFields++;
+    // }
     if (profileData['skills']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['resume_url']?.toString().isNotEmpty == true) {
       completedFields++;
     }
     if (profileData['current_ctc'] != null) completedFields++;
     if (profileData['expected_ctc'] != null) completedFields++;
+
+    if (profileData['languages']?.toString().isNotEmpty == true)
+      completedFields++;
+    if (profileData['street_address']?.toString().isNotEmpty == true)
+      completedFields++;
+    if (profileData['career_objective']?.toString().isNotEmpty == true)
+      completedFields++;
+    if (profileData['profile_image_url']?.toString().isNotEmpty == true)
+      completedFields++;
+
+    final educations = profileData['educations'] as List<dynamic>?;
+    if (educations != null && educations.isNotEmpty) completedFields++;
 
     return ((completedFields / totalFields) * 100).round();
   }
@@ -728,4 +783,90 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     final skillsList = profileData['skills_list'] as List<dynamic>?;
     return skillsList?.length ?? 0;
   }
+
+  Widget _buildJobSearchToggleSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 3), 
+      padding: const EdgeInsets.all(16), 
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkCardBackground : Colors.white,
+        borderRadius: BorderRadius.circular(12), // ✅ Quick actions radius
+        border: Border.all(
+          color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44, // ✅ Quick actions exact size
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade500.withOpacity(0.3), // ✅ Quick actions style
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _isJobSearchActive ? Icons.visibility : Icons.visibility_off_outlined,
+              size: 20, // ✅ Quick actions size
+              color: isDark ? Colors.white : AppTheme.secondary,
+            ),
+          ),
+          const SizedBox(width: 12), 
+          
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [ // ✅ Removed mainAxisAlignment.center
+                Text(
+                  'Job Search Status',
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15, // ✅ Quick actions font
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _isJobSearchActive 
+                      ? 'Your profile is visible to recruiters' 
+                      : 'Job search is paused - recruiters can\'t see you',
+                  style: AppTheme.getSubtitleStyle(
+                    context,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          
+          // Toggle Switch
+          Switch(
+            value: _isJobSearchActive, // ✅ State variable use
+            onChanged: (value) {
+              setState(() {
+                _isJobSearchActive = value; // ✅ State variable update
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(value ? '✅ Job search activated!' : '⏸️ Job search paused!'),
+                  backgroundColor: value ? Colors.green : Colors.orange,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            },
+            activeColor: AppTheme.primary,
+            activeTrackColor: AppTheme.primary.withOpacity(0.6),
+            inactiveThumbColor: Colors.grey.shade400,
+            inactiveTrackColor: Colors.grey.shade300,
+          ),
+        ],
+      ),
+    );
+  }
+
 }

@@ -272,6 +272,26 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getStates() async {
+    try {
+      final response = await _dio.get('/candidates/locations/states/');
+      return response.data;
+    } on DioException catch (e) {
+      return {'error': e.response?.data['message'] ?? 'Failed to load states'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getCities(String stateSlug) async {
+    try {
+      final response = await _dio.get(
+        '/candidates/locations/cities/?state=$stateSlug',
+      );
+      return response.data;
+    } on DioException catch (e) {
+      return {'error': e.response?.data['message'] ?? 'Failed to load cities'};
+    }
+  }
+
   static Future<Map<String, dynamic>> verifyOTPOnly({
     required String email,
     required String otp,
@@ -589,6 +609,8 @@ class ApiService {
     bool willingToRelocate = false,
     String? workExperience,
     String? careerObjective,
+    String joiningAvailability = 'IMMEDIATE',
+    String? noticePeriodDetails,
   }) async {
     try {
       final token = await getAccessToken();
@@ -605,28 +627,34 @@ class ApiService {
         'country': country,
         'state': state,
         'city': city,
-        'education': education,
+        if (education.isNotEmpty) 'education': education,
         'skills': skills,
         if (languages != null && languages.isNotEmpty) 'languages': languages,
-      if (streetAddress != null && streetAddress.isNotEmpty) 'street_address': streetAddress,
-      'willing_to_relocate': willingToRelocate,
-      if (workExperience != null && workExperience.isNotEmpty) 'work_experience': workExperience,
-      if (careerObjective != null && careerObjective.isNotEmpty) 'career_objective': careerObjective,
+        if (streetAddress != null && streetAddress.isNotEmpty)
+          'street_address': streetAddress,
+        'willing_to_relocate': willingToRelocate,
+        if (workExperience != null && workExperience.isNotEmpty)
+          'work_experience': workExperience,
+        if (careerObjective != null && careerObjective.isNotEmpty)
+          'career_objective': careerObjective,
         if (resumeFile != null)
           'resume': await MultipartFile.fromFile(
             resumeFile.path,
             filename: resumeFile.path.split('/').last,
           ),
-        if (videoIntroFile != null) 
+        if (videoIntroFile != null)
           'video_intro': await MultipartFile.fromFile(
             videoIntroFile.path,
             filename: videoIntroFile.path.split('/').last,
           ),
-          if (profileImage != null)  
-        'profile_image': await MultipartFile.fromFile(
-          profileImage.path,
-          filename: profileImage.path.split('/').last,
-        ),
+        if (profileImage != null)
+          'profile_image': await MultipartFile.fromFile(
+            profileImage.path,
+            filename: profileImage.path.split('/').last,
+          ),
+        'joining_availability': joiningAvailability,
+        if (noticePeriodDetails != null && noticePeriodDetails.isNotEmpty)
+          'notice_period_details': noticePeriodDetails,
       });
 
       if (kDebugMode) {
@@ -635,6 +663,24 @@ class ApiService {
           print('[DEBUG] Resume file: ${resumeFile.path}');
         }
       }
+          if (kDebugMode) {
+      print('[DEBUG] ===== REGISTRATION DATA =====');
+      print('[DEBUG] Full Name: $fullName');
+      print('[DEBUG] Phone: $phone');
+      print('[DEBUG] Age: $age');
+      print('[DEBUG] Role: $role');
+      print('[DEBUG] Experience Years: $experienceYears');
+      print('[DEBUG] Skills: $skills');
+      print('[DEBUG] State: $state');
+      print('[DEBUG] City: $city');
+      print('[DEBUG] Education: $education');
+      print('[DEBUG] Work Experience: $workExperience');
+      print('[DEBUG] Joining Availability: $joiningAvailability');
+      print('[DEBUG] Notice Period: $noticePeriodDetails');
+      print('[DEBUG] Resume: ${resumeFile?.path}');
+      print('[DEBUG] ===========================');
+    }
+
 
       final response = await _dio.post(
         '/candidates/register/',
@@ -704,7 +750,7 @@ class ApiService {
     int? minAge,
     int? maxAge,
     String? city,
-    String?name,
+    String? name,
     String? state,
     String? country,
     String? religion,
@@ -826,6 +872,8 @@ class ApiService {
       return {'error': e.response?.data['message'] ?? 'Failed to load profile'};
     }
   }
+
+
 
   static Future<Map<String, dynamic>> updateCandidateProfile({
     String? fullName,
@@ -1146,26 +1194,25 @@ class ApiService {
   }
 
   static Future<BannerModel?> fetchActiveBanner() async {
-  try {
-    final response = await _dio.get('/banner/active/'); // tumhara endpoint
+    try {
+      final response = await _dio.get('/banner/active/'); // tumhara endpoint
 
-    if (response.statusCode == 200 && response.data != null) {
-      return BannerModel.fromJson(response.data);
+      if (response.statusCode == 200 && response.data != null) {
+        return BannerModel.fromJson(response.data);
+      }
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Banner fetch error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Unexpected error fetching banner: $e');
+      }
     }
-  } on DioException catch (e) {
-    if (kDebugMode) {
-      print('[DEBUG] Banner fetch error: ${e.message}');
-      print('[DEBUG] Response: ${e.response?.data}');
-    }
-  } catch (e) {
-    if (kDebugMode) {
-      print('[DEBUG] Unexpected error fetching banner: $e');
-    }
+
+    return null;
   }
-
-  return null;
-}
-
 
   static Future<Map<String, dynamic>> getFilterCategories() async {
     try {
@@ -1180,12 +1227,26 @@ class ApiService {
         print('[DEBUG] Response: ${e.response?.data}');
       }
       return {
-        'error': e.response?.data['message'] ?? 'Failed to load filter categories',
+        'error':
+            e.response?.data['message'] ?? 'Failed to load filter categories',
       };
     }
   }
 
-  static Future<Map<String, dynamic>> getCategorySubcategories(String categorySlug) async {
+  static Future<Map<String, dynamic>> getDepartmentsAndReligions() async {
+  try {
+    final response = await _dio.get('/candidates/public/filter-options/');
+    return response.data;
+  } on DioException catch (e) {
+    return {
+      'error': e.response?.data['message'] ?? 'Failed to load options',
+    };
+  }
+}
+
+  static Future<Map<String, dynamic>> getCategorySubcategories(
+    String categorySlug,
+  ) async {
     try {
       final response = await _dio.get(
         '/candidates/filter-options/',
@@ -1205,5 +1266,57 @@ class ApiService {
       };
     }
   }
-}
 
+  static Future<Map<String, dynamic>> saveCandidateStep({
+    required int step,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      final token = await getAccessToken();
+
+      FormData formData = FormData.fromMap({
+        'step': step,
+        ...data.map((key, value) {
+          if (value is File) {
+            return MapEntry(
+              key,
+              MultipartFile.fromFileSync(
+                value.path,
+                filename: value.path.split('/').last,
+              ),
+            );
+          }
+          return MapEntry(key, value);
+        }),
+      });
+
+      final response = await _dio.post(
+        '/candidates/save-step/',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Save Step Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Save Step Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to save step',
+      };
+    }
+  }
+}
