@@ -217,41 +217,65 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
   }
 
   void _saveExperience() {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    final startY = int.parse(_startYear!);
+  // Parse with safe defaults
+  final startYearStr = _startYear ?? '0';
+  final endYearStr   = _isCurrentlyWorking ? null : (_endYear ?? '0');
 
-    if (!_isCurrentlyWorking) {
-      final endY = int.parse(_endYear!);
-      if (endY < startY) {
+  final startYearInt = int.tryParse(startYearStr) ?? 0;
+  final endYearInt   = endYearStr != null ? (int.tryParse(endYearStr) ?? 0) : null;
+
+  final startMonthIndex = _months.indexOf(_startMonth ?? 'January');
+  final endMonthIndex   = _isCurrentlyWorking 
+      ? -1 
+      : _months.indexOf(_endMonth ?? 'January');
+
+  if (!_isCurrentlyWorking && endYearInt != null) {
+    // Year comparison
+    if (endYearInt < startYearInt) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End year cannot be before start year')),
+      );
+      return;
+    }
+
+    // Same year → check months
+    if (endYearInt == startYearInt) {
+      if (endMonthIndex < startMonthIndex) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End date cannot be before start date')),
+          const SnackBar(content: Text('End month cannot be before start month in same year')),
         );
         return;
       }
-      if (endY == startY && _months.indexOf(_endMonth!) < _months.indexOf(_startMonth!)) {
+
+      // Prevent zero-duration (same month same year)
+      if (endMonthIndex == startMonthIndex) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End month before start month in same year')),
+          const SnackBar(
+            content: Text('Start and end cannot be the same month and year.\n'
+                'Use a longer duration or mark as current if this is ongoing.'),
+          ),
         );
         return;
       }
     }
-
-    // All validations passed
-    final newExperience = {
-      'company_name': _companyController.text.trim(),
-      'role_title': _roleController.text.trim(),
-      'location': _locationController.text.trim(),
-      'description': _descriptionController.text.trim(),
-      'ctc': _ctcController.text.trim(),
-      'start_month': _startMonth,
-      'start_year': _startYear,
-      'end_month': _isCurrentlyWorking ? null : _endMonth,
-      'end_year': _isCurrentlyWorking ? null : _endYear,
-      'is_current': _isCurrentlyWorking,
-    };
-
-    // ── Push back to parent screen ──
-    Navigator.pop(context, newExperience);
   }
+
+  // All good → proceed to create and pop
+  final newExperience = {
+    'company_name': _companyController.text.trim(),
+    'role_title': _roleController.text.trim(),
+    'location': _locationController.text.trim(),
+    'description': _descriptionController.text.trim(),
+    'ctc': _ctcController.text.trim(),
+    'start_month': _startMonth,
+    'start_year': _startYear,
+    'end_month': _isCurrentlyWorking ? null : _endMonth,
+    'end_year': _isCurrentlyWorking ? null : _endYear,
+    'is_current': _isCurrentlyWorking,
+  };
+
+  Navigator.pop(context, newExperience);
+}
 }

@@ -1638,20 +1638,71 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                     ),
                   );
 
-                  if (result != null && result is Map<String, dynamic>) {
-                    setState(() {
-                      if (result['is_current'] == true) {
-                        for (var exp in _workExperiences) {
-                          exp['is_current'] = false;
-                        }
-                      }
-                      _workExperiences.add(result);
-                    });
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Experience added')),
-                    );
+                  if (result == null || result is! Map<String, dynamic>) {
+                    return;
                   }
+
+                  final bool isNewCurrent = result['is_current'] == true;
+
+                  // Only block if trying to add ANOTHER current job
+                  if (isNewCurrent && _hasCurrentJob()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'You already have a job marked as "Currently Working".\n'
+                          'Please remove or edit the current one first if this new role is ongoing.',
+                        ),
+                        duration: Duration(seconds: 4),
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    _workExperiences.add(result);
+
+                    // Optional but recommended: keep the list sorted newest → oldest
+                    _workExperiences.sort((a, b) {
+                      final yA = int.tryParse(a['start_year'] ?? '0') ?? 0;
+                      final yB = int.tryParse(b['start_year'] ?? '0') ?? 0;
+                      if (yA != yB) return yB.compareTo(yA);
+
+                      // same year → try to sort by month too
+                      final mA = [
+                        'January',
+                        'February',
+                        'March',
+                        'April',
+                        'May',
+                        'June',
+                        'July',
+                        'August',
+                        'September',
+                        'October',
+                        'November',
+                        'December',
+                      ].indexOf(a['start_month'] ?? 'January');
+                      final mB = [
+                        'January',
+                        'February',
+                        'March',
+                        'April',
+                        'May',
+                        'June',
+                        'July',
+                        'August',
+                        'September',
+                        'October',
+                        'November',
+                        'December',
+                      ].indexOf(b['start_month'] ?? 'January');
+                      return mB.compareTo(mA);
+                    });
+                  });
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Experience added')),
+                  );
                 },
                 tooltip: 'Add Experience',
               ),
@@ -1670,6 +1721,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                 border: Border.all(color: Colors.grey[300]!),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.work_outline, size: 48, color: Colors.grey[400]),
                   const SizedBox(height: 12),
@@ -1679,7 +1731,80 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                   ),
                   const SizedBox(height: 8),
                   TextButton.icon(
-                    onPressed: _showAddExperienceDialog,
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddExperienceScreen(),
+                        ),
+                      );
+
+                      if (result == null || result is! Map<String, dynamic>) {
+                        return;
+                      }
+
+                      final bool isNewCurrent = result['is_current'] == true;
+
+                      // Only block if trying to add ANOTHER current job
+                      if (isNewCurrent && _hasCurrentJob()) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'You already have a job marked as "Currently Working".\n'
+                              'Please remove or edit the current one first if this new role is ongoing.',
+                            ),
+                            duration: Duration(seconds: 4),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        _workExperiences.add(result);
+
+                        // Optional but recommended: keep the list sorted newest → oldest
+                        _workExperiences.sort((a, b) {
+                          final yA = int.tryParse(a['start_year'] ?? '0') ?? 0;
+                          final yB = int.tryParse(b['start_year'] ?? '0') ?? 0;
+                          if (yA != yB) return yB.compareTo(yA);
+
+                          // same year → try to sort by month too
+                          final mA = [
+                            'January',
+                            'February',
+                            'March',
+                            'April',
+                            'May',
+                            'June',
+                            'July',
+                            'August',
+                            'September',
+                            'October',
+                            'November',
+                            'December',
+                          ].indexOf(a['start_month'] ?? 'January');
+                          final mB = [
+                            'January',
+                            'February',
+                            'March',
+                            'April',
+                            'May',
+                            'June',
+                            'July',
+                            'August',
+                            'September',
+                            'October',
+                            'November',
+                            'December',
+                          ].indexOf(b['start_month'] ?? 'January');
+                          return mB.compareTo(mA);
+                        });
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Experience added')),
+                      );
+                    },
                     icon: const Icon(Icons.add),
                     label: const Text('Add Experience'),
                   ),
@@ -1798,6 +1923,28 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         ],
       ),
     );
+  }
+
+  bool _hasCurrentJob() {
+    return _workExperiences.any((exp) => exp['is_current'] == true);
+  }
+
+  bool _hasActiveTimelineInCurrentYear() {
+    final currentYear = DateTime.now().year.toString();
+
+    return _workExperiences.any((exp) {
+      final endY = exp['end_year'] as String?;
+      final isCurrentFlag = exp['is_current'] == true;
+
+      // Considered "active/current timeline" if:
+      // - explicitly current, or
+      // - end year is current year or missing/null, or
+      // - end year >= current year
+      return isCurrentFlag ||
+          endY == null ||
+          endY == currentYear ||
+          (int.tryParse(endY ?? '0') ?? 0) >= int.parse(currentYear);
+    });
   }
 
   String? _validateNoticePeriod() {
@@ -3140,269 +3287,269 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
   // ========== Work Experience Methods ==========
 
-  void _showAddExperienceDialog() {
-    final companyController = TextEditingController();
-    final locationController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final ctcController = TextEditingController();
-    final roleController = TextEditingController();
+  // void _showAddExperienceDialog() {
+  //   final companyController = TextEditingController();
+  //   final locationController = TextEditingController();
+  //   final descriptionController = TextEditingController();
+  //   final ctcController = TextEditingController();
+  //   final roleController = TextEditingController();
 
-    final int currentYear = DateTime.now().year;
+  //   final int currentYear = DateTime.now().year;
 
-    String startMonth = 'January';
-    String startYear = currentYear.toString();
-    String endMonth = 'January';
-    String endYear = currentYear.toString();
-    bool isCurrentlyWorking = false;
+  //   String startMonth = 'January';
+  //   String startYear = currentYear.toString();
+  //   String endMonth = 'January';
+  //   String endYear = currentYear.toString();
+  //   bool isCurrentlyWorking = false;
 
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+  //   final months = [
+  //     'January',
+  //     'February',
+  //     'March',
+  //     'April',
+  //     'May',
+  //     'June',
+  //     'July',
+  //     'August',
+  //     'September',
+  //     'October',
+  //     'November',
+  //     'December',
+  //   ];
 
-    /// ✅ YEARS (past → present)
-    final years = List.generate(
-      50,
-      (index) => (currentYear - 49 + index).toString(),
-    );
+  //   /// ✅ YEARS (past → present)
+  //   final years = List.generate(
+  //     50,
+  //     (index) => (currentYear - 49 + index).toString(),
+  //   );
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.95,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            children: [
-              const SizedBox(height: 12),
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     useSafeArea: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (context) => Container(
+  //       height: MediaQuery.of(context).size.height * 0.95,
+  //       decoration: const BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  //       ),
+  //       child: StatefulBuilder(
+  //         builder: (context, setDialogState) => Column(
+  //           children: [
+  //             const SizedBox(height: 12),
 
-              /// Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add work experience',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
+  //             /// Header
+  //             Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 20),
+  //               child: Row(
+  //                 children: [
+  //                   const Expanded(
+  //                     child: Text(
+  //                       'Add work experience',
+  //                       style: TextStyle(
+  //                         fontSize: 20,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   IconButton(
+  //                     onPressed: () => Navigator.pop(context),
+  //                     icon: const Icon(Icons.close),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
 
-              /// Form
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      _buildTextField(
-                        controller: companyController,
-                        label: 'Company Name *',
-                        icon: Icons.person,
-                        // hint: 'Enter company name',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: roleController,
-                        label: 'Job Role / Position *',
-                        icon: Icons.person,
-                        // hint: 'Enter role',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        icon: Icons.location_city,
-                        controller: locationController,
-                        label: 'Location',
-                        // hint: 'e.g. Gurugram',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: descriptionController,
-                        icon: Icons.description,
-                        label: 'Description',
-                        // hint: 'Describe your role',
-                        maxLines: null,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: ctcController,
-                        label: 'CTC (Annual)',
-                        icon: Icons.money,
-                        // hint: 'e.g. 500000',
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
+  //             /// Form
+  //             Expanded(
+  //               child: SingleChildScrollView(
+  //                 padding: const EdgeInsets.symmetric(horizontal: 20),
+  //                 child: Column(
+  //                   children: [
+  //                     _buildTextField(
+  //                       controller: companyController,
+  //                       label: 'Company Name *',
+  //                       icon: Icons.person,
+  //                       // hint: 'Enter company name',
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     _buildTextField(
+  //                       controller: roleController,
+  //                       label: 'Job Role / Position *',
+  //                       icon: Icons.person,
+  //                       // hint: 'Enter role',
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     _buildTextField(
+  //                       icon: Icons.location_city,
+  //                       controller: locationController,
+  //                       label: 'Location',
+  //                       // hint: 'e.g. Gurugram',
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     _buildTextField(
+  //                       controller: descriptionController,
+  //                       icon: Icons.description,
+  //                       label: 'Description',
+  //                       // hint: 'Describe your role',
+  //                       maxLines: null,
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     _buildTextField(
+  //                       controller: ctcController,
+  //                       label: 'CTC (Annual)',
+  //                       icon: Icons.money,
+  //                       // hint: 'e.g. 500000',
+  //                       keyboardType: TextInputType.number,
+  //                     ),
+  //                     const SizedBox(height: 16),
 
-                      /// Start Date
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Start Date *',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDropdown(
-                              value: startMonth,
-                              items: months,
-                              label: 'Month',
-                              onChanged: (v) =>
-                                  setDialogState(() => startMonth = v),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildDropdown(
-                              value: startYear,
-                              items: years,
-                              label: 'Year',
-                              onChanged: (v) =>
-                                  setDialogState(() => startYear = v),
-                            ),
-                          ),
-                        ],
-                      ),
+  //                     /// Start Date
+  //                     const Align(
+  //                       alignment: Alignment.centerLeft,
+  //                       child: Text(
+  //                         'Start Date *',
+  //                         style: TextStyle(fontWeight: FontWeight.w600),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     Row(
+  //                       children: [
+  //                         Expanded(
+  //                           child: _buildDropdown(
+  //                             value: startMonth,
+  //                             items: months,
+  //                             label: 'Month',
+  //                             onChanged: (v) =>
+  //                                 setDialogState(() => startMonth = v),
+  //                           ),
+  //                         ),
+  //                         const SizedBox(width: 12),
+  //                         Expanded(
+  //                           child: _buildDropdown(
+  //                             value: startYear,
+  //                             items: years,
+  //                             label: 'Year',
+  //                             onChanged: (v) =>
+  //                                 setDialogState(() => startYear = v),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
 
-                      const SizedBox(height: 12),
+  //                     const SizedBox(height: 12),
 
-                      CheckboxListTile(
-                        value: isCurrentlyWorking,
-                        onChanged: (value) {
-                          setDialogState(() => isCurrentlyWorking = value!);
-                        },
-                        title: const Text(
-                          'I am currently working in this role',
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                      ),
+  //                     CheckboxListTile(
+  //                       value: isCurrentlyWorking,
+  //                       onChanged: (value) {
+  //                         setDialogState(() => isCurrentlyWorking = value!);
+  //                       },
+  //                       title: const Text(
+  //                         'I am currently working in this role',
+  //                       ),
+  //                       contentPadding: EdgeInsets.zero,
+  //                       controlAffinity: ListTileControlAffinity.leading,
+  //                     ),
 
-                      if (!isCurrentlyWorking) ...[
-                        const SizedBox(height: 8),
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'End Date *',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildDropdown(
-                                value: endMonth,
-                                items: months,
-                                label: 'Month',
-                                onChanged: (v) =>
-                                    setDialogState(() => endMonth = v),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _buildDropdown(
-                                value: endYear,
-                                items: years,
-                                label: 'Year',
-                                onChanged: (v) =>
-                                    setDialogState(() => endYear = v),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
-              ),
+  //                     if (!isCurrentlyWorking) ...[
+  //                       const SizedBox(height: 8),
+  //                       const Align(
+  //                         alignment: Alignment.centerLeft,
+  //                         child: Text(
+  //                           'End Date *',
+  //                           style: TextStyle(fontWeight: FontWeight.w600),
+  //                         ),
+  //                       ),
+  //                       const SizedBox(height: 8),
+  //                       Row(
+  //                         children: [
+  //                           Expanded(
+  //                             child: _buildDropdown(
+  //                               value: endMonth,
+  //                               items: months,
+  //                               label: 'Month',
+  //                               onChanged: (v) =>
+  //                                   setDialogState(() => endMonth = v),
+  //                             ),
+  //                           ),
+  //                           const SizedBox(width: 12),
+  //                           Expanded(
+  //                             child: _buildDropdown(
+  //                               value: endYear,
+  //                               items: years,
+  //                               label: 'Year',
+  //                               onChanged: (v) =>
+  //                                   setDialogState(() => endYear = v),
+  //                             ),
+  //                           ),
+  //                         ],
+  //                       ),
+  //                     ],
+  //                     const SizedBox(height: 40),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
 
-              /// Save Button
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                  child: const Text('Save'),
-                  onPressed: () {
-                    /// REQUIRED FIELDS
-                    if (companyController.text.isEmpty ||
-                        roleController.text.isEmpty) {
-                      _showSnack('Please fill all required fields', Colors.red);
-                      return;
-                    }
+  //             /// Save Button
+  //             Padding(
+  //               padding: const EdgeInsets.all(20),
+  //               child: ElevatedButton(
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor: AppTheme.primary,
+  //                   minimumSize: const Size(double.infinity, 48),
+  //                 ),
+  //                 child: const Text('Save'),
+  //                 onPressed: () {
+  //                   /// REQUIRED FIELDS
+  //                   if (companyController.text.isEmpty ||
+  //                       roleController.text.isEmpty) {
+  //                     _showSnack('Please fill all required fields', Colors.red);
+  //                     return;
+  //                   }
 
-                    /// DATE VALIDATION
-                    if (!isCurrentlyWorking &&
-                        int.parse(endYear) < int.parse(startYear)) {
-                      _showSnack(
-                        'End year cannot be before start year',
-                        Colors.red,
-                      );
-                      return;
-                    }
+  //                   /// DATE VALIDATION
+  //                   if (!isCurrentlyWorking &&
+  //                       int.parse(endYear) < int.parse(startYear)) {
+  //                     _showSnack(
+  //                       'End year cannot be before start year',
+  //                       Colors.red,
+  //                     );
+  //                     return;
+  //                   }
 
-                    setState(() {
-                      if (isCurrentlyWorking) {
-                        for (var exp in _workExperiences) {
-                          exp['is_current'] = false;
-                        }
-                      }
+  //                   setState(() {
+  //                     if (isCurrentlyWorking) {
+  //                       for (var exp in _workExperiences) {
+  //                         exp['is_current'] = false;
+  //                       }
+  //                     }
 
-                      _workExperiences.add({
-                        'company_name': companyController.text,
-                        'role_title': roleController.text,
-                        'location': locationController.text,
-                        'description': descriptionController.text,
-                        'ctc': ctcController.text,
-                        'start_month': startMonth,
-                        'start_year': startYear,
-                        'end_month': isCurrentlyWorking ? null : endMonth,
-                        'end_year': isCurrentlyWorking ? null : endYear,
-                        'is_current': isCurrentlyWorking,
-                      });
-                    });
+  //                     _workExperiences.add({
+  //                       'company_name': companyController.text,
+  //                       'role_title': roleController.text,
+  //                       'location': locationController.text,
+  //                       'description': descriptionController.text,
+  //                       'ctc': ctcController.text,
+  //                       'start_month': startMonth,
+  //                       'start_year': startYear,
+  //                       'end_month': isCurrentlyWorking ? null : endMonth,
+  //                       'end_year': isCurrentlyWorking ? null : endYear,
+  //                       'is_current': isCurrentlyWorking,
+  //                     });
+  //                   });
 
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //                   Navigator.pop(context);
+  //                 },
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildDropdown({
     required String value,
