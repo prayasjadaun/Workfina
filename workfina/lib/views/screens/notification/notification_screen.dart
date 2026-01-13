@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 
@@ -190,7 +189,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                             style: AppTheme.getLabelStyle(
                               context,
                               fontSize: 10,
-                              color: Colors.white
+                              color: Colors.white,
                             ),
                           ),
                         ),
@@ -440,46 +439,6 @@ class _NotificationScreenState extends State<NotificationScreen>
         icon,
         size: 18,
         color: isRead ? iconColor.withOpacity(0.8) : iconColor,
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String status) {
-    Color chipColor;
-    String displayText;
-
-    switch (status) {
-      case 'DELIVERED':
-        chipColor = Colors.green;
-        displayText = 'Delivered';
-        break;
-      case 'FAILED':
-        chipColor = Colors.red;
-        displayText = 'Failed';
-        break;
-      case 'SENT':
-        chipColor = Colors.blue;
-        displayText = 'Sent';
-        break;
-      default:
-        chipColor = Colors.orange;
-        displayText = 'Pending';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        displayText,
-        style: AppTheme.getLabelStyle(
-          context,
-          color: chipColor,
-          fontWeight: FontWeight.w500,
-          fontSize: 9,
-        ),
       ),
     );
   }
