@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
+import 'package:workfina/controllers/app_version_controller.dart';
 import 'package:workfina/models/banner_model.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/candidates/candidate_edit_profile.dart';
+import 'package:workfina/views/screens/appVersion/app_version.dart';
 
 class CandidateDashboard extends StatefulWidget {
   const CandidateDashboard({super.key});
@@ -22,7 +24,28 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CandidateController>().checkProfileExists();
+      _checkAppVersion();
     });
+  }
+
+  /// Check app version and show update dialog if needed
+  Future<void> _checkAppVersion() async {
+    final versionController = context.read<AppVersionController>();
+
+    // Only check if not already checked
+    if (versionController.hasChecked) return;
+
+    await versionController.checkAppVersion();
+
+    if (!mounted) return;
+
+    // Show update dialog if update is available
+    if (versionController.hasUpdate && versionController.versionInfo != null) {
+      showAppVersionBottomSheet(
+        context,
+        versionInfo: versionController.versionInfo!,
+      );
+    }
   }
 
   @override

@@ -381,20 +381,21 @@ class _NotificationScreenState extends State<NotificationScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  // Row(
-                  //   children: [
-                  //     _buildStatusChip(status),
-                  //     const Spacer(),
-                  //     Text(
-                  //       notification['time_ago'] ?? '',
-                  //       style: AppTheme.getLabelStyle(
-                  //         context,
-                  //         color: Colors.grey[500],
-                  //         fontSize: 11,
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // _buildStatusChip(status),
+                      // const Spacer(),
+                      Text(
+                        notification['time_ago'] ?? '',
+                        style: AppTheme.getLabelStyle(
+                          context,
+                          color: Colors.grey[500],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

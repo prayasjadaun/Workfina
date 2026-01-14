@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workfina/models/banner_model.dart';
+import 'package:workfina/models/app_version_model.dart';
 import 'package:workfina/services/notification_service.dart';
 
 class ApiService {
@@ -1444,6 +1445,40 @@ class ApiService {
     } catch (e) {
       print('Error sending test notification: $e');
       throw Exception('Failed to send test notification');
+    }
+  }
+
+  /// Check app version against server
+  /// Returns AppVersionModel with update information
+  static Future<AppVersionModel?> checkAppVersion({
+    required String currentVersion,
+    required String platform,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/app-version/check/',
+        data: {
+          'current_version': currentVersion,
+          'platform': platform,
+        },
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] App Version Check Response: ${response.data}');
+      }
+
+      return AppVersionModel.fromJson(response.data);
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] App Version Check Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return null;
+    } catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] App Version Check Exception: $e');
+      }
+      return null;
     }
   }
 }

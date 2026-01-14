@@ -7,12 +7,14 @@ import 'package:workfina/services/api_service.dart';
 import 'package:workfina/services/notification_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
+import 'package:workfina/controllers/app_version_controller.dart';
 import 'package:workfina/views/screens/notification/notification_screen.dart';
 import 'package:workfina/views/screens/recuriters/category_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_screen.dart';
 import 'package:workfina/views/screens/widgets/category_card_widget.dart';
 import 'package:workfina/views/screens/widgets/refresh_indicator_wrapper.dart';
 import 'package:workfina/views/screens/widgets/search_bar.dart';
+import 'package:workfina/views/screens/appVersion/app_version.dart';
 
 class RecruiterDashboard extends StatefulWidget {
   final VoidCallback? onNavigateToUnlocked;
@@ -80,7 +82,30 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
 
       // Request notification permissions after dashboard loads
       await NotificationService.requestPermissionsLater();
+
+      // Check app version
+      _checkAppVersion();
     });
+  }
+
+  /// Check app version and show update dialog if needed
+  Future<void> _checkAppVersion() async {
+    final versionController = context.read<AppVersionController>();
+
+    // Only check if not already checked
+    if (versionController.hasChecked) return;
+
+    await versionController.checkAppVersion();
+
+    if (!mounted) return;
+
+    // Show update dialog if update is available
+    if (versionController.hasUpdate && versionController.versionInfo != null) {
+      showAppVersionBottomSheet(
+        context,
+        versionInfo: versionController.versionInfo!,
+      );
+    }
   }
 
   bool _matchSearch(Map<String, dynamic> candidate) {

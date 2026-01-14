@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/recuriter_controller.dart';
+import 'package:workfina/controllers/app_version_controller.dart';
 import 'package:workfina/services/api_service.dart';
 import 'package:workfina/services/notification_service.dart';
 import 'package:workfina/views/screens/splash_screen.dart';
@@ -36,6 +37,7 @@ class WorkfinaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => CandidateController()),
         ChangeNotifierProvider(create: (_) => RecruiterController()),
+        ChangeNotifierProvider(create: (_) => AppVersionController()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, child) {
