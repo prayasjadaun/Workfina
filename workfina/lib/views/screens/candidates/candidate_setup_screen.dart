@@ -9,6 +9,7 @@ import 'package:workfina/theme/app_theme.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:workfina/views/screens/candidates/candidate_education_screen.dart';
 import 'dart:convert';
 
 import 'package:workfina/views/screens/candidates/candidate_experience_screen.dart';
@@ -267,6 +268,15 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     switch (_currentPage) {
       case 0:
         isValid = _personalFormKey.currentState!.validate();
+        // if (isValid && _joiningAvailability == 'NOTICE_PERIOD') {
+        //   final noticeError = _validateNoticePeriod();
+        //   if (noticeError != null) {
+        //     setState(() {
+        //       _noticePeriodError = noticeError;
+        //     });
+        //     isValid = false;
+        //   }
+        // }
         break;
       // Add cases for other pages similarly
       default:
@@ -1644,13 +1654,13 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
                   final bool isNewCurrent = result['is_current'] == true;
 
-                  // Only block if trying to add ANOTHER current job
+                  // Block second current job (keep your existing check)
                   if (isNewCurrent && _hasCurrentJob()) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
                           'You already have a job marked as "Currently Working".\n'
-                          'Please remove or edit the current one first if this new role is ongoing.',
+                          'Please end the current one first if this new role is ongoing.',
                         ),
                         duration: Duration(seconds: 4),
                       ),
@@ -1658,17 +1668,48 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                     return;
                   }
 
+                  // ── NEW: Block overlapping long-duration experiences ──
+                  final newStartY =
+                      int.tryParse(result['start_year'] ?? '0') ?? 0;
+                  final newEndY = result['is_current'] == true
+                      ? DateTime.now().year + 1
+                      : int.tryParse(result['end_year'] ?? '0') ?? 0;
+
+                  final hasOverlap = _workExperiences.any((exp) {
+                    final expStart =
+                        int.tryParse(exp['start_year'] ?? '0') ?? 0;
+                    final expEnd = exp['is_current'] == true
+                        ? DateTime.now().year + 1
+                        : int.tryParse(exp['end_year'] ?? '0') ?? 0;
+
+                    // Overlap if new range intersects existing range
+                    // and at least one is long enough (≥1 year to catch short spam too)
+                    return newStartY <= expEnd &&
+                        newEndY >= expStart &&
+                        (newEndY - newStartY >= 1 || expEnd - expStart >= 1);
+                  });
+
+                  if (hasOverlap) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cannot add this experience'),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 5),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // All good → add and sort
                   setState(() {
                     _workExperiences.add(result);
 
-                    // Optional but recommended: keep the list sorted newest → oldest
                     _workExperiences.sort((a, b) {
                       final yA = int.tryParse(a['start_year'] ?? '0') ?? 0;
                       final yB = int.tryParse(b['start_year'] ?? '0') ?? 0;
                       if (yA != yB) return yB.compareTo(yA);
 
-                      // same year → try to sort by month too
-                      final mA = [
+                      final months = [
                         'January',
                         'February',
                         'March',
@@ -1681,21 +1722,9 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                         'October',
                         'November',
                         'December',
-                      ].indexOf(a['start_month'] ?? 'January');
-                      final mB = [
-                        'January',
-                        'February',
-                        'March',
-                        'April',
-                        'May',
-                        'June',
-                        'July',
-                        'August',
-                        'September',
-                        'October',
-                        'November',
-                        'December',
-                      ].indexOf(b['start_month'] ?? 'January');
+                      ];
+                      final mA = months.indexOf(a['start_month'] ?? 'January');
+                      final mB = months.indexOf(b['start_month'] ?? 'January');
                       return mB.compareTo(mA);
                     });
                   });
@@ -1750,8 +1779,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                              'You already have a job marked as "Currently Working".\n'
-                              'Please remove or edit the current one first if this new role is ongoing.',
+                              'You already have a job marked as "Currently Working"',
                             ),
                             duration: Duration(seconds: 4),
                           ),
@@ -1762,13 +1790,11 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                       setState(() {
                         _workExperiences.add(result);
 
-                        // Optional but recommended: keep the list sorted newest → oldest
                         _workExperiences.sort((a, b) {
                           final yA = int.tryParse(a['start_year'] ?? '0') ?? 0;
                           final yB = int.tryParse(b['start_year'] ?? '0') ?? 0;
                           if (yA != yB) return yB.compareTo(yA);
 
-                          // same year → try to sort by month too
                           final mA = [
                             'January',
                             'February',
@@ -1908,12 +1934,13 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                       ),
                     ),
                     onChanged: (value) {
-                      // Live validation — feels modern & helpful
-                      if (_joiningAvailability == 'NOTICE_PERIOD') {
-                        setState(() {
-                          _noticePeriodError = _validateNoticePeriod();
-                        });
+                      if (_joiningAvailability != 'NOTICE_PERIOD') {
+                        return; // no need to validate when immediate
                       }
+
+                      setState(() {
+                        _noticePeriodError = _validateNoticePeriod();
+                      });
                     },
                   ),
                 ],
@@ -1948,17 +1975,15 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   }
 
   String? _validateNoticePeriod() {
-    if (_joiningAvailability != 'NOTICE_PERIOD') {
-      return null;
+    if (_joiningAvailability == 'NOTICE_PERIOD') {
+      final text = _noticePeriodController.text.trim();
+
+      if (text.isEmpty) {
+        return 'Notice period is required if not joining immediately';
+      }
     }
 
-    final text = _noticePeriodController.text.trim();
-
-    if (text.isEmpty) {
-      return 'Notice period is required if not joining immediately';
-    }
-
-    return null;
+    return null; // No error when immediate or filled correctly
   }
 
   // PAGE 2: Professional Information
@@ -2002,7 +2027,94 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                       color: AppTheme.primary,
                       size: 28,
                     ),
-                    onPressed: _showAddEducationDialog,
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddEducationScreen(),
+                        ),
+                      );
+
+                      if (result == null || result is! Map<String, dynamic>) {
+                        return;
+                      }
+
+                      // 1. Block exact duplicate (same school + degree + exact same years)
+                      final newSchool =
+                          (result['school'] as String?)?.trim().toLowerCase() ??
+                          '';
+                      final newDegree =
+                          (result['degree'] as String?)?.trim().toLowerCase() ??
+                          '';
+                      final newStartY = result['start_year'] ?? '';
+                      final newEndY = result['end_year'] ?? '';
+
+                      final isExactDuplicate = _educationList.any((edu) {
+                        return (edu['school'] as String?)
+                                    ?.trim()
+                                    .toLowerCase() ==
+                                newSchool &&
+                            (edu['degree'] as String?)?.trim().toLowerCase() ==
+                                newDegree &&
+                            edu['start_year'] == newStartY &&
+                            edu['end_year'] == newEndY;
+                      });
+
+                      if (isExactDuplicate) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'This exact education entry already exists',
+                            ),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      // 2. Block if timeline matches / overlaps with any existing long education
+                      final newStartYearInt = int.tryParse(newStartY) ?? 0;
+                      final newEndYearInt = int.tryParse(newEndY) ?? 0;
+                      final newDuration = newEndYearInt - newStartYearInt;
+
+                      final hasTimelineConflict = _educationList.any((edu) {
+                        final eduStart =
+                            int.tryParse(edu['start_year'] ?? '0') ?? 0;
+                        final eduEnd =
+                            int.tryParse(edu['end_year'] ?? '0') ?? 0;
+
+                        final overlaps =
+                            newStartYearInt <= eduEnd &&
+                            newEndYearInt >= eduStart;
+                        final longDuration =
+                            (eduEnd - eduStart) >= 2 || newDuration >= 2;
+
+                        return overlaps && longDuration;
+                      });
+
+                      if (hasTimelineConflict) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Cannot add this education \n'),
+                            backgroundColor: Colors.red,
+                            duration: Duration(seconds: 5),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // If reached here → safe to add
+                      setState(() {
+                        _educationList.add(result);
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Education added successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
                     tooltip: 'Add Education',
                   ),
                 ],
@@ -2047,43 +2159,95 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: _showSkillsBottomSheet,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.psychology_outlined,
-                            color: Colors.grey[600],
-                            size: 20,
+                  Text(
+                    'Add skills',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 4),
+                  Autocomplete<String>(
+                    optionsMaxHeight: 200,
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4,
+                          borderRadius: BorderRadius.circular(8),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            padding: EdgeInsets.zero,
+                            itemCount: options.length,
+                            itemBuilder: (context, index) {
+                              final option = options.elementAt(index);
+                              return InkWell(
+                                onTap: () => onSelected(option),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                  child: Text(
+                                    option,
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _selectedSkills.isEmpty
-                                  ? 'Select Skills *'
-                                  : '${_selectedSkills.length} skills selected',
-                              style: TextStyle(
-                                color: _selectedSkills.isEmpty
-                                    ? Colors.grey[600]
-                                    : const Color(0xFF1A1A1A),
-                                fontSize: 15,
+                        ),
+                      );
+                    },
+                    fieldViewBuilder:
+                        (context, controller, focusNode, onFieldSubmitted) {
+                          return TextField(
+                            controller: controller,
+                            focusNode: focusNode,
+                            decoration: InputDecoration(
+                              hintText: 'e.g., Adobe Photoshop',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: Colors.grey[300]!,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: AppTheme.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
                               ),
                             ),
-                          ),
-                          Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
-                        ],
-                      ),
-                    ),
+                            onSubmitted: (value) {
+                              if (value.isNotEmpty &&
+                                  !_selectedSkills.contains(value)) {
+                                setState(() {
+                                  _selectedSkills.add(value);
+                                });
+                                controller.clear();
+                              }
+                            },
+                          );
+                        },
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      final input = textEditingValue.text.toLowerCase();
+                      if (input.isEmpty) {
+                        return const Iterable<String>.empty();
+                      }
+                      return _availableSkills.where(
+                        (skill) => skill.toLowerCase().contains(input),
+                      );
+                    },
+                    onSelected: (String selection) {
+                      if (!_selectedSkills.contains(selection)) {
+                        setState(() {
+                          _selectedSkills.add(selection);
+                        });
+                      }
+                    },
                   ),
                   if (_selectedSkills.isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -2239,388 +2403,388 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
   // ========== Education Methods ==========
 
-  void _showAddEducationDialog() {
-    final schoolController = TextEditingController();
-    final degreeController = TextEditingController();
-    final fieldController = TextEditingController();
-    final gradeController = TextEditingController();
-    final locationController = TextEditingController();
+  // void _showAddEducationDialog() {
+  //   final schoolController = TextEditingController();
+  //   final degreeController = TextEditingController();
+  //   final fieldController = TextEditingController();
+  //   final gradeController = TextEditingController();
+  //   final locationController = TextEditingController();
 
-    String startMonth = 'January';
-    String startYear = DateTime.now().year.toString();
-    String endMonth = 'January';
-    String endYear = DateTime.now().year.toString();
+  //   String startMonth = 'January';
+  //   String startYear = DateTime.now().year.toString();
+  //   String endMonth = 'January';
+  //   String endYear = DateTime.now().year.toString();
 
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    final years = List.generate(
-      50,
-      (index) => (DateTime.now().year - index).toString(),
-    );
+  //   final months = [
+  //     'January',
+  //     'February',
+  //     'March',
+  //     'April',
+  //     'May',
+  //     'June',
+  //     'July',
+  //     'August',
+  //     'September',
+  //     'October',
+  //     'November',
+  //     'December',
+  //   ];
+  //   final years = List.generate(
+  //     50,
+  //     (index) => (DateTime.now().year - index).toString(),
+  //   );
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.95,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: StatefulBuilder(
-          builder: (context, setDialogState) => Column(
-            children: [
-              // Handle bar
-              Container(
-                margin: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     useSafeArea: true,
+  //     backgroundColor: Colors.transparent,
+  //     builder: (context) => Container(
+  //       height: MediaQuery.of(context).size.height * 0.95,
+  //       decoration: const BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  //       ),
+  //       child: StatefulBuilder(
+  //         builder: (context, setDialogState) => Column(
+  //           children: [
+  //             // Handle bar
+  //             Container(
+  //               margin: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+  //               height: 4,
+  //               width: 40,
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey[300],
+  //                 borderRadius: BorderRadius.circular(2),
+  //               ),
+  //             ),
 
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Add education',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-              ),
+  //             // Header
+  //             Padding(
+  //               padding: const EdgeInsets.symmetric(horizontal: 20),
+  //               child: Row(
+  //                 children: [
+  //                   const Expanded(
+  //                     child: Text(
+  //                       'Add education',
+  //                       style: TextStyle(
+  //                         fontSize: 20,
+  //                         fontWeight: FontWeight.w600,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                   IconButton(
+  //                     onPressed: () => Navigator.pop(context),
+  //                     icon: const Icon(Icons.close),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
 
-              // Form
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: schoolController,
-                        decoration: const InputDecoration(
-                          labelText: 'School/University *',
-                          hintText: 'Enter your school or university name',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: locationController,
-                        decoration: const InputDecoration(
-                          labelText: 'Location',
-                          hintText: 'Enter your Location',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: degreeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Degree *',
-                          hintText: "e.g., Bachelor's, Master's",
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: fieldController,
-                        decoration: const InputDecoration(
-                          labelText: 'Field of Study',
-                          hintText: 'e.g., Computer Science',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+  //             // Form
+  //             Expanded(
+  //               child: SingleChildScrollView(
+  //                 padding: const EdgeInsets.symmetric(horizontal: 20),
+  //                 child: Column(
+  //                   children: [
+  //                     TextField(
+  //                       controller: schoolController,
+  //                       decoration: const InputDecoration(
+  //                         labelText: 'School/University *',
+  //                         hintText: 'Enter your school or university name',
+  //                         border: OutlineInputBorder(),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     TextField(
+  //                       controller: locationController,
+  //                       decoration: const InputDecoration(
+  //                         labelText: 'Location',
+  //                         hintText: 'Enter your Location',
+  //                         border: OutlineInputBorder(),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     TextField(
+  //                       controller: degreeController,
+  //                       decoration: const InputDecoration(
+  //                         labelText: 'Degree *',
+  //                         hintText: "e.g., Bachelor's, Master's",
+  //                         border: OutlineInputBorder(),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     TextField(
+  //                       controller: fieldController,
+  //                       decoration: const InputDecoration(
+  //                         labelText: 'Field of Study',
+  //                         hintText: 'e.g., Computer Science',
+  //                         border: OutlineInputBorder(),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 16),
 
-                      // Start Date
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Start Date *',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: startMonth,
-                              decoration: const InputDecoration(
-                                labelText: 'Month',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: months
-                                  .map(
-                                    (month) => DropdownMenuItem(
-                                      value: month,
-                                      child: Text(month),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) =>
-                                  setDialogState(() => startMonth = value!),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: startYear,
-                              decoration: const InputDecoration(
-                                labelText: 'Year',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: years
-                                  .map(
-                                    (year) => DropdownMenuItem(
-                                      value: year,
-                                      child: Text(year),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) =>
-                                  setDialogState(() => startYear = value!),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
+  //                     // Start Date
+  //                     const Align(
+  //                       alignment: Alignment.centerLeft,
+  //                       child: Text(
+  //                         'Start Date *',
+  //                         style: TextStyle(fontWeight: FontWeight.w600),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     Row(
+  //                       children: [
+  //                         Expanded(
+  //                           child: DropdownButtonFormField<String>(
+  //                             value: startMonth,
+  //                             decoration: const InputDecoration(
+  //                               labelText: 'Month',
+  //                               border: OutlineInputBorder(),
+  //                             ),
+  //                             items: months
+  //                                 .map(
+  //                                   (month) => DropdownMenuItem(
+  //                                     value: month,
+  //                                     child: Text(month),
+  //                                   ),
+  //                                 )
+  //                                 .toList(),
+  //                             onChanged: (value) =>
+  //                                 setDialogState(() => startMonth = value!),
+  //                           ),
+  //                         ),
+  //                         const SizedBox(width: 12),
+  //                         Expanded(
+  //                           child: DropdownButtonFormField<String>(
+  //                             value: startYear,
+  //                             decoration: const InputDecoration(
+  //                               labelText: 'Year',
+  //                               border: OutlineInputBorder(),
+  //                             ),
+  //                             items: years
+  //                                 .map(
+  //                                   (year) => DropdownMenuItem(
+  //                                     value: year,
+  //                                     child: Text(year),
+  //                                   ),
+  //                                 )
+  //                                 .toList(),
+  //                             onChanged: (value) =>
+  //                                 setDialogState(() => startYear = value!),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 16),
 
-                      // End Date
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'End Date (or Expected) *',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: endMonth,
-                              decoration: const InputDecoration(
-                                labelText: 'Month',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: months
-                                  .map(
-                                    (month) => DropdownMenuItem(
-                                      value: month,
-                                      child: Text(month),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) =>
-                                  setDialogState(() => endMonth = value!),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              value: endYear,
-                              decoration: const InputDecoration(
-                                labelText: 'Year',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: years
-                                  .map(
-                                    (year) => DropdownMenuItem(
-                                      value: year,
-                                      child: Text(year),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) =>
-                                  setDialogState(() => endYear = value!),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: gradeController,
-                        decoration: const InputDecoration(
-                          labelText: 'Grade/Percentage',
-                          hintText: 'e.g., 8.5 CGPA or 85%',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
-              ),
+  //                     // End Date
+  //                     const Align(
+  //                       alignment: Alignment.centerLeft,
+  //                       child: Text(
+  //                         'End Date (or Expected) *',
+  //                         style: TextStyle(fontWeight: FontWeight.w600),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 8),
+  //                     Row(
+  //                       children: [
+  //                         Expanded(
+  //                           child: DropdownButtonFormField<String>(
+  //                             value: endMonth,
+  //                             decoration: const InputDecoration(
+  //                               labelText: 'Month',
+  //                               border: OutlineInputBorder(),
+  //                             ),
+  //                             items: months
+  //                                 .map(
+  //                                   (month) => DropdownMenuItem(
+  //                                     value: month,
+  //                                     child: Text(month),
+  //                                   ),
+  //                                 )
+  //                                 .toList(),
+  //                             onChanged: (value) =>
+  //                                 setDialogState(() => endMonth = value!),
+  //                           ),
+  //                         ),
+  //                         const SizedBox(width: 12),
+  //                         Expanded(
+  //                           child: DropdownButtonFormField<String>(
+  //                             value: endYear,
+  //                             decoration: const InputDecoration(
+  //                               labelText: 'Year',
+  //                               border: OutlineInputBorder(),
+  //                             ),
+  //                             items: years
+  //                                 .map(
+  //                                   (year) => DropdownMenuItem(
+  //                                     value: year,
+  //                                     child: Text(year),
+  //                                   ),
+  //                                 )
+  //                                 .toList(),
+  //                             onChanged: (value) =>
+  //                                 setDialogState(() => endYear = value!),
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                     const SizedBox(height: 16),
+  //                     TextField(
+  //                       controller: gradeController,
+  //                       decoration: const InputDecoration(
+  //                         labelText: 'Grade/Percentage',
+  //                         hintText: 'e.g., 8.5 CGPA or 85%',
+  //                         border: OutlineInputBorder(),
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 40),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
 
-              // Buttons
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: Color(0xFFF1F3F4))),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Discard'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (schoolController.text.isEmpty ||
-                            degreeController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please fill all required fields'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+  //             // Buttons
+  //             Container(
+  //               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+  //               decoration: const BoxDecoration(
+  //                 border: Border(top: BorderSide(color: Color(0xFFF1F3F4))),
+  //               ),
+  //               child: Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: TextButton(
+  //                       onPressed: () => Navigator.pop(context),
+  //                       child: const Text('Discard'),
+  //                     ),
+  //                   ),
+  //                   const SizedBox(width: 12),
+  //                   ElevatedButton(
+  //                     onPressed: () {
+  //                       if (schoolController.text.isEmpty ||
+  //                           degreeController.text.isEmpty) {
+  //                         ScaffoldMessenger.of(context).showSnackBar(
+  //                           const SnackBar(
+  //                             content: Text('Please fill all required fields'),
+  //                             backgroundColor: Colors.red,
+  //                           ),
+  //                         );
+  //                         return;
+  //                       }
 
-                        // Ã¢Å“â€¦ DUPLICATE EDUCATION PREVENTION
-                        final newEducationKey =
-                            '${schoolController.text.toLowerCase()}-${degreeController.text.toLowerCase()}-${startYear}-${endYear}';
-                        if (_educationList.any((edu) {
-                          final existingKey =
-                              '${edu['school'].toLowerCase()}-${edu['degree'].toLowerCase()}-${edu['start_year']}-${edu['end_year']}';
-                          return existingKey == newEducationKey;
-                        })) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'This education entry already exists',
-                              ),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                          return;
-                        }
-                        final startDate = DateTime(
-                          int.parse(startYear),
-                          _getMonthIndex(startMonth),
-                          1,
-                        );
-                        final endDate = DateTime(
-                          int.parse(endYear),
-                          _getMonthIndex(endMonth),
-                          1,
-                        );
+  //                       // Ã¢Å“â€¦ DUPLICATE EDUCATION PREVENTION
+  //                       final newEducationKey =
+  //                           '${schoolController.text.toLowerCase()}-${degreeController.text.toLowerCase()}-${startYear}-${endYear}';
+  //                       if (_educationList.any((edu) {
+  //                         final existingKey =
+  //                             '${edu['school'].toLowerCase()}-${edu['degree'].toLowerCase()}-${edu['start_year']}-${edu['end_year']}';
+  //                         return existingKey == newEducationKey;
+  //                       })) {
+  //                         ScaffoldMessenger.of(context).showSnackBar(
+  //                           const SnackBar(
+  //                             content: Text(
+  //                               'This education entry already exists',
+  //                             ),
+  //                             backgroundColor: Colors.orange,
+  //                           ),
+  //                         );
+  //                         return;
+  //                       }
+  //                       final startDate = DateTime(
+  //                         int.parse(startYear),
+  //                         _getMonthIndex(startMonth),
+  //                         1,
+  //                       );
+  //                       final endDate = DateTime(
+  //                         int.parse(endYear),
+  //                         _getMonthIndex(endMonth),
+  //                         1,
+  //                       );
 
-                        if (endDate.isBefore(startDate)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'End date must be after or same as start date',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+  //                       if (endDate.isBefore(startDate)) {
+  //                         ScaffoldMessenger.of(context).showSnackBar(
+  //                           const SnackBar(
+  //                             content: Text(
+  //                               'End date must be after or same as start date',
+  //                             ),
+  //                             backgroundColor: Colors.red,
+  //                           ),
+  //                         );
+  //                         return;
+  //                       }
 
-                        if (startYear == endYear && startMonth == endMonth) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Start and end dates cannot be the same',
-                              ),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+  //                       if (startYear == endYear && startMonth == endMonth) {
+  //                         ScaffoldMessenger.of(context).showSnackBar(
+  //                           const SnackBar(
+  //                             content: Text(
+  //                               'Start and end dates cannot be the same',
+  //                             ),
+  //                             backgroundColor: Colors.red,
+  //                           ),
+  //                         );
+  //                         return;
+  //                       }
 
-                        if (endDate.isAfter(DateTime.now())) {
-                          // Future dates OK for education (expected graduation)
-                        }
+  //                       if (endDate.isAfter(DateTime.now())) {
+  //                         // Future dates OK for education (expected graduation)
+  //                       }
 
-                        setState(() {
-                          _educationList.add({
-                            'school': schoolController.text,
-                            'degree': degreeController.text,
-                            'field': fieldController.text,
-                            'location': locationController.text,
-                            'start_month': startMonth,
-                            'start_year': startYear,
-                            'end_month': endMonth,
-                            'end_year': endYear,
-                            'grade': gradeController.text,
-                          });
-                        });
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Education added successfully'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(100, 44),
-                      ),
-                      child: const Text('Save'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  //                       setState(() {
+  //                         _educationList.add({
+  //                           'school': schoolController.text,
+  //                           'degree': degreeController.text,
+  //                           'field': fieldController.text,
+  //                           'location': locationController.text,
+  //                           'start_month': startMonth,
+  //                           'start_year': startYear,
+  //                           'end_month': endMonth,
+  //                           'end_year': endYear,
+  //                           'grade': gradeController.text,
+  //                         });
+  //                       });
+  //                       Navigator.pop(context);
+  //                       ScaffoldMessenger.of(context).showSnackBar(
+  //                         const SnackBar(
+  //                           content: Text('Education added successfully'),
+  //                           backgroundColor: Colors.green,
+  //                         ),
+  //                       );
+  //                     },
+  //                     style: ElevatedButton.styleFrom(
+  //                       backgroundColor: AppTheme.primary,
+  //                       foregroundColor: Colors.white,
+  //                       minimumSize: const Size(100, 44),
+  //                     ),
+  //                     child: const Text('Save'),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  int _getMonthIndex(String month) {
-    const months = {
-      'January': 1,
-      'February': 2,
-      'March': 3,
-      'April': 4,
-      'May': 5,
-      'June': 6,
-      'July': 7,
-      'August': 8,
-      'September': 9,
-      'October': 10,
-      'November': 11,
-      'December': 12,
-    };
-    return months[month] ?? 1;
-  }
+  // int _getMonthIndex(String month) {
+  //   const months = {
+  //     'January': 1,
+  //     'February': 2,
+  //     'March': 3,
+  //     'April': 4,
+  //     'May': 5,
+  //     'June': 6,
+  //     'July': 7,
+  //     'August': 8,
+  //     'September': 9,
+  //     'October': 10,
+  //     'November': 11,
+  //     'December': 12,
+  //   };
+  //   return months[month] ?? 1;
+  // }
 
   Widget _buildEducationDisplayCard(Map<String, dynamic> education, int index) {
     String startYear = education['start_year']?.toString() ?? '';
