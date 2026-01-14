@@ -249,7 +249,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
       case 1:
         return _workExperiences.isNotEmpty &&
-            // _joiningAvailability &&
+            _joiningAvailability == 'IMMEDIATE' ||
             _noticePeriodController.text.isNotEmpty;
 
       case 2:
@@ -869,7 +869,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Step ${_currentPage + 1} of 4', // Change from 4 to 5
+                'Step ${_currentPage + 1} of 4',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -877,7 +877,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                 ),
               ),
               Text(
-                '${((_currentPage + 1) / 4 * 100).toInt()}% Complete', // Change from 4 to 5
+                '${(_currentPage / 4 * 100).toInt()}% Complete',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,
@@ -1065,6 +1065,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
             Center(
               child: Text(
                 _profileImage != null ? 'Change photo' : 'Add photo ',
+                
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ),
