@@ -114,6 +114,52 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
     }
   }
 
+  Future<void> _deleteNote(String noteId, int index) async {
+    final result = await ApiService.deleteCandidateNote(
+      candidateId: widget.candidate['id'].toString(),
+      noteId: noteId,
+    );
+
+    if (result.containsKey('error')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
+      );
+    } else {
+      setState(() {
+        notes.removeAt(index);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Note deleted'),
+          backgroundColor: AppTheme.primary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteFollowup(String followupId, int index) async {
+    final result = await ApiService.deleteCandidateFollowup(
+      candidateId: widget.candidate['id'].toString(),
+      followupId: followupId,
+    );
+
+    if (result.containsKey('error')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error']), backgroundColor: Colors.red),
+      );
+    } else {
+      setState(() {
+        followups.removeAt(index);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Follow-up deleted'),
+          backgroundColor: AppTheme.primary,
+        ),
+      );
+    }
+  }
+
   Future<void> _addFollowup(DateTime selectedDateTime, String? notes) async {
     final result = await ApiService.addCandidateFollowup(
       candidateId: widget.candidate['id'],
@@ -346,7 +392,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                         duration: const Duration(milliseconds: 300),
                         opacity: collapsed ? 1.0 : 0.0,
                         child: Text(
-                          widget.candidate['full_name'] ??
+                          widget.candidate['first_name'] ??
                               widget.candidate['masked_name'] ??
                               'Unknown',
                           style: AppTheme.getAppBarTextStyle().copyWith(
@@ -996,7 +1042,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
           const SizedBox(height: 16),
           // Display existing notes
           if (notes.isNotEmpty) ...[
-            ...notes.map((note) {
+            ...notes.asMap().entries.map((entry) {
+              final index = entry.key;
+              final note = entry.value;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
@@ -1033,6 +1081,21 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                       child: Text(
                         note['note_text'] ?? '',
                         style: AppTheme.getBodyStyle(context, fontSize: 14),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _deleteNote(note['id'].toString(), index),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ],
@@ -1195,7 +1258,7 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.blueDark,
+                backgroundColor: AppTheme.blue,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
@@ -1241,7 +1304,9 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
             ),
           )
         else
-          ...followups.map((followup) {
+          ...followups.asMap().entries.map((entry) {
+            final index = entry.key;
+            final followup = entry.value;
             DateTime followupDateTime;
             try {
               // Handle API response format
@@ -1353,6 +1418,21 @@ class _CandidateDetailScreenState extends State<CandidateDetailScreen> {
                           ),
                         ],
                       ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _deleteFollowup(followup['id'].toString(), index),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: Colors.red,
+                        size: 16,
+                      ),
                     ),
                   ),
                 ],

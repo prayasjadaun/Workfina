@@ -528,6 +528,7 @@ class ApiService {
 
       return {
         'error':
+            e.response?.data['error'] ??
             e.response?.data['message'] ??
             'Login failed. Check your network connection.',
       };
@@ -797,9 +798,15 @@ class ApiService {
 
       return response.data;
     } on DioException catch (e) {
-      return {
-        'error': e.response?.data['message'] ?? 'Failed to load candidates',
-      };
+      // Server sends 'error' key, not 'message'
+      final errorData = e.response?.data;
+      String errorMessage = 'Failed to load candidates';
+
+      if (errorData != null && errorData is Map) {
+        errorMessage = errorData['error'] ?? errorData['message'] ?? errorMessage;
+      }
+
+      return {'error': errorMessage};
     }
   }
 
@@ -1169,6 +1176,44 @@ class ApiService {
             e.response?.data['error'] ??
             e.response?.data['message'] ??
             'Failed to load notes and followups',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteCandidateNote({
+    required String candidateId,
+    required String noteId,
+  }) async {
+    try {
+      final response = await _dio.delete(
+        '/candidates/$candidateId/note/$noteId/',
+      );
+      return response.data ?? {'success': true};
+    } on DioException catch (e) {
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to delete note',
+      };
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteCandidateFollowup({
+    required String candidateId,
+    required String followupId,
+  }) async {
+    try {
+      final response = await _dio.delete(
+        '/candidates/$candidateId/followup/$followupId/',
+      );
+      return response.data ?? {'success': true};
+    } on DioException catch (e) {
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to delete followup',
       };
     }
   }

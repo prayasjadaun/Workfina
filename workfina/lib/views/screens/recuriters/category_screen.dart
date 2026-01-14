@@ -725,6 +725,100 @@ class _CategoryScreenState extends State<CategoryScreen>
     );
   }
 
+  Widget _buildVerificationPendingWidget() {
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.hourglass_top_rounded,
+              size: 48,
+              color: Colors.orange.shade700,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Verification Pending',
+            style: AppTheme.getHeadlineStyle(
+              context,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.orange.shade800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Your company verification is currently under review. Once approved, you\'ll be able to browse and unlock candidate profiles.',
+            style: AppTheme.getBodyStyle(
+              context,
+              fontSize: 14,
+              color: Colors.orange.shade900,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 20,
+                  color: Colors.orange.shade600,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'This usually takes 24-48 hours. We\'ll notify you once verified.',
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontSize: 12,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+              // User can go back or contact support
+              Navigator.pop(context);
+            },
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Go Back'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.orange.shade700,
+              side: BorderSide(color: Colors.orange.shade300),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCandidatesSection() {
     return Consumer<RecruiterController>(
       builder: (context, recruiterController, child) {
@@ -736,13 +830,23 @@ class _CategoryScreenState extends State<CategoryScreen>
         }
 
         if (recruiterController.error != null) {
+          // Check if it's a verification pending error
+          final errorLower = recruiterController.error!.toLowerCase();
+          final isVerificationPending = errorLower.contains('verification') ||
+              errorLower.contains('pending') ||
+              errorLower.contains('company') && errorLower.contains('cannot');
+
+          if (isVerificationPending) {
+            return _buildVerificationPendingWidget();
+          }
+
           return Container(
             padding: const EdgeInsets.all(16),
             child: Center(
               child: Column(
                 children: [
                   Text(
-                    'Error: \${recruiterController.error}',
+                    'Error: ${recruiterController.error}',
                     style: AppTheme.getBodyStyle(context, color: Colors.red),
                     textAlign: TextAlign.center,
                   ),

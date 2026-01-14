@@ -42,7 +42,6 @@ class _SplashScreenState extends State<SplashScreen>
       }
 
       final userRole = authController.user?['role'];
-      print('[DEBUG] User role from stored data: $userRole');
 
       if (userRole == 'candidate') {
         final candidateController = CandidateController();
@@ -53,7 +52,6 @@ class _SplashScreenState extends State<SplashScreen>
           if (!hasProfile &&
               candidateController.error != null &&
               candidateController.error!.contains('Only candidates')) {
-            print('[DEBUG] Role mismatch detected - logging out');
             await authController.logout();
             if (mounted) {
               Navigator.pushReplacementNamed(context, '/login');
@@ -61,19 +59,25 @@ class _SplashScreenState extends State<SplashScreen>
             return;
           }
 
+          // Check if profile setup is complete using is_profile_completed flag
+          bool isProfileComplete = false;
+          if (hasProfile && candidateController.candidateProfile != null) {
+            isProfileComplete =
+                candidateController.candidateProfile!['is_profile_completed'] ==
+                true;
+          }
+
           if (mounted) {
             Navigator.pushReplacementNamed(
               context,
-              hasProfile ? '/candidate-home' : '/candidate-setup',
+              isProfileComplete ? '/candidate-home' : '/candidate-setup',
             );
           }
         } catch (e) {
-          print('[DEBUG] Candidate profile check failed: $e');
-          // Check if it's an auth error (401/404 means user deleted from backend)
           if (e.toString().contains('401') ||
               e.toString().contains('404') ||
-              candidateController.error?.contains('Failed to load profile') == true) {
-            print('[DEBUG] Authentication failed - clearing tokens and redirecting to login');
+              candidateController.error?.contains('Failed to load profile') ==
+                  true) {
             await authController.logout();
             if (mounted) {
               Navigator.pushReplacementNamed(context, '/login');
@@ -91,15 +95,26 @@ class _SplashScreenState extends State<SplashScreen>
           try {
             final hasProfile = await recruiterController.loadHRProfile();
 
+            // Check if profile setup is complete (required fields filled)
+            bool isProfileComplete = false;
+            if (hasProfile && recruiterController.hrProfile != null) {
+              final profile = recruiterController.hrProfile!;
+              final companyName = profile['company_name']?.toString() ?? '';
+              final designation = profile['designation']?.toString() ?? '';
+              final phone = profile['phone']?.toString() ?? '';
+              isProfileComplete =
+                  companyName.isNotEmpty &&
+                  designation.isNotEmpty &&
+                  phone.isNotEmpty;
+            }
+
             Navigator.pushReplacementNamed(
               context,
-              hasProfile ? '/hr-home' : '/hr-setup',
+              isProfileComplete ? '/hr-home' : '/hr-setup',
             );
           } catch (e) {
-            print('[DEBUG] HR profile check failed: $e');
             // Check if it's an auth error (401/404 means user deleted from backend)
             if (e.toString().contains('401') || e.toString().contains('404')) {
-              print('[DEBUG] Authentication failed - clearing tokens and redirecting to login');
               await authController.logout();
               if (mounted) {
                 Navigator.pushReplacementNamed(context, '/login');
@@ -117,7 +132,6 @@ class _SplashScreenState extends State<SplashScreen>
         }
       }
     } catch (e) {
-      print('[DEBUG] Splash error: $e');
       if (mounted) {
         _showNetworkErrorDialog('Unable to connect to server');
       }
@@ -180,7 +194,6 @@ class _SplashScreenState extends State<SplashScreen>
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(Icons.work, size: 60, color: Colors.white),
@@ -190,7 +203,6 @@ class _SplashScreenState extends State<SplashScreen>
                 'Workfina',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primary,
                 ),
               ),
             ],

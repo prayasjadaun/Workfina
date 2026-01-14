@@ -174,7 +174,6 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                     ),
                     const SizedBox(width: 16),
 
-                    // Name, Email and Verified
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,36 +203,46 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.white
-                                  : AppTheme.primary.withOpacity(0.1),
+                              color: profile['is_verified'] == true
+                                  ? (isDark
+                                      ? Colors.white
+                                      : AppTheme.primary.withOpacity(0.1))
+                                  : (isDark
+                                      ? Colors.orange.withOpacity(0.2)
+                                      : Colors.orange.withOpacity(0.1)),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: AppTheme.primary.withOpacity(0.3),
+                                color: profile['is_verified'] == true
+                                    ? AppTheme.primary.withOpacity(0.3)
+                                    : Colors.orange.withOpacity(0.3),
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SvgPicture.asset(
-                                  'assets/svgs/check.svg',
+                                  profile['is_verified'] == true
+                                      ? 'assets/svgs/check.svg'
+                                      : 'assets/svg/schedule.svg',
                                   width: 12,
                                   height: 12,
                                   colorFilter: ColorFilter.mode(
-                                    isDark
+                                    profile['is_verified'] == true
                                         ? AppTheme.primary
-                                        : AppTheme.primary,
+                                        : Colors.orange,
                                     BlendMode.srcIn,
                                   ),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Verified',
+                                  profile['is_verified'] == true
+                                      ? 'Verified'
+                                      : 'Pending',
                                   style: AppTheme.getLabelStyle(
                                     context,
-                                    color: isDark
+                                    color: profile['is_verified'] == true
                                         ? AppTheme.primary
-                                        : AppTheme.primary,
+                                        : Colors.orange,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 11,
                                   ),
@@ -270,7 +279,6 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
             ),
             child: Column(
               children: [
-                // Header with Edit Button
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Row(
@@ -296,7 +304,8 @@ class _RecruiterProfileScreenState extends State<RecruiterProfileScreen> {
                             'assets/svgs/edit.svg',
                             width: 16,
                             height: 16,
-                            colorFilter: const ColorFilter.mode(
+                            colorFilter:  ColorFilter.mode(
+                              isDark? Colors.white :
                               AppTheme.primary,
                               BlendMode.srcIn,
                             ),

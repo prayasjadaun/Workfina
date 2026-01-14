@@ -23,15 +23,13 @@ class _EmailScreenState extends State<EmailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-
         title: Text(
           'WorkFina',
           style: TextStyle(
-            color: AppTheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -40,9 +38,7 @@ class _EmailScreenState extends State<EmailScreen> {
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -54,20 +50,13 @@ class _EmailScreenState extends State<EmailScreen> {
                   const SizedBox(height: 40),
 
                   // Title
-                  const Text(
-                    'Welcome Back!',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
+                  Text('Welcome Back!', style: AppTheme.getAuthTitleStyle(context)),
                   const SizedBox(height: 8),
 
                   // Subtitle
                   Text(
                     'Access your account through your email',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: AppTheme.getAuthSubtitleStyle(context),
                   ),
                   const SizedBox(height: 40),
 
@@ -76,7 +65,7 @@ class _EmailScreenState extends State<EmailScreen> {
                     'Enter Your Email',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: AppTheme.getTextTertiaryColor(context),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -85,46 +74,24 @@ class _EmailScreenState extends State<EmailScreen> {
                   // Email Input Field
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: AppTheme.getInputFillColor(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      decoration: InputDecoration(
+                      style: AppTheme.getInputTextStyle(context),
+                      decoration: AppTheme.getAuthInputDecoration(
+                        context,
                         hintText: 'example@email.com',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontWeight: FontWeight.normal,
-                        ),
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: Colors.grey[600],
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        errorStyle: const TextStyle(height: 0.5),
+                        prefixIcon: Icons.email_outlined,
                       ),
                       validator: (value) {
                         if (value?.isEmpty ?? true) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(
-                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        ).hasMatch(value!)) {
+                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
                           return 'Please enter a valid email';
                         }
                         return null;
@@ -132,13 +99,8 @@ class _EmailScreenState extends State<EmailScreen> {
                       onFieldSubmitted: (_) async {
                         FocusScope.of(context).unfocus();
                         if (_formKey.currentState!.validate()) {
-                          final authController = Provider.of<AuthController>(
-                            context,
-                            listen: false,
-                          );
-                          final success = await authController.sendOTP(
-                            _emailController.text,
-                          );
+                          final authController = Provider.of<AuthController>(context, listen: false);
+                          final success = await authController.sendOTP(_emailController.text);
                           if (success && mounted) {
                             Navigator.pushNamed(context, '/otp');
                           }
@@ -183,9 +145,7 @@ class _EmailScreenState extends State<EmailScreen> {
                                     AppTheme.blue.withOpacity(0.8),
                                   ],
                                 ),
-                          color: authController.isLoading
-                              ? Colors.grey[300]
-                              : null,
+                          color: authController.isLoading ? Colors.grey[300] : null,
                           boxShadow: authController.isLoading
                               ? null
                               : [
@@ -201,8 +161,7 @@ class _EmailScreenState extends State<EmailScreen> {
                               ? null
                               : () async {
                                   if (_formKey.currentState!.validate()) {
-                                    final success = await authController
-                                        .sendOTP(_emailController.text);
+                                    final success = await authController.sendOTP(_emailController.text);
                                     if (success && mounted) {
                                       Navigator.pushNamed(context, '/otp');
                                     }
@@ -248,12 +207,11 @@ class _EmailScreenState extends State<EmailScreen> {
                           'Already have an account? ',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[700],
+                            color: AppTheme.getTextTertiaryColor(context),
                           ),
                         ),
                         GestureDetector(
-                          onTap: () =>
-                              Navigator.pushReplacementNamed(context, '/login'),
+                          onTap: () => Navigator.pushReplacementNamed(context, '/login'),
                           child: Text(
                             'Login',
                             style: TextStyle(

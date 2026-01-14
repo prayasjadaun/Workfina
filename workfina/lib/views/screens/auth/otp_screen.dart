@@ -22,7 +22,6 @@ class _OTPScreenState extends State<OTPScreen> {
   @override
   void initState() {
     super.initState();
-    // Add listeners to track OTP completion
     for (var controller in _otpControllers) {
       controller.addListener(_checkOtpComplete);
     }
@@ -49,26 +48,24 @@ class _OTPScreenState extends State<OTPScreen> {
     }
   }
 
-  String get otpCode =>
-      _otpControllers.map((controller) => controller.text).join();
+  String get otpCode => _otpControllers.map((controller) => controller.text).join();
 
   @override
   Widget build(BuildContext context) {
     final authController = context.watch<AuthController>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: AppTheme.getTextPrimaryColor(context)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'WorkFina',
           style: TextStyle(
-            color: AppTheme.primary,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -77,9 +74,7 @@ class _OTPScreenState extends State<OTPScreen> {
       ),
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -87,24 +82,24 @@ class _OTPScreenState extends State<OTPScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 40),
-                
+
                 // Title
-                const Text(
+                Text(
                   'We just sent an Email',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppTheme.getTextPrimaryColor(context),
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Subtitle with email/phone
                 RichText(
                   text: TextSpan(
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey[600],
+                      color: AppTheme.getTextSecondaryColor(context),
                     ),
                     children: [
                       const TextSpan(
@@ -112,16 +107,16 @@ class _OTPScreenState extends State<OTPScreen> {
                       ),
                       TextSpan(
                         text: authController.tempEmail ?? 'your email',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color: AppTheme.getTextPrimaryColor(context),
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Edit Number/Email Link
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
@@ -134,9 +129,9 @@ class _OTPScreenState extends State<OTPScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // OTP Input Boxes
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -150,10 +145,10 @@ class _OTPScreenState extends State<OTPScreen> {
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         maxLength: 1,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: AppTheme.getTextPrimaryColor(context),
                         ),
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
@@ -162,7 +157,7 @@ class _OTPScreenState extends State<OTPScreen> {
                           counterText: '',
                           enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(
-                              color: Colors.grey[300]!,
+                              color: AppTheme.getDividerColor(context),
                               width: 2,
                             ),
                           ),
@@ -181,7 +176,6 @@ class _OTPScreenState extends State<OTPScreen> {
                             _focusNodes[index - 1].requestFocus();
                           }
 
-                          // Auto submit when OTP complete
                           if (index == 5 && value.isNotEmpty) {
                             FocusScope.of(context).unfocus();
 
@@ -194,9 +188,9 @@ class _OTPScreenState extends State<OTPScreen> {
                     );
                   }),
                 ),
-                
+
                 const SizedBox(height: 40),
-                
+
                 // Continue Button
                 Consumer<AuthController>(
                   builder: (context, authController, child) {
@@ -226,7 +220,7 @@ class _OTPScreenState extends State<OTPScreen> {
                       height: 56,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(28),
-                        color: isButtonEnabled ? Colors.black : Colors.grey[300],
+                        color: isButtonEnabled ? AppTheme.blue : AppTheme.getDividerColor(context),
                         boxShadow: isButtonEnabled
                             ? [
                                 BoxShadow(
@@ -238,9 +232,7 @@ class _OTPScreenState extends State<OTPScreen> {
                             : null,
                       ),
                       child: ElevatedButton(
-                        onPressed: isButtonEnabled
-                            ? () => _verifyOtp(authController)
-                            : null,
+                        onPressed: isButtonEnabled ? () => _verifyOtp(authController) : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
@@ -263,18 +255,16 @@ class _OTPScreenState extends State<OTPScreen> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: isButtonEnabled 
-                                      ? Colors.white 
-                                      : Colors.grey[600],
+                                  color: isButtonEnabled ? Colors.white : Colors.grey[600],
                                 ),
                               ),
                       ),
                     );
                   },
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Resend Code Link
                 Center(
                   child: Row(
@@ -284,7 +274,7 @@ class _OTPScreenState extends State<OTPScreen> {
                         'Didn\'t receive the code? ',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[700],
+                          color: AppTheme.getTextTertiaryColor(context),
                         ),
                       ),
                       GestureDetector(
@@ -305,11 +295,11 @@ class _OTPScreenState extends State<OTPScreen> {
                             }
                           }
                         },
-                        child: const Text(
+                        child: Text(
                           'Send Again',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.black,
+                            color: AppTheme.getTextPrimaryColor(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -317,7 +307,7 @@ class _OTPScreenState extends State<OTPScreen> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
               ],
             ),

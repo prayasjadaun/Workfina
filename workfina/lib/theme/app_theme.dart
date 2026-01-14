@@ -482,4 +482,108 @@ static const Color greenCard = Color.fromARGB(255, 82, 134, 34);
       color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
     );
   }
+
+  // ============ Auth Screen Helpers ============
+
+  /// Input field background color
+  static Color getInputFillColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade800 : Colors.grey.shade100;
+  }
+
+  /// Primary text color (for titles, headings)
+  static Color getTextPrimaryColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.white : Colors.black;
+  }
+
+  /// Secondary text color (for subtitles, hints)
+  static Color getTextSecondaryColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+  }
+
+  /// Tertiary text color (for labels)
+  static Color getTextTertiaryColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade300 : Colors.grey.shade700;
+  }
+
+  /// Hint text color
+  static Color getHintColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade500 : Colors.grey.shade400;
+  }
+
+  /// Icon color for input fields
+  static Color getInputIconColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+  }
+
+  /// Divider color
+  static Color getDividerColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? Colors.grey.shade700 : Colors.grey.shade300;
+  }
+
+  /// Input text style
+  static TextStyle getInputTextStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: getTextPrimaryColor(context),
+    );
+  }
+
+  /// Auth screen title style
+  static TextStyle getAuthTitleStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.bold,
+      color: getTextPrimaryColor(context),
+    );
+  }
+
+  /// Auth screen subtitle style
+  static TextStyle getAuthSubtitleStyle(BuildContext context) {
+    return TextStyle(
+      fontSize: 16,
+      color: getTextSecondaryColor(context),
+    );
+  }
+
+  /// Input decoration for auth screens
+  static InputDecoration getAuthInputDecoration(
+    BuildContext context, {
+    required String hintText,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+    String? labelText,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      hintStyle: TextStyle(
+        color: getHintColor(context),
+        fontWeight: FontWeight.normal,
+      ),
+      prefixIcon: Icon(
+        prefixIcon,
+        color: getInputIconColor(context),
+      ),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      filled: true,
+      fillColor: getInputFillColor(context),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16,
+      ),
+      errorStyle: const TextStyle(height: 0.5),
+    );
+  }
 }

@@ -70,16 +70,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      // appBar: AppBar(
-      //   title: Text(
-      //     'Create Account',
-      //     style: AppTheme.getHeadlineStyle(context, fontWeight: FontWeight.w600),
-      //   ),
-      //   centerTitle: true,
-      //   elevation: 0,
-      //   backgroundColor: Theme.of(context).colorScheme.background,
-      // ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => FocusScope.of(context).unfocus(),
@@ -104,7 +95,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     child: Icon(
                       Icons.person_add_outlined,
                       size: 50,
-                      color: AppTheme.primary,
+                      // color: AppTheme.primary,
                     ),
                   ),
 
@@ -145,43 +136,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       children: [
-                        TextFormField(
-                          controller: _usernameController,
-                          textInputAction: TextInputAction.next,
-                          inputFormatters: [
-                            UsernameTextInputFormatter(),
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[a-z0-9_.]'),
-                            ),
-                          ],
-                          style: AppTheme.getBodyStyle(context),
-                          decoration: InputDecoration(
-                            labelText: 'Username',
-                            hintText: 'Enter your username',
-                            prefixIcon: Icon(
-                              Icons.person_outline,
-                              color: AppTheme.primary,
-                            ),
-                            labelStyle: AppTheme.getLabelStyle(context),
-                            hintStyle: AppTheme.getBodyStyle(
-                              context,
-                              color: isDark
-                                  ? Colors.grey.shade500
-                                  : Colors.grey.shade500,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value?.isEmpty ?? true) {
-                              return 'Please enter your username';
-                            }
-                            if (value!.length < 3) {
-                              return 'Username must be at least 3 characters';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 20),
 
                         TextFormField(
                           controller: _passwordController,
@@ -193,7 +147,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             hintText: 'Enter your password',
                             prefixIcon: Icon(
                               Icons.lock_outline,
-                              color: AppTheme.primary,
+                              // color: AppTheme.primary,
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -240,7 +194,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             hintText: 'Confirm your password',
                             prefixIcon: Icon(
                               Icons.lock_outline,
-                              color: AppTheme.primary,
+                              // color: AppTheme.primary,
                             ),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -307,7 +261,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               ? null
                               : _handleCreateAccount,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
+                            backgroundColor: AppTheme.blue,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(

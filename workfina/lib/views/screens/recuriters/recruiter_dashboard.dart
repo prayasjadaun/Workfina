@@ -29,6 +29,8 @@ class RecruiterDashboard extends StatefulWidget {
 
 class _RecruiterDashboardState extends State<RecruiterDashboard>
     with TickerProviderStateMixin {
+      final bool isDark =
+    WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
   late TabController _tabController;
   List<String> _categories = [];
   late Future<Map<String, dynamic>> _filterOptionsFuture;
@@ -201,7 +203,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         final unlockedCount = controller.unlockedCandidateIds.length;
 
         return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          // backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: isDark ? AppTheme.primary : Colors.white,
           body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => [
               _buildSliverHeader(context, controller),
@@ -419,6 +422,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
         background: Container(
           color: AppTheme.primary,
           child: Column(
@@ -440,7 +444,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                           displayName[0].toUpperCase(),
                           style: AppTheme.getTitleStyle(
                             context,
-                            color: Colors.white,
+                            color: isDark ? Colors.black : Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 18,
                           ),
@@ -940,6 +944,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
               width: 40,
               height: 40,
               colorFilter: ColorFilter.mode(
+                isDark? Colors.white :
                 AppTheme.secondary.withOpacity(0.5),
                 BlendMode.srcIn,
               ),

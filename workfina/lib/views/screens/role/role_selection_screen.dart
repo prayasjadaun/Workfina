@@ -18,27 +18,25 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     final user = context.watch<AuthController>().user;
 
     return Scaffold(
-      body: Container(
-        decoration: AppTheme.getGradientDecoration(context),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_pin, size: 80, color: AppTheme.primary),
+              Icon(Icons.person_pin, size: 80),
               const SizedBox(height: 32),
               Text(
-                'Welcome, ${user?['username'] ?? 'User'}!',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                'Welcome',
+                style: AppTheme.getAuthTitleStyle(
+                  context,
+                ).copyWith(fontSize: 28),
               ),
               const SizedBox(height: 8),
               Text(
                 'Are you a candidate or an HR recruiter?',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                style: AppTheme.getAuthSubtitleStyle(context),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -65,7 +63,6 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                   onPressed: _selectedRole == null
                       ? null
                       : () async {
-                          // Update user role first
                           final authController = context.read<AuthController>();
                           await authController.updateUserRole(_selectedRole!);
 
@@ -75,7 +72,24 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                             Navigator.pushNamed(context, '/hr-setup');
                           }
                         },
-                  child: const Text('Continue', style: TextStyle(fontSize: 16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.blue,
+                    disabledBackgroundColor: AppTheme.getDividerColor(context),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Continue',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _selectedRole == null
+                          ? Colors.grey[600]
+                          : Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -104,8 +118,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppTheme.primary
-                : Colors.grey.withOpacity(0.3),
+                ? AppTheme.blue
+                : AppTheme.getDividerColor(context),
             width: 2,
           ),
           boxShadow: [AppTheme.getCardShadow(context)],
@@ -116,13 +130,15 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.primary
-                    : Colors.grey.withOpacity(0.1),
+                    ? AppTheme.blue
+                    : AppTheme.getInputFillColor(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: isSelected ? Colors.white : Colors.grey[600],
+                color: isSelected
+                    ? Colors.white
+                    : AppTheme.getInputIconColor(context),
                 size: 24,
               ),
             ),
@@ -133,22 +149,27 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    style: TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? AppTheme.primary : null,
+                      color: isSelected
+                          ? AppTheme.blue
+                          : AppTheme.getTextPrimaryColor(context),
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.getTextSecondaryColor(context),
+                    ),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppTheme.primary, size: 24),
+              Icon(Icons.check_circle, color: AppTheme.blue, size: 24),
           ],
         ),
       ),

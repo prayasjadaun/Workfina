@@ -78,27 +78,24 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
     return ChangeNotifierProvider(
       create: (_) => RecruiterController(),
       child: Scaffold(
-        backgroundColor: theme.colorScheme.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: theme.colorScheme.surface,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           title: Text(
             'Company Setup',
             style: AppTheme.getHeadlineStyle(context, fontSize: 18),
           ),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios, color: theme.colorScheme.onSurface),
+            icon: Icon(
+              Icons.arrow_back_ios,
+              color: AppTheme.getTextPrimaryColor(context),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
-          systemOverlayStyle: isDark 
-              ? SystemUiOverlayStyle.light 
-              : SystemUiOverlayStyle.dark,
         ),
         body: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -122,12 +119,10 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   }
 
   Widget _buildProgressHeader() {
-    final theme = Theme.of(context);
-    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: AppTheme.getCardColor(context),
         boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Column(
@@ -150,8 +145,8 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
                           color: isCompleted || isActive
-                              ? AppTheme.primary
-                              : theme.dividerColor,
+                              ? AppTheme.blue
+                              : AppTheme.getDividerColor(context),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -161,8 +156,8 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isCompleted || isActive
-                              ? AppTheme.primary
-                              : theme.dividerColor,
+                              ? AppTheme.blue
+                              : AppTheme.getDividerColor(context),
                         ),
                         child: Center(
                           child: isCompleted
@@ -173,8 +168,13 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                                 )
                               : Text(
                                   '${index + 1}',
-                                  style: AppTheme.getLabelStyle(context,
-                                    color: isActive ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.5),
+                                  style: AppTheme.getLabelStyle(
+                                    context,
+                                    color: isActive
+                                        ? Colors.white
+                                        : AppTheme.getTextSecondaryColor(
+                                            context,
+                                          ),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -280,10 +280,22 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
               controller: _websiteController,
               label: 'Company Website',
               icon: Icons.web_outlined,
-              hintText: 'https://yourcompany.com',
+              hintText: 'yourcompany.com',
+              prefixText: 'https://',
+              isRequired: true,
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.done,
               onDone: _nextStep,
+              validator: (value) {
+                if (value?.isEmpty == true)
+                  return 'Company website is required';
+                final urlPattern = RegExp(
+                  r'^[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(/.*)?$',
+                );
+                if (!urlPattern.hasMatch(value!))
+                  return 'Enter a valid URL (e.g., yourcompany.com)';
+                return null;
+              },
             ),
           ],
         ),
@@ -303,7 +315,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
             children: [
               const SizedBox(height: 24),
               _buildReviewCard('Company Details', [
-                'Name: ${_fullNameController.text}',  
+                'Name: ${_fullNameController.text}',
                 'Company: ${_companyNameController.text}',
                 'Designation: ${_designationController.text}',
                 'Size: ${_companySizes.firstWhere((s) => s['value'] == _selectedCompanySize)['label']}',
@@ -312,7 +324,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
               _buildReviewCard('Contact Information', [
                 'Phone: ${_phoneController.text}',
                 if (_websiteController.text.isNotEmpty)
-                  'Website: ${_websiteController.text}',
+                  'Website: https://${_websiteController.text}',
               ]),
               const SizedBox(height: 24),
               _buildInfoCard(),
@@ -329,14 +341,13 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required IconData icon,
     required Widget child,
   }) {
-    Theme.of(context);
-    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppTheme.getCardColor(context),
@@ -351,11 +362,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                     color: AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon, 
-                    color: AppTheme.primary, 
-                    size: 32,
-                  ),
+                  child: Icon(icon, size: 32),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -385,6 +392,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required IconData icon,
     bool isRequired = false,
     String? hintText,
+    String? prefixText,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
@@ -393,8 +401,6 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     TextInputAction textInputAction = TextInputAction.next,
     VoidCallback? onDone,
   }) {
-    final theme = Theme.of(context);
-    
     return TextFormField(
       controller: controller,
       textInputAction: textInputAction,
@@ -408,26 +414,27 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
       decoration: InputDecoration(
         labelText: '$label${isRequired ? ' *' : ''}',
         hintText: hintText,
+        prefixText: prefixText,
         labelStyle: AppTheme.getLabelStyle(context),
         hintStyle: AppTheme.getSubtitleStyle(context),
-        prefixIcon: Icon(icon, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        prefixIcon: Icon(icon, color: AppTheme.getInputIconColor(context)),
         filled: true,
         fillColor: AppTheme.getCardColor(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.dividerColor),
+          borderSide: BorderSide(color: AppTheme.getDividerColor(context)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.dividerColor),
+          borderSide: BorderSide(color: AppTheme.getDividerColor(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.blue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.colorScheme.error),
+          borderSide: const BorderSide(color: Colors.red),
         ),
         contentPadding: const EdgeInsets.all(16),
         counterText: '',
@@ -447,63 +454,59 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
     required List<Map<String, String>> items,
     required void Function(String?) onChanged,
   }) {
-    final theme = Theme.of(context);
-    
     return DropdownButtonFormField<String>(
       value: value,
       style: AppTheme.getBodyStyle(context),
+      dropdownColor: AppTheme.getCardColor(context),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: AppTheme.getLabelStyle(context),
-        prefixIcon: Icon(icon, color: theme.colorScheme.onSurface.withOpacity(0.6)),
+        prefixIcon: Icon(icon, color: AppTheme.getInputIconColor(context)),
         filled: true,
         fillColor: AppTheme.getCardColor(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.dividerColor),
+          borderSide: BorderSide(color: AppTheme.getDividerColor(context)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.dividerColor),
+          borderSide: BorderSide(color: AppTheme.getDividerColor(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 2),
+          borderSide: const BorderSide(color: AppTheme.blue, width: 2),
         ),
         contentPadding: const EdgeInsets.all(16),
       ),
       items: items
-          .map((item) => DropdownMenuItem(
-                value: item['value'],
-                child: Text(
-                  item['label']!,
-                  style: AppTheme.getBodyStyle(context),
-                ),
-              ))
+          .map(
+            (item) => DropdownMenuItem(
+              value: item['value'],
+              child: Text(
+                item['label']!,
+                style: AppTheme.getBodyStyle(context),
+              ),
+            ),
+          )
           .toList(),
       onChanged: onChanged,
     );
   }
 
   Widget _buildReviewCard(String title, List<String> items) {
-    final theme = Theme.of(context);
-    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(color: AppTheme.getDividerColor(context)),
         boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTheme.getTitleStyle(context, fontSize: 16),
-          ),
+          Text(title, style: AppTheme.getTitleStyle(context, fontSize: 16)),
           const SizedBox(height: 12),
           ...items.map(
             (item) => Padding(
@@ -514,16 +517,13 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                     width: 4,
                     height: 4,
                     decoration: const BoxDecoration(
-                      color: AppTheme.primary,
+                      color: AppTheme.blue,
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      item,
-                      style: AppTheme.getBodyStyle(context),
-                    ),
+                    child: Text(item, style: AppTheme.getBodyStyle(context)),
                   ),
                 ],
               ),
@@ -535,14 +535,12 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   }
 
   Widget _buildInfoCard() {
-    final theme = Theme.of(context);
-    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.05),
+        color: AppTheme.blue.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
+        border: Border.all(color: AppTheme.blue.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -551,7 +549,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary,
+                  color: AppTheme.blue,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -572,21 +570,23 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
             '• Your company profile will be reviewed within 24 hours\n'
             '• Once approved, you\'ll receive credits to unlock candidate profiles\n'
             '• Start browsing our talent pool immediately after setup',
-            style: AppTheme.getBodyStyle(context, 
-              color: theme.colorScheme.onSurface.withOpacity(0.7)),
+            style: AppTheme.getBodyStyle(
+              context,
+              color: AppTheme.getTextSecondaryColor(context),
+            ),
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.5),
+              color: AppTheme.getInputFillColor(context),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.verified_user_outlined,
-                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                  color: AppTheme.getInputIconColor(context),
                   size: 18,
                 ),
                 const SizedBox(width: 8),
@@ -605,12 +605,10 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   }
 
   Widget _buildNavigationButtons() {
-    final theme = Theme.of(context);
-    
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: AppTheme.getCardColor(context),
         boxShadow: [AppTheme.getCardShadow(context)],
       ),
       child: Row(
@@ -624,11 +622,14 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  side: BorderSide(color: theme.dividerColor),
+                  side: BorderSide(color: AppTheme.getDividerColor(context)),
                 ),
                 child: Text(
                   'Previous',
-                  style: AppTheme.getBodyStyle(context, fontWeight: FontWeight.w500),
+                  style: AppTheme.getBodyStyle(
+                    context,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -648,7 +649,7 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: AppTheme.blue,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -681,14 +682,18 @@ class _RecruiterSetupScreenState extends State<RecruiterSetupScreen> {
   }
 
   Future<void> _submitProfile(RecruiterController hrController) async {
+    // Prepend https:// to the website URL if not empty
+    String? websiteUrl;
+    if (_websiteController.text.isNotEmpty) {
+      websiteUrl = 'https://${_websiteController.text}';
+    }
+
     final success = await hrController.registerHR(
-      fullName: _fullNameController.text,  
+      fullName: _fullNameController.text,
       companyName: _companyNameController.text,
       designation: _designationController.text,
       phone: _phoneController.text,
-      companyWebsite: _websiteController.text.isEmpty
-          ? null
-          : _websiteController.text,
+      companyWebsite: websiteUrl,
       companySize: _selectedCompanySize,
     );
 

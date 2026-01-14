@@ -360,7 +360,10 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
               svgPath,
               width: 24,
               height: 24,
-              colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                isDark ? Colors.white : color,
+                BlendMode.srcIn,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -369,7 +372,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: color,
+              // color: color,
             ),
           ),
           const SizedBox(height: 2),
@@ -639,7 +642,7 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                   width: double.infinity,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: AppTheme.blue,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
