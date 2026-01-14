@@ -246,55 +246,61 @@ const SizedBox(height: 24),
   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
   elevation: 0,
   toolbarHeight: 60,
-  title: Row(
-    children: [
-      // Profile Avatar
-      Container(
-        width: 48,
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppTheme.primaryDark,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            displayName[0].toUpperCase(),
-            style: AppTheme.getTitleStyle(
-              context,
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
+  titleSpacing: 0,
+  automaticallyImplyLeading: false,
+  title: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 18 ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.center, 
+      children: [
+        // Profile Avatar
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppTheme.primaryDark,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(
+              displayName[0].toUpperCase(),
+              style: AppTheme.getTitleStyle(
+                context,
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
             ),
           ),
         ),
-      ),
-      const SizedBox(width: 12),
-      // Greeting
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Hello 👋',
-              style: AppTheme.getSubtitleStyle(
-                context,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w400,
+        const SizedBox(width: 16),
+        // Greeting
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Hello 👋',
+                style: AppTheme.getSubtitleStyle(
+                  context,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
-            Text(
-              displayName,
-              style: AppTheme.getBodyStyle(
-                context,
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+              Text(
+                displayName,
+                style: AppTheme.getBodyStyle(
+                  context,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   ),
   actions: [
     Container(
