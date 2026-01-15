@@ -87,6 +87,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
                 label: 'Job Title / Role',
                 isRequired: true,
                 icon: Icons.work_outline,
+                
               ),
               const SizedBox(height: 20),
               _buildTextFormField(
@@ -181,6 +182,7 @@ class _AddExperienceScreenState extends State<AddExperienceScreen> {
     int? minLines,
     TextInputType? keyboardType,
     String? hint,
+    
   }) {
     return TextFormField(
       controller: controller,

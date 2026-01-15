@@ -28,6 +28,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   final _personalFormKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  final _profileImageFieldKey = GlobalKey<FormFieldState<File?>>();
 
   // Controllers
   // final TextEditingController _fullNameController = TextEditingController();
@@ -69,9 +70,12 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _selectedRole = '';
+  _selectedReligion = '';
     _fetchStates();
-    _fetchDepartmentsAndReligions();
-    _loadSavedProfile();
+    _fetchDepartmentsAndReligions().then((_) {
+    _loadSavedProfile(); // This runs AFTER departments are loaded
+  });
   }
 
   // Dynamic lists fetched from backend
@@ -109,39 +113,55 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   final ImagePicker _imagePicker = ImagePicker();
 
   Future<void> _fetchStates() async {
-    setState(() => _loadingStates = true);
-    try {
-      final response = await ApiService.getStates();
-      if (response.containsKey('error')) {
-        throw Exception(response['error']);
+  setState(() => _loadingStates = true);
+  try {
+    final response = await ApiService.getStates();
+    if (response.containsKey('error')) {
+      throw Exception(response['error']);
+    }
+    final statesList = response['states'] as List;
+    var states = statesList.map((state) => {
+      'id': state['id'].toString(),
+      'name': state['name'].toString().trim(),  // Add .trim() here
+      'slug': state['slug'].toString(),
+    }).toList();
+
+    // Reorder: Remove 'other' based on name, sort remaining by name, append 'other'
+    Map<String, String>? otherState;
+    states = states.where((state) {
+      if (state['name']!.toLowerCase() == 'other') {
+        otherState = state;
+        return false;
       }
-      final statesList = response['states'] as List;
-      setState(() {
-        _states = statesList
-            .map(
-              (state) => {
-                'id': state['id'].toString(),
-                'name': state['name'].toString(),
-                'slug': state['slug'].toString(),
-              },
-            )
-            .toList();
-        _selectedStateId = null; // Add this line
-        _stateController.clear(); // Add this line
-        _loadingStates = false;
-      });
-    } catch (e) {
-      setState(() => _loadingStates = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load states: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      return true;
+    }).toList();
+
+    // Sort remaining alphabetically by name
+    states.sort((a, b) => a['name']!.compareTo(b['name']!));
+
+    // Append 'other' if it existed
+    if (otherState != null) {
+      states.add(otherState!);
+    }
+
+    setState(() {
+      _states = states;
+      _selectedStateId = null;
+      _stateController.clear();
+      _loadingStates = false;
+    });
+  } catch (e) {
+    setState(() => _loadingStates = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load states: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
 
   Future<void> _fetchCities(String stateSlug) async {
     setState(() {
@@ -249,7 +269,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
       case 1:
         return _workExperiences.isNotEmpty &&
-            _joiningAvailability == 'IMMEDIATE' ||
+                _joiningAvailability == 'IMMEDIATE' ||
             _noticePeriodController.text.isNotEmpty;
 
       case 2:
@@ -429,6 +449,18 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         setState(() {
           _profileImage = file;
         });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Update the FormField's value explicitly
+          _profileImageFieldKey.currentState?.didChange(_profileImage);
+
+          // Re-run validation on the whole form
+          final isValid = _personalFormKey.currentState?.validate() ?? false;
+
+          print(
+            'DidChange called - field value now: ${_profileImageFieldKey.currentState?.value?.path}',
+          );
+          print('Form valid after didChange + validate: $isValid');
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -443,78 +475,157 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   }
 
   Future<void> _fetchDepartmentsAndReligions() async {
-    setState(() => _loadingOptions = true);
-    try {
-      final response = await ApiService.getDepartmentsAndReligions();
-      if (response.containsKey('error')) {
-        throw Exception(response['error']);
-      }
+  setState(() => _loadingOptions = true);
+  try {
+    final response = await ApiService.getDepartmentsAndReligions();
+    if (response.containsKey('error')) {
+      throw Exception(response['error']);
+    }
 
-      // Handle departments
-      final departments = response['departments'] as List;
-      final Map<String, Map<String, String>> uniqueDepts = {};
-      for (var dept in departments) {
-        final value = dept['value'].toString();
-        uniqueDepts[value] = {
-          'value': value,
-          'label': dept['label'].toString(),
-        };
-      }
-      _roles = uniqueDepts.values.toList();
+    // ✅ CLEAR existing lists first
+    _roles.clear();
+    _religions.clear();
+    _availableSkills.clear();
+    _availableLanguages.clear();
 
-      // Handle religions
-      final religions = response['religions'] as List;
-      final Map<String, Map<String, String>> uniqueReligions = {};
-      for (var relig in religions) {
-        final value = relig['value'].toString();
-        uniqueReligions[value] = {
-          'value': value,
-          'label': relig['label'].toString(),
-        };
+    // Handle departments
+    final departments = response['departments'] as List;
+    print('[DEBUG] Departments from API: ${departments.length} items');
+    
+    for (var dept in departments) {
+      final value = dept['value'].toString().trim();
+      final label = dept['label'].toString().trim();
+      
+      print('[DEBUG] Dept - value: "$value", label: "$label"');
+      
+      _roles.add({
+        'value': value,
+        'label': label,
+      });
+    }
+    
+    // Sort by label
+    _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
+    
+    // ✅ VERIFY no duplicates (for debugging)
+    final uniqueValues = _roles.map((r) => r['value']).toSet();
+    if (uniqueValues.length != _roles.length) {
+      print('[ERROR] Duplicate roles detected!');
+      final Map<String, Map<String, String>> uniqueMap = {};
+      for (var role in _roles) {
+        uniqueMap[role['value']!] = role;
       }
-      _religions = uniqueReligions.values.toList();
+      _roles = uniqueMap.values.toList();
+      _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
+    }
+    
+    print('[DEBUG] Final roles count: ${_roles.length}');
+    print('[DEBUG] Roles: ${_roles.map((r) => r['value']).toList()}');
 
-      // Handle skills
-      final skills = response['skills'] as List?;
-      if (skills != null) {
-        _availableSkills = skills
-            .map((skill) => skill['label'].toString())
-            .toList();
-      }
+    // Handle religions
+    final religions = response['religions'] as List;
+    print('[DEBUG] Religions from API: $religions'); // ← Add this line
 
-      // Handle languages
-      final languages = response['languages'] as List?;
-      if (languages != null) {
-        _availableLanguages = languages
-            .map((lang) => lang['label'].toString())
-            .toList();
-      }
+    for (var relig in religions) {
+      final value = relig['value'].toString().trim();
+      final label = relig['label'].toString().trim();
+        print('[DEBUG] Religion - value: "$value", label: "$label"'); // ← Add this line
 
-      // Set default values
-      if (_roles.isNotEmpty) {
-        final roleExists = _roles.any((r) => r['value'] == _selectedRole);
-        if (_selectedRole.isEmpty || !roleExists) {
-          _selectedRole = _roles[0]['value']!;
+      
+      _religions.add({
+        'value': value,
+        'label': label,
+      });
+    }
+    _religions.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Handle skills
+    final skills = response['skills'] as List?;
+    if (skills != null) {
+      _availableSkills = skills
+          .map((skill) => skill['label'].toString().trim())
+          .toSet()
+          .toList();
+      _availableSkills.sort();
+    }
+
+    // Handle languages
+    final languages = response['languages'] as List?;
+    if (languages != null) {
+      _availableLanguages = languages
+          .map((lang) => lang['label'].toString().trim())
+          .toSet()
+          .toList();
+      _availableLanguages.sort();
+    }
+
+    // ✅ CRITICAL: Validate and set default values
+    if (_roles.isNotEmpty) {
+      print('[DEBUG] Current _selectedRole: "$_selectedRole"');
+      print('[DEBUG] Available role values: ${_roles.map((r) => r['value']).toList()}');
+      
+      // ✅ Check if it matches by VALUE (slug)
+      bool roleExists = _roles.any((r) => r['value'] == _selectedRole);
+      
+      // ✅ If not found by value, check by LABEL
+      if (!roleExists) {
+        roleExists = _roles.any((r) => r['label'] == _selectedRole);
+        if (roleExists) {
+          // Convert label to value
+          final matchingRole = _roles.firstWhere((r) => r['label'] == _selectedRole);
+          _selectedRole = matchingRole['value']!;
+          print('[DEBUG] Converted label to value: "$_selectedRole"');
         }
       }
+      
+      print('[DEBUG] Role exists: $roleExists');
+      
+      if (_selectedRole.isEmpty || !roleExists) {
+        // ✅ Reset to first item if invalid
+        _selectedRole = _roles[0]['value']!;
+        print('[DEBUG] Reset _selectedRole to: "$_selectedRole"');
+      }
+    } else {
+      print('[ERROR] No roles loaded!');
+      _selectedRole = '';
+    }
 
-      if (_religions.isNotEmpty && _selectedReligion.isEmpty) {
+    // ✅ Same logic for religion
+    if (_religions.isNotEmpty) {
+      bool religionExists = _religions.any((r) => r['value'] == _selectedReligion);
+      
+      if (!religionExists) {
+        religionExists = _religions.any((r) => r['label'] == _selectedReligion);
+        if (religionExists) {
+          final matchingReligion = _religions.firstWhere((r) => r['label'] == _selectedReligion);
+          _selectedReligion = matchingReligion['value']!;
+          print('[DEBUG] Converted religion label to value: "$_selectedReligion"');
+        }
+      }
+      
+      if (_selectedReligion.isEmpty || !religionExists) {
         _selectedReligion = _religions[0]['value']!;
       }
+    } else {
+      _selectedReligion = '';
+    }
 
-      setState(() => _loadingOptions = false);
-    } catch (e) {
-      setState(() => _loadingOptions = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load options: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    setState(() => _loadingOptions = false);
+
+    
+  } catch (e) {
+    print('[ERROR] Failed to fetch departments: $e');
+    setState(() => _loadingOptions = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load options: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
 
   Future<void> _pickImageFromGallery() async {
     try {
@@ -589,6 +700,18 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
 
         setState(() {
           _profileImage = file;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Update the FormField's value explicitly
+          _profileImageFieldKey.currentState?.didChange(_profileImage);
+
+          // Re-run validation on the whole form
+          final isValid = _personalFormKey.currentState?.validate() ?? false;
+
+          print(
+            'DidChange called - field value now: ${_profileImageFieldKey.currentState?.value?.path}',
+          );
+          print('Form valid after didChange + validate: $isValid');
         });
       }
     } catch (e) {
@@ -1009,78 +1132,114 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
               title: 'Personal Information',
               subtitle: 'Tell us about yourself',
             ),
-            const SizedBox(height: 20),
+            // const SizedBox(height: 20),
             // Profile Picture
+            const SizedBox(height: 20),
+
+            // Required Profile Photo
             Center(
-              child: GestureDetector(
-                onTap: _showImageSourceBottomSheet,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[100],
-                        border: Border.all(
-                          color: AppTheme.primary.withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: _profileImage != null
-                          ? ClipOval(
-                              child: Image.file(
-                                _profileImage!,
-                                fit: BoxFit.cover,
+              child: FormField<File?>(
+                key: _profileImageFieldKey,
+                initialValue: _profileImage,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (value) {
+                  if (value == null) {
+                    return 'Profile photo is required';
+                  }
+                  return null;
+                },
+                builder: (FormFieldState<File?> field) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: _showImageSourceBottomSheet,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 150,
+                              height: 150,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.grey[100],
+                                border: Border.all(
+                                  color: field.hasError
+                                      ? Colors.red
+                                      : AppTheme.primary.withOpacity(0.3),
+                                  width: field.hasError ? 3.5 : 2,
+                                ),
                               ),
-                            )
-                          : Icon(
-                              Icons.person_outline,
-                              size: 40,
-                              color: Colors.grey[400],
+                              child: _profileImage != null
+                                  ? ClipOval(
+                                      child: Image.file(
+                                        _profileImage!,
+                                        fit: BoxFit.cover,
+                                        width: 150,
+                                        height: 150,
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.person_outline,
+                                      size: 54,
+                                      color: Colors.grey[400],
+                                    ),
                             ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 16,
+                            Positioned(
+                              bottom: -6,
+                              right: -6,
+                              child: Container(
+                                padding: const EdgeInsets.all(7),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _profileImage != null
+                            ? 'Change photo'
+                            : 'Add profile photo *',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: field.hasError ? Colors.red : Colors.grey[700],
+                          fontWeight: field.hasError
+                              ? FontWeight.w500
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      if (field.hasError) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          field.errorText ?? 'Profile photo is required',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                _profileImage != null ? 'Change photo' : 'Add photo ',
-                
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ),
-            if (_profileImage == null &&
-                _personalFormKey.currentState != null &&
-                !_personalFormKey.currentState!.validate())
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    'Profile image is required',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ),
-              ),
+
+            const SizedBox(height: 32),
             const SizedBox(height: 32),
 
             // Basic Info
@@ -1117,15 +1276,28 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
               label: 'Phone Number',
               icon: Icons.phone_outlined,
               isRequired: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Phone number is required';
-                }
-                return null;
-              },
               keyboardType: TextInputType.phone,
               maxLength: 10,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly, // Only allow digits
+              ],
+              validator: (value) {
+                final trimmed = value?.trim() ?? '';
+
+                if (trimmed.isEmpty) {
+                  return 'Phone number is required';
+                }
+
+                if (trimmed.length != 10) {
+                  return 'Please enter exactly 10 digits';
+                }
+
+                if (!RegExp(r'^\d{10}$').hasMatch(trimmed)) {
+                  return 'Invalid phone number';
+                }
+
+                return null;
+              },
             ),
             const SizedBox(height: 16),
 
@@ -2402,390 +2574,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     );
   }
 
-  // ========== Education Methods ==========
 
-  // void _showAddEducationDialog() {
-  //   final schoolController = TextEditingController();
-  //   final degreeController = TextEditingController();
-  //   final fieldController = TextEditingController();
-  //   final gradeController = TextEditingController();
-  //   final locationController = TextEditingController();
-
-  //   String startMonth = 'January';
-  //   String startYear = DateTime.now().year.toString();
-  //   String endMonth = 'January';
-  //   String endYear = DateTime.now().year.toString();
-
-  //   final months = [
-  //     'January',
-  //     'February',
-  //     'March',
-  //     'April',
-  //     'May',
-  //     'June',
-  //     'July',
-  //     'August',
-  //     'September',
-  //     'October',
-  //     'November',
-  //     'December',
-  //   ];
-  //   final years = List.generate(
-  //     50,
-  //     (index) => (DateTime.now().year - index).toString(),
-  //   );
-
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     useSafeArea: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) => Container(
-  //       height: MediaQuery.of(context).size.height * 0.95,
-  //       decoration: const BoxDecoration(
-  //         color: Colors.white,
-  //         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-  //       ),
-  //       child: StatefulBuilder(
-  //         builder: (context, setDialogState) => Column(
-  //           children: [
-  //             // Handle bar
-  //             Container(
-  //               margin: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-  //               height: 4,
-  //               width: 40,
-  //               decoration: BoxDecoration(
-  //                 color: Colors.grey[300],
-  //                 borderRadius: BorderRadius.circular(2),
-  //               ),
-  //             ),
-
-  //             // Header
-  //             Padding(
-  //               padding: const EdgeInsets.symmetric(horizontal: 20),
-  //               child: Row(
-  //                 children: [
-  //                   const Expanded(
-  //                     child: Text(
-  //                       'Add education',
-  //                       style: TextStyle(
-  //                         fontSize: 20,
-  //                         fontWeight: FontWeight.w600,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   IconButton(
-  //                     onPressed: () => Navigator.pop(context),
-  //                     icon: const Icon(Icons.close),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-
-  //             // Form
-  //             Expanded(
-  //               child: SingleChildScrollView(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 20),
-  //                 child: Column(
-  //                   children: [
-  //                     TextField(
-  //                       controller: schoolController,
-  //                       decoration: const InputDecoration(
-  //                         labelText: 'School/University *',
-  //                         hintText: 'Enter your school or university name',
-  //                         border: OutlineInputBorder(),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     TextField(
-  //                       controller: locationController,
-  //                       decoration: const InputDecoration(
-  //                         labelText: 'Location',
-  //                         hintText: 'Enter your Location',
-  //                         border: OutlineInputBorder(),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     TextField(
-  //                       controller: degreeController,
-  //                       decoration: const InputDecoration(
-  //                         labelText: 'Degree *',
-  //                         hintText: "e.g., Bachelor's, Master's",
-  //                         border: OutlineInputBorder(),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     TextField(
-  //                       controller: fieldController,
-  //                       decoration: const InputDecoration(
-  //                         labelText: 'Field of Study',
-  //                         hintText: 'e.g., Computer Science',
-  //                         border: OutlineInputBorder(),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 16),
-
-  //                     // Start Date
-  //                     const Align(
-  //                       alignment: Alignment.centerLeft,
-  //                       child: Text(
-  //                         'Start Date *',
-  //                         style: TextStyle(fontWeight: FontWeight.w600),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 8),
-  //                     Row(
-  //                       children: [
-  //                         Expanded(
-  //                           child: DropdownButtonFormField<String>(
-  //                             value: startMonth,
-  //                             decoration: const InputDecoration(
-  //                               labelText: 'Month',
-  //                               border: OutlineInputBorder(),
-  //                             ),
-  //                             items: months
-  //                                 .map(
-  //                                   (month) => DropdownMenuItem(
-  //                                     value: month,
-  //                                     child: Text(month),
-  //                                   ),
-  //                                 )
-  //                                 .toList(),
-  //                             onChanged: (value) =>
-  //                                 setDialogState(() => startMonth = value!),
-  //                           ),
-  //                         ),
-  //                         const SizedBox(width: 12),
-  //                         Expanded(
-  //                           child: DropdownButtonFormField<String>(
-  //                             value: startYear,
-  //                             decoration: const InputDecoration(
-  //                               labelText: 'Year',
-  //                               border: OutlineInputBorder(),
-  //                             ),
-  //                             items: years
-  //                                 .map(
-  //                                   (year) => DropdownMenuItem(
-  //                                     value: year,
-  //                                     child: Text(year),
-  //                                   ),
-  //                                 )
-  //                                 .toList(),
-  //                             onChanged: (value) =>
-  //                                 setDialogState(() => startYear = value!),
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     const SizedBox(height: 16),
-
-  //                     // End Date
-  //                     const Align(
-  //                       alignment: Alignment.centerLeft,
-  //                       child: Text(
-  //                         'End Date (or Expected) *',
-  //                         style: TextStyle(fontWeight: FontWeight.w600),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 8),
-  //                     Row(
-  //                       children: [
-  //                         Expanded(
-  //                           child: DropdownButtonFormField<String>(
-  //                             value: endMonth,
-  //                             decoration: const InputDecoration(
-  //                               labelText: 'Month',
-  //                               border: OutlineInputBorder(),
-  //                             ),
-  //                             items: months
-  //                                 .map(
-  //                                   (month) => DropdownMenuItem(
-  //                                     value: month,
-  //                                     child: Text(month),
-  //                                   ),
-  //                                 )
-  //                                 .toList(),
-  //                             onChanged: (value) =>
-  //                                 setDialogState(() => endMonth = value!),
-  //                           ),
-  //                         ),
-  //                         const SizedBox(width: 12),
-  //                         Expanded(
-  //                           child: DropdownButtonFormField<String>(
-  //                             value: endYear,
-  //                             decoration: const InputDecoration(
-  //                               labelText: 'Year',
-  //                               border: OutlineInputBorder(),
-  //                             ),
-  //                             items: years
-  //                                 .map(
-  //                                   (year) => DropdownMenuItem(
-  //                                     value: year,
-  //                                     child: Text(year),
-  //                                   ),
-  //                                 )
-  //                                 .toList(),
-  //                             onChanged: (value) =>
-  //                                 setDialogState(() => endYear = value!),
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     TextField(
-  //                       controller: gradeController,
-  //                       decoration: const InputDecoration(
-  //                         labelText: 'Grade/Percentage',
-  //                         hintText: 'e.g., 8.5 CGPA or 85%',
-  //                         border: OutlineInputBorder(),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 40),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ),
-
-  //             // Buttons
-  //             Container(
-  //               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-  //               decoration: const BoxDecoration(
-  //                 border: Border(top: BorderSide(color: Color(0xFFF1F3F4))),
-  //               ),
-  //               child: Row(
-  //                 children: [
-  //                   Expanded(
-  //                     child: TextButton(
-  //                       onPressed: () => Navigator.pop(context),
-  //                       child: const Text('Discard'),
-  //                     ),
-  //                   ),
-  //                   const SizedBox(width: 12),
-  //                   ElevatedButton(
-  //                     onPressed: () {
-  //                       if (schoolController.text.isEmpty ||
-  //                           degreeController.text.isEmpty) {
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           const SnackBar(
-  //                             content: Text('Please fill all required fields'),
-  //                             backgroundColor: Colors.red,
-  //                           ),
-  //                         );
-  //                         return;
-  //                       }
-
-  //                       // Ã¢Å“â€¦ DUPLICATE EDUCATION PREVENTION
-  //                       final newEducationKey =
-  //                           '${schoolController.text.toLowerCase()}-${degreeController.text.toLowerCase()}-${startYear}-${endYear}';
-  //                       if (_educationList.any((edu) {
-  //                         final existingKey =
-  //                             '${edu['school'].toLowerCase()}-${edu['degree'].toLowerCase()}-${edu['start_year']}-${edu['end_year']}';
-  //                         return existingKey == newEducationKey;
-  //                       })) {
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           const SnackBar(
-  //                             content: Text(
-  //                               'This education entry already exists',
-  //                             ),
-  //                             backgroundColor: Colors.orange,
-  //                           ),
-  //                         );
-  //                         return;
-  //                       }
-  //                       final startDate = DateTime(
-  //                         int.parse(startYear),
-  //                         _getMonthIndex(startMonth),
-  //                         1,
-  //                       );
-  //                       final endDate = DateTime(
-  //                         int.parse(endYear),
-  //                         _getMonthIndex(endMonth),
-  //                         1,
-  //                       );
-
-  //                       if (endDate.isBefore(startDate)) {
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           const SnackBar(
-  //                             content: Text(
-  //                               'End date must be after or same as start date',
-  //                             ),
-  //                             backgroundColor: Colors.red,
-  //                           ),
-  //                         );
-  //                         return;
-  //                       }
-
-  //                       if (startYear == endYear && startMonth == endMonth) {
-  //                         ScaffoldMessenger.of(context).showSnackBar(
-  //                           const SnackBar(
-  //                             content: Text(
-  //                               'Start and end dates cannot be the same',
-  //                             ),
-  //                             backgroundColor: Colors.red,
-  //                           ),
-  //                         );
-  //                         return;
-  //                       }
-
-  //                       if (endDate.isAfter(DateTime.now())) {
-  //                         // Future dates OK for education (expected graduation)
-  //                       }
-
-  //                       setState(() {
-  //                         _educationList.add({
-  //                           'school': schoolController.text,
-  //                           'degree': degreeController.text,
-  //                           'field': fieldController.text,
-  //                           'location': locationController.text,
-  //                           'start_month': startMonth,
-  //                           'start_year': startYear,
-  //                           'end_month': endMonth,
-  //                           'end_year': endYear,
-  //                           'grade': gradeController.text,
-  //                         });
-  //                       });
-  //                       Navigator.pop(context);
-  //                       ScaffoldMessenger.of(context).showSnackBar(
-  //                         const SnackBar(
-  //                           content: Text('Education added successfully'),
-  //                           backgroundColor: Colors.green,
-  //                         ),
-  //                       );
-  //                     },
-  //                     style: ElevatedButton.styleFrom(
-  //                       backgroundColor: AppTheme.primary,
-  //                       foregroundColor: Colors.white,
-  //                       minimumSize: const Size(100, 44),
-  //                     ),
-  //                     child: const Text('Save'),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // int _getMonthIndex(String month) {
-  //   const months = {
-  //     'January': 1,
-  //     'February': 2,
-  //     'March': 3,
-  //     'April': 4,
-  //     'May': 5,
-  //     'June': 6,
-  //     'July': 7,
-  //     'August': 8,
-  //     'September': 9,
-  //     'October': 10,
-  //     'November': 11,
-  //     'December': 12,
-  //   };
-  //   return months[month] ?? 1;
-  // }
 
   Widget _buildEducationDisplayCard(Map<String, dynamic> education, int index) {
     String startYear = education['start_year']?.toString() ?? '';
@@ -2837,7 +2626,6 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                   ),
                 ),
 
-                // Ã°Å¸â€œÂ Location
                 if (education['location'] != null &&
                     education['location'].toString().isNotEmpty) ...[
                   const SizedBox(height: 2),
@@ -3252,6 +3040,37 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         _willingToRelocate = profile['willing_to_relocate'] ?? false;
         _joiningAvailability = profile['joining_availability'] ?? 'IMMEDIATE';
         _noticePeriodController.text = profile['notice_period_details'] ?? '';
+             final roleFromProfile = profile['role_name'] ?? ''; // This is a LABEL like "HR"
+  if (roleFromProfile.isNotEmpty && _roles.isNotEmpty) {
+    // Find role by matching LABEL
+    final roleExists = _roles.any((r) => r['label'] == roleFromProfile);
+    if (roleExists) {
+      final matchingRole = _roles.firstWhere((r) => r['label'] == roleFromProfile);
+      _selectedRole = matchingRole['value']!; // Store the VALUE (slug)
+      print('[DEBUG] Loaded role - label: "$roleFromProfile", value: "$_selectedRole"');
+    } else if (_roles.isNotEmpty) {
+      _selectedRole = _roles[0]['value']!;
+      print('[DEBUG] Role not found, using default: "$_selectedRole"');
+    }
+  } else if (_roles.isNotEmpty) {
+    _selectedRole = _roles[0]['value']!;
+  }
+  
+  // ✅ UPDATED: Same for religion
+  final religionFromProfile = profile['religion_name'] ?? ''; // This is a LABEL
+  if (religionFromProfile.isNotEmpty && _religions.isNotEmpty) {
+    final religionExists = _religions.any((r) => r['label'] == religionFromProfile);
+    if (religionExists) {
+      final matchingReligion = _religions.firstWhere((r) => r['label'] == religionFromProfile);
+      _selectedReligion = matchingReligion['value']!; // Store the VALUE (slug)
+      print('[DEBUG] Loaded religion - label: "$religionFromProfile", value: "$_selectedReligion"');
+    } else if (_religions.isNotEmpty) {
+      _selectedReligion = _religions[0]['value']!;
+    }
+  } else if (_religions.isNotEmpty) {
+    _selectedReligion = _religions[0]['value']!;
+  }
+
 
         if (profile['languages'] != null &&
             profile['languages'].toString().isNotEmpty) {
@@ -3450,271 +3269,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     }
   }
 
-  // ========== Work Experience Methods ==========
 
-  // void _showAddExperienceDialog() {
-  //   final companyController = TextEditingController();
-  //   final locationController = TextEditingController();
-  //   final descriptionController = TextEditingController();
-  //   final ctcController = TextEditingController();
-  //   final roleController = TextEditingController();
-
-  //   final int currentYear = DateTime.now().year;
-
-  //   String startMonth = 'January';
-  //   String startYear = currentYear.toString();
-  //   String endMonth = 'January';
-  //   String endYear = currentYear.toString();
-  //   bool isCurrentlyWorking = false;
-
-  //   final months = [
-  //     'January',
-  //     'February',
-  //     'March',
-  //     'April',
-  //     'May',
-  //     'June',
-  //     'July',
-  //     'August',
-  //     'September',
-  //     'October',
-  //     'November',
-  //     'December',
-  //   ];
-
-  //   /// ✅ YEARS (past → present)
-  //   final years = List.generate(
-  //     50,
-  //     (index) => (currentYear - 49 + index).toString(),
-  //   );
-
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     useSafeArea: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) => Container(
-  //       height: MediaQuery.of(context).size.height * 0.95,
-  //       decoration: const BoxDecoration(
-  //         color: Colors.white,
-  //         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-  //       ),
-  //       child: StatefulBuilder(
-  //         builder: (context, setDialogState) => Column(
-  //           children: [
-  //             const SizedBox(height: 12),
-
-  //             /// Header
-  //             Padding(
-  //               padding: const EdgeInsets.symmetric(horizontal: 20),
-  //               child: Row(
-  //                 children: [
-  //                   const Expanded(
-  //                     child: Text(
-  //                       'Add work experience',
-  //                       style: TextStyle(
-  //                         fontSize: 20,
-  //                         fontWeight: FontWeight.w600,
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   IconButton(
-  //                     onPressed: () => Navigator.pop(context),
-  //                     icon: const Icon(Icons.close),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-
-  //             /// Form
-  //             Expanded(
-  //               child: SingleChildScrollView(
-  //                 padding: const EdgeInsets.symmetric(horizontal: 20),
-  //                 child: Column(
-  //                   children: [
-  //                     _buildTextField(
-  //                       controller: companyController,
-  //                       label: 'Company Name *',
-  //                       icon: Icons.person,
-  //                       // hint: 'Enter company name',
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     _buildTextField(
-  //                       controller: roleController,
-  //                       label: 'Job Role / Position *',
-  //                       icon: Icons.person,
-  //                       // hint: 'Enter role',
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     _buildTextField(
-  //                       icon: Icons.location_city,
-  //                       controller: locationController,
-  //                       label: 'Location',
-  //                       // hint: 'e.g. Gurugram',
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     _buildTextField(
-  //                       controller: descriptionController,
-  //                       icon: Icons.description,
-  //                       label: 'Description',
-  //                       // hint: 'Describe your role',
-  //                       maxLines: null,
-  //                     ),
-  //                     const SizedBox(height: 16),
-  //                     _buildTextField(
-  //                       controller: ctcController,
-  //                       label: 'CTC (Annual)',
-  //                       icon: Icons.money,
-  //                       // hint: 'e.g. 500000',
-  //                       keyboardType: TextInputType.number,
-  //                     ),
-  //                     const SizedBox(height: 16),
-
-  //                     /// Start Date
-  //                     const Align(
-  //                       alignment: Alignment.centerLeft,
-  //                       child: Text(
-  //                         'Start Date *',
-  //                         style: TextStyle(fontWeight: FontWeight.w600),
-  //                       ),
-  //                     ),
-  //                     const SizedBox(height: 8),
-  //                     Row(
-  //                       children: [
-  //                         Expanded(
-  //                           child: _buildDropdown(
-  //                             value: startMonth,
-  //                             items: months,
-  //                             label: 'Month',
-  //                             onChanged: (v) =>
-  //                                 setDialogState(() => startMonth = v),
-  //                           ),
-  //                         ),
-  //                         const SizedBox(width: 12),
-  //                         Expanded(
-  //                           child: _buildDropdown(
-  //                             value: startYear,
-  //                             items: years,
-  //                             label: 'Year',
-  //                             onChanged: (v) =>
-  //                                 setDialogState(() => startYear = v),
-  //                           ),
-  //                         ),
-  //                       ],
-  //                     ),
-
-  //                     const SizedBox(height: 12),
-
-  //                     CheckboxListTile(
-  //                       value: isCurrentlyWorking,
-  //                       onChanged: (value) {
-  //                         setDialogState(() => isCurrentlyWorking = value!);
-  //                       },
-  //                       title: const Text(
-  //                         'I am currently working in this role',
-  //                       ),
-  //                       contentPadding: EdgeInsets.zero,
-  //                       controlAffinity: ListTileControlAffinity.leading,
-  //                     ),
-
-  //                     if (!isCurrentlyWorking) ...[
-  //                       const SizedBox(height: 8),
-  //                       const Align(
-  //                         alignment: Alignment.centerLeft,
-  //                         child: Text(
-  //                           'End Date *',
-  //                           style: TextStyle(fontWeight: FontWeight.w600),
-  //                         ),
-  //                       ),
-  //                       const SizedBox(height: 8),
-  //                       Row(
-  //                         children: [
-  //                           Expanded(
-  //                             child: _buildDropdown(
-  //                               value: endMonth,
-  //                               items: months,
-  //                               label: 'Month',
-  //                               onChanged: (v) =>
-  //                                   setDialogState(() => endMonth = v),
-  //                             ),
-  //                           ),
-  //                           const SizedBox(width: 12),
-  //                           Expanded(
-  //                             child: _buildDropdown(
-  //                               value: endYear,
-  //                               items: years,
-  //                               label: 'Year',
-  //                               onChanged: (v) =>
-  //                                   setDialogState(() => endYear = v),
-  //                             ),
-  //                           ),
-  //                         ],
-  //                       ),
-  //                     ],
-  //                     const SizedBox(height: 40),
-  //                   ],
-  //                 ),
-  //               ),
-  //             ),
-
-  //             /// Save Button
-  //             Padding(
-  //               padding: const EdgeInsets.all(20),
-  //               child: ElevatedButton(
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: AppTheme.primary,
-  //                   minimumSize: const Size(double.infinity, 48),
-  //                 ),
-  //                 child: const Text('Save'),
-  //                 onPressed: () {
-  //                   /// REQUIRED FIELDS
-  //                   if (companyController.text.isEmpty ||
-  //                       roleController.text.isEmpty) {
-  //                     _showSnack('Please fill all required fields', Colors.red);
-  //                     return;
-  //                   }
-
-  //                   /// DATE VALIDATION
-  //                   if (!isCurrentlyWorking &&
-  //                       int.parse(endYear) < int.parse(startYear)) {
-  //                     _showSnack(
-  //                       'End year cannot be before start year',
-  //                       Colors.red,
-  //                     );
-  //                     return;
-  //                   }
-
-  //                   setState(() {
-  //                     if (isCurrentlyWorking) {
-  //                       for (var exp in _workExperiences) {
-  //                         exp['is_current'] = false;
-  //                       }
-  //                     }
-
-  //                     _workExperiences.add({
-  //                       'company_name': companyController.text,
-  //                       'role_title': roleController.text,
-  //                       'location': locationController.text,
-  //                       'description': descriptionController.text,
-  //                       'ctc': ctcController.text,
-  //                       'start_month': startMonth,
-  //                       'start_year': startYear,
-  //                       'end_month': isCurrentlyWorking ? null : endMonth,
-  //                       'end_year': isCurrentlyWorking ? null : endYear,
-  //                       'is_current': isCurrentlyWorking,
-  //                     });
-  //                   });
-
-  //                   Navigator.pop(context);
-  //                 },
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 
   Widget _buildDropdown({
     required String value,

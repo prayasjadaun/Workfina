@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:workfina/controllers/candidate_controller.dart';
 import 'package:workfina/services/api_service.dart';
@@ -666,7 +667,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       text: experience?['company_name'] ?? '',
     );
     final roleController = TextEditingController(
-      text: experience?['job_role'] ?? '',
+      text: experience?['role_title'] ?? '',
     );
     final locationController = TextEditingController(
       text: experience?['location'] ?? '',
@@ -738,6 +739,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
+                
                 const SizedBox(height: 12),
                 TextField(
                   controller: descriptionController,
@@ -749,6 +751,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -868,9 +871,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 setState(() {
                   final workData = {
                     'company_name': companyController.text,
-                    // 'job_role': roleController.text,
                     'role_title':
-                        roleController.text, // ✅ FIXED: 'role_title' use karo
+                        roleController.text, 
 
                     'location': locationController.text,
                     'description': descriptionController.text,
@@ -924,11 +926,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// HEADER ROW
+          /// HEADER ROW (Icon + Title + Delete)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              /// ICON
               Container(
                 height: 48,
                 width: 48,
@@ -942,18 +943,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-
-              /// TITLE INFO
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      experience['role_title'] ?? '',
+                          experience['role_title'] ??
+                          'N/A',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -963,8 +965,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ],
                 ),
               ),
-
-              /// delete and add
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -994,51 +994,85 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ],
           ),
 
-          /// LOCATION
-          if (experience['location'] != null &&
-              experience['location'].toString().isNotEmpty)
+          const SizedBox(height: 12),
+
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                /// LEFT: Location
+                Expanded(
+                  child:
+                      experience['location'] != null &&
+                          experience['location'].toString().isNotEmpty
+                      ? Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                experience['location'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const SizedBox(),
+                ),
+
+                /// RIGHT: Date
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_month_outlined,
+                      size: 14,
+                      color: Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      duration,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          /// CTC
+          if (experience['ctc'] != null &&
+              experience['ctc'].toString().isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Row(
                 children: [
                   Icon(
-                    Icons.location_on_outlined,
+                    Icons.payments_outlined,
                     size: 16,
                     color: Colors.grey[600],
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    experience['location'],
+                    '${NumberFormat.compact().format(int.parse(experience['ctc'].toString()))} CTC',
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                   ),
                 ],
               ),
             ),
 
-          /// DATE
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_month_outlined,
-                  size: 16,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  duration,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-
           /// DESCRIPTION
           if (experience['description'] != null &&
               experience['description'].toString().isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.only(top: 12),
               child: Text(
                 experience['description'],
                 style: TextStyle(
@@ -1135,7 +1169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   controller: schoolController,
                   decoration: const InputDecoration(
                     labelText: 'School/University *',
-                    hintText: 'e.g., K.R. Mangalam University',
+                    hintText: 'Enter you University',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -1442,8 +1476,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _workExperiences.map((exp) {
           return {
             'company_name': exp['company_name'],
-            // 'job_role': exp['job_role'],
-            // 'role_title': exp['job_role'],
             'role_title': exp['role_title'], // ✅ FIXED: 'role_title' use karo
 
             'location': exp['location'],
@@ -1802,28 +1834,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Work Experience Section
                   _buildSectionTitle('Work Experience'),
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Add at least one work experience (Required)',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: AppTheme.primary,
-                          size: 28,
-                        ),
-                        onPressed: _showAddExperienceDialog,
-                        tooltip: 'Add Experience',
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: Text(
+                  //         'Add at least one work experience (Required)',
+                  //         style: TextStyle(
+                  //           fontSize: 13,
+                  //           color: Colors.grey[600],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //     IconButton(
+                  //       icon: const Icon(
+                  //         Icons.add_circle,
+                  //         color: AppTheme.primary,
+                  //         size: 28,
+                  //       ),
+                  //       onPressed: _showAddExperienceDialog,
+                  //       tooltip: 'Add Experience',
+                  //     ),
+                  //   ],
+                  // ),
                   const SizedBox(height: 6),
 
                   // Display Work Experiences
@@ -1838,28 +1870,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Education Section
                   _buildSectionTitle('Education'),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Add at least one educational qualification (Required)',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.add_circle,
-                          color: AppTheme.primary,
-                          size: 28,
-                        ),
-                        onPressed: _showAddEducationDialog,
-                        tooltip: 'Add Education',
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: Text(
+                  //         'Add at least one educational qualification (Required)',
+                  //         style: TextStyle(
+                  //           fontSize: 13,
+                  //           color: Colors.grey[600],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //     IconButton(
+                  //       icon: const Icon(
+                  //         Icons.add_circle,
+                  //         color: AppTheme.primary,
+                  //         size: 28,
+                  //       ),
+                  //       onPressed: _showAddEducationDialog,
+                  //       tooltip: 'Add Education',
+                  //     ),
+                  //   ],
+                  // ),
                   const SizedBox(height: 10),
 
                   // Display Education Cards
@@ -1947,7 +1979,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ? _buildLoadingField('Loading religions...')
                       : _buildDropdownField(
                           value: _selectedReligion,
-                          label: 'Religion (Optional)',
+                          label: 'Religion ',
                           icon: Icons.account_circle,
                           items: _religions,
                           onChanged: (value) =>
@@ -1957,7 +1989,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(height: 24),
 
                   // Documents Section
-                  _buildSectionTitle('Documents (Optional)'),
+                  _buildSectionTitle('Documents'),
                   const SizedBox(height: 16),
 
                   // Resume Upload
