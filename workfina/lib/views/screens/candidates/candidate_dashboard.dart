@@ -8,6 +8,7 @@ import 'package:workfina/services/api_service.dart';
 import 'package:workfina/theme/app_theme.dart';
 import 'package:workfina/views/screens/candidates/candidate_edit_profile.dart';
 import 'package:workfina/views/screens/appVersion/app_version.dart';
+import 'package:workfina/views/screens/widgets/hiring_availabile_widget.dart';
 
 class CandidateDashboard extends StatefulWidget {
   const CandidateDashboard({super.key});
@@ -25,7 +26,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<CandidateController>().checkProfileExists();
       _checkAppVersion();
+      _checkHiringAvailability();
     });
+  }
+
+  /// Check and show hiring availability prompt if needed
+  Future<void> _checkHiringAvailability() async {
+    // Small delay to let the UI settle first
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
+    await HiringAvailabileWidget.showIfNeeded(context);
   }
 
   /// Check app version and show update dialog if needed

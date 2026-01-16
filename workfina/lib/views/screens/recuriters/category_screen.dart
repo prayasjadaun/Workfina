@@ -864,7 +864,8 @@ class _CategoryScreenState extends State<CategoryScreen>
         var lockedCandidates = recruiterController.candidates
             .where(
               (candidate) =>
-                  !recruiterController.isCandidateUnlocked(candidate['id']),
+                  !recruiterController.isCandidateUnlocked(candidate['id']) &&
+                  (candidate['is_available_for_hiring'] ?? true),
             )
             .toList();
 

@@ -1375,13 +1375,31 @@ class ApiService {
 
   static Future<void> uploadFCMToken() async {
     try {
+      if (kDebugMode) print('[DEBUG] Starting FCM token upload...');
       final token = await NotificationService.getToken();
+      if (kDebugMode) print('[DEBUG] FCM Token retrieved: $token');
+
       if (token != null) {
-        await _dio.post('/auth/update-fcm-token/', data: {'token': token});
-        if (kDebugMode) print('[DEBUG] FCM Token uploaded');
+        if (kDebugMode) print('[DEBUG] Sending FCM token to backend...');
+        final response = await _dio.post(
+          '/auth/update-fcm-token/',
+          data: {'token': token},
+        );
+        if (kDebugMode) {
+          print('[DEBUG] FCM Token uploaded successfully');
+          print('[DEBUG] Response: ${response.data}');
+        }
+      } else {
+        if (kDebugMode) print('[DEBUG] FCM Token is null, skipping upload');
       }
     } catch (e) {
-      if (kDebugMode) print('[DEBUG] FCM Token upload failed: $e');
+      if (kDebugMode) {
+        print('[DEBUG] FCM Token upload failed: $e');
+        if (e is DioException) {
+          print('[DEBUG] Status Code: ${e.response?.statusCode}');
+          print('[DEBUG] Response: ${e.response?.data}');
+        }
+      }
     }
   }
 
@@ -1479,6 +1497,59 @@ class ApiService {
         print('[DEBUG] App Version Check Exception: $e');
       }
       return null;
+    }
+  }
+
+  /// Get candidate availability status
+  static Future<Map<String, dynamic>> getCandidateAvailability() async {
+    try {
+      final response = await _dio.get('/candidates/availability/');
+
+      if (kDebugMode) {
+        print('[DEBUG] Candidate Availability Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Candidate Availability Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to get availability status',
+      };
+    }
+  }
+
+  /// Update candidate availability status
+  static Future<Map<String, dynamic>> updateCandidateAvailability({
+    required bool isAvailableForHiring,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/candidates/availability/update/',
+        data: {'is_available_for_hiring': isAvailableForHiring},
+      );
+
+      if (kDebugMode) {
+        print('[DEBUG] Update Availability Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Update Availability Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to update availability',
+      };
     }
   }
 }
