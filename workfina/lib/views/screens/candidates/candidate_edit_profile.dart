@@ -193,10 +193,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .map<Map<String, dynamic>>(
             (exp) => {
               'company_name': exp['company_name'] ?? '',
-              // 'job_role': exp['role_title'] ?? '',
-              // 'job_role': exp['role_title'] ?? exp['job_role'] ?? '', // FIX: Handle both keys
-              // 'role_title':
-              //     exp['role_title'] ?? '', 
               'role_title': exp['role_title'] ?? '',
 
 
@@ -211,6 +207,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               'is_current': exp['is_current'] ?? false,
               'location': exp['location'] ?? '',
               'description': exp['description'] ?? '',
+              'ctc': exp['current_ctc']?.toString() ?? '',  
+
             },
           )
           .toList();
@@ -277,62 +275,100 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _fetchDepartmentsAndReligions() async {
-    setState(() => _loadingOptions = true);
-    try {
-      final response = await ApiService.getDepartmentsAndReligions();
-      if (response.containsKey('error')) {
-        throw Exception(response['error']);
+  setState(() => _loadingOptions = true);
+  try {
+    final response = await ApiService.getDepartmentsAndReligions();
+    if (response.containsKey('error')) {
+      throw Exception(response['error']);
+    }
+
+    // ✅ CLEAR existing lists
+    _roles.clear();
+    _religions.clear();
+
+    // Handle departments
+    final departments = response['departments'] as List;
+    for (var dept in departments) {
+      final value = dept['value'].toString().trim();
+      final label = dept['label'].toString().trim();
+      _roles.add({'value': value, 'label': label});
+    }
+    _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Remove duplicates if any
+    final Map<String, Map<String, String>> uniqueRoles = {};
+    for (var role in _roles) {
+      uniqueRoles[role['value']!] = role;
+    }
+    _roles = uniqueRoles.values.toList();
+    _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Handle religions
+    final religions = response['religions'] as List;
+    for (var relig in religions) {
+      final value = relig['value'].toString().trim();
+      final label = relig['label'].toString().trim();
+      _religions.add({'value': value, 'label': label});
+    }
+    _religions.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Remove duplicates
+    final Map<String, Map<String, String>> uniqueReligions = {};
+    for (var relig in _religions) {
+      uniqueReligions[relig['value']!] = relig;
+    }
+    _religions = uniqueReligions.values.toList();
+    _religions.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // ✅ NOW SET THE ROLE FROM PROFILE DATA
+    final roleFromProfile = widget.profileData['role_name'] ?? '';
+    print('[EDIT] Role from profile: "$roleFromProfile"');
+    print('[EDIT] Available roles: ${_roles.map((r) => r['label']).toList()}');
+    
+    if (roleFromProfile.isNotEmpty && _roles.isNotEmpty) {
+      // Find by label
+      final roleExists = _roles.any((r) => r['label'] == roleFromProfile);
+      if (roleExists) {
+        final matchingRole = _roles.firstWhere((r) => r['label'] == roleFromProfile);
+        _selectedRole = matchingRole['value']!;
+        print('[EDIT] Set role to: "$_selectedRole"');
+      } else {
+        // Not found, use first
+        _selectedRole = _roles[0]['value']!;
+        print('[EDIT] Role not found, using default: "$_selectedRole"');
       }
+    } else if (_roles.isNotEmpty) {
+      _selectedRole = _roles[0]['value']!;
+    }
 
-      final departments = response['departments'] as List;
-      final Map<String, Map<String, String>> uniqueDepts = {};
-      for (var dept in departments) {
-        final value = dept['value'].toString();
-        uniqueDepts[value] = {
-          'value': value,
-          'label': dept['label'].toString(),
-        };
-      }
-      _roles = uniqueDepts.values.toList();
-
-      // _roles.add({'value': 'OTHER', 'label': 'Other'});
-
-      final religions = response['religions'] as List;
-      final Map<String, Map<String, String>> uniqueReligions = {};
-      for (var relig in religions) {
-        final value = relig['value'].toString();
-        uniqueReligions[value] = {
-          'value': value,
-          'label': relig['label'].toString(),
-        };
-      }
-      _religions = uniqueReligions.values.toList();
-
-      if (_roles.isNotEmpty) {
-        // If _selectedRole is empty or not in list, set to first item
-        final roleExists = _roles.any((r) => r['value'] == _selectedRole);
-        if (_selectedRole.isEmpty || !roleExists) {
-          _selectedRole = _roles[0]['value']!;
-        }
-      }
-
-      if (_religions.isNotEmpty && _selectedReligion.isEmpty) {
+    // ✅ SET RELIGION FROM PROFILE DATA
+    final religionFromProfile = widget.profileData['religion_name'] ?? '';
+    if (religionFromProfile.isNotEmpty && _religions.isNotEmpty) {
+      final religionExists = _religions.any((r) => r['label'] == religionFromProfile);
+      if (religionExists) {
+        final matchingReligion = _religions.firstWhere((r) => r['label'] == religionFromProfile);
+        _selectedReligion = matchingReligion['value']!;
+      } else {
         _selectedReligion = _religions[0]['value']!;
       }
+    } else if (_religions.isNotEmpty) {
+      _selectedReligion = _religions[0]['value']!;
+    }
 
-      setState(() => _loadingOptions = false);
-    } catch (e) {
-      setState(() => _loadingOptions = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load options: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    setState(() => _loadingOptions = false);
+    
+  } catch (e) {
+    setState(() => _loadingOptions = false);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load options: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+}
 
   @override
   void dispose() {
@@ -675,6 +711,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final descriptionController = TextEditingController(
       text: experience?['description'] ?? '',
     );
+      final ctcController = TextEditingController(text: experience?['ctc'] ?? '');  
+
 
     String startMonth = experience?['start_month'] ?? 'January';
     String startYear =
@@ -751,6 +789,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                controller: ctcController,
+                decoration: const InputDecoration(
+                  labelText: 'Current CTC (Annual in Lakhs)',
+                  hintText: 'e.g., 5.5, 12, 18.5',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.currency_rupee),
+                ),
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+              ),
+                const SizedBox(height: 16),
+
 
                 const Align(
                   alignment: Alignment.centerLeft,
@@ -876,6 +926,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                     'location': locationController.text,
                     'description': descriptionController.text,
+                    'ctc': ctcController.text,  
                     'start_month': startMonth,
                     'start_year': startYear,
                     'end_month': isCurrentlyWorking ? null : endMonth,
@@ -1048,25 +1099,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
 
           /// CTC
-          if (experience['ctc'] != null &&
-              experience['ctc'].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.payments_outlined,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${NumberFormat.compact().format(int.parse(experience['ctc'].toString()))} CTC',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
+          if (experience['ctc'] != null && experience['ctc'].toString().isNotEmpty)
+  Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Row(
+      children: [
+        Icon(Icons.payments_outlined, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          '₹${experience['ctc']} LPA',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    ),
+  ),
+
 
           /// DESCRIPTION
           if (experience['description'] != null &&
