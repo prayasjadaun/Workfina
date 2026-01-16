@@ -156,7 +156,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      banner.title, // API se aaya title
+                                      banner.title, 
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -189,6 +189,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   ),
                 ),
 
+Padding(
+  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+  child: _buildJobSearchToggleSection(),
+),
+
                 // Stats Overview Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -196,7 +201,12 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                     children: [
                       _buildStatsSection(profileData),
 
+
+
                       const SizedBox(height: 32),
+                      
+
+                      
 
                       // Quick Actions Section
                       Row(
@@ -219,9 +229,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
 
                       const SizedBox(height: 16),
 
-                      _buildJobSearchToggleSection(),
 
-const SizedBox(height: 24),
 
                       // Profile Tips Section
                       Row(

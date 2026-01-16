@@ -71,11 +71,11 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedRole = '';
-  _selectedReligion = '';
+    _selectedReligion = '';
     _fetchStates();
     _fetchDepartmentsAndReligions().then((_) {
-    _loadSavedProfile(); // This runs AFTER departments are loaded
-  });
+      _loadSavedProfile(); // This runs AFTER departments are loaded
+    });
   }
 
   // Dynamic lists fetched from backend
@@ -113,55 +113,59 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   final ImagePicker _imagePicker = ImagePicker();
 
   Future<void> _fetchStates() async {
-  setState(() => _loadingStates = true);
-  try {
-    final response = await ApiService.getStates();
-    if (response.containsKey('error')) {
-      throw Exception(response['error']);
-    }
-    final statesList = response['states'] as List;
-    var states = statesList.map((state) => {
-      'id': state['id'].toString(),
-      'name': state['name'].toString().trim(),  // Add .trim() here
-      'slug': state['slug'].toString(),
-    }).toList();
-
-    // Reorder: Remove 'other' based on name, sort remaining by name, append 'other'
-    Map<String, String>? otherState;
-    states = states.where((state) {
-      if (state['name']!.toLowerCase() == 'other') {
-        otherState = state;
-        return false;
+    setState(() => _loadingStates = true);
+    try {
+      final response = await ApiService.getStates();
+      if (response.containsKey('error')) {
+        throw Exception(response['error']);
       }
-      return true;
-    }).toList();
+      final statesList = response['states'] as List;
+      var states = statesList
+          .map(
+            (state) => {
+              'id': state['id'].toString(),
+              'name': state['name'].toString().trim(), // Add .trim() here
+              'slug': state['slug'].toString(),
+            },
+          )
+          .toList();
 
-    // Sort remaining alphabetically by name
-    states.sort((a, b) => a['name']!.compareTo(b['name']!));
+      // Reorder: Remove 'other' based on name, sort remaining by name, append 'other'
+      Map<String, String>? otherState;
+      states = states.where((state) {
+        if (state['name']!.toLowerCase() == 'other') {
+          otherState = state;
+          return false;
+        }
+        return true;
+      }).toList();
 
-    // Append 'other' if it existed
-    if (otherState != null) {
-      states.add(otherState!);
-    }
+      // Sort remaining alphabetically by name
+      states.sort((a, b) => a['name']!.compareTo(b['name']!));
 
-    setState(() {
-      _states = states;
-      _selectedStateId = null;
-      _stateController.clear();
-      _loadingStates = false;
-    });
-  } catch (e) {
-    setState(() => _loadingStates = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load states: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Append 'other' if it existed
+      if (otherState != null) {
+        states.add(otherState!);
+      }
+
+      setState(() {
+        _states = states;
+        _selectedStateId = null;
+        _stateController.clear();
+        _loadingStates = false;
+      });
+    } catch (e) {
+      setState(() => _loadingStates = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load states: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-}
 
   Future<void> _fetchCities(String stateSlug) async {
     setState(() {
@@ -176,16 +180,36 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         throw Exception(response['error']);
       }
       final citiesList = response['cities'] as List;
+      var cities = citiesList
+          .map(
+            (city) => {
+              'id': city['id'].toString(),
+              'name': city['name'].toString().trim(),
+              'slug': city['slug'].toString(),
+            },
+          )
+          .toList();
+
+      // Reorder: Remove 'other' based on name, sort remaining by name, append 'other'
+      Map<String, String>? otherCity;
+      cities = cities.where((city) {
+        if (city['name']!.toLowerCase() == 'other') {
+          otherCity = city;
+          return false;
+        }
+        return true;
+      }).toList();
+
+      // Sort remaining alphabetically by name
+      cities.sort((a, b) => a['name']!.compareTo(b['name']!));
+
+      // Append 'other' if it existed
+      if (otherCity != null) {
+        cities.add(otherCity!);
+      }
+
       setState(() {
-        _cities = citiesList
-            .map(
-              (city) => {
-                'id': city['id'].toString(),
-                'name': city['name'].toString(),
-                'slug': city['slug'].toString(),
-              },
-            )
-            .toList();
+        _cities = cities;
         _loadingCities = false;
       });
     } catch (e) {
@@ -475,157 +499,209 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
   }
 
   Future<void> _fetchDepartmentsAndReligions() async {
-  setState(() => _loadingOptions = true);
-  try {
-    final response = await ApiService.getDepartmentsAndReligions();
-    if (response.containsKey('error')) {
-      throw Exception(response['error']);
-    }
+    setState(() => _loadingOptions = true);
+    try {
+      final response = await ApiService.getDepartmentsAndReligions();
+      if (response.containsKey('error')) {
+        throw Exception(response['error']);
+      }
 
-    // ✅ CLEAR existing lists first
-    _roles.clear();
-    _religions.clear();
-    _availableSkills.clear();
-    _availableLanguages.clear();
+      _roles.clear();
+      _religions.clear();
+      _availableSkills.clear();
+      _availableLanguages.clear();
 
-    // Handle departments
-    final departments = response['departments'] as List;
+      // Handle departments
+      final departments = response['departments'] as List;
     print('[DEBUG] Departments from API: ${departments.length} items');
-    
+
+    Map<String, String>? otherRole;
+    List<Map<String, String>> regularRoles = [];
+
     for (var dept in departments) {
       final value = dept['value'].toString().trim();
       final label = dept['label'].toString().trim();
-      
-      print('[DEBUG] Dept - value: "$value", label: "$label"');
-      
-      _roles.add({
-        'value': value,
-        'label': label,
-      });
-    }
-    
-    // Sort by label
-    _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
-    
-    // ✅ VERIFY no duplicates (for debugging)
-    final uniqueValues = _roles.map((r) => r['value']).toSet();
-    if (uniqueValues.length != _roles.length) {
-      print('[ERROR] Duplicate roles detected!');
-      final Map<String, Map<String, String>> uniqueMap = {};
-      for (var role in _roles) {
-        uniqueMap[role['value']!] = role;
-      }
-      _roles = uniqueMap.values.toList();
-      _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
-    }
-    
-    print('[DEBUG] Final roles count: ${_roles.length}');
-    print('[DEBUG] Roles: ${_roles.map((r) => r['value']).toList()}');
 
-    // Handle religions
-    final religions = response['religions'] as List;
-    print('[DEBUG] Religions from API: $religions'); // ← Add this line
+      print('[DEBUG] Dept - value: "$value", label: "$label"');
+
+      // Check BOTH value and label for "other"
+      if (value.toLowerCase() == 'other' || label.toLowerCase() == 'other') {
+        otherRole = {'value': value, 'label': label};
+      } else {
+        regularRoles.add({'value': value, 'label': label});
+      }
+    }
+
+    // Sort regular roles alphabetically by label
+    regularRoles.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Build final list: sorted roles + "other" at end
+    _roles = List.from(regularRoles);
+    if (otherRole != null) {
+      _roles.add(otherRole);
+    }
+
+
+      // ✅ VERIFY no duplicates (for debugging)
+      final uniqueValues = _roles.map((r) => r['value']).toSet();
+      if (uniqueValues.length != _roles.length) {
+        print('[ERROR] Duplicate roles detected!');
+        final Map<String, Map<String, String>> uniqueMap = {};
+        for (var role in _roles) {
+          uniqueMap[role['value']!] = role;
+        }
+        _roles = uniqueMap.values.toList();
+        _roles.sort((a, b) => a['label']!.compareTo(b['label']!));
+      }
+
+      print('[DEBUG] Final roles count: ${_roles.length}');
+      print('[DEBUG] Roles: ${_roles.map((r) => r['value']).toList()}');
+
+      // Handle religions
+      final religions = response['religions'] as List;
+    print('[DEBUG] Religions from API: $religions');
+
+    Map<String, String>? otherReligion;
+    List<Map<String, String>> regularReligions = [];
 
     for (var relig in religions) {
       final value = relig['value'].toString().trim();
       final label = relig['label'].toString().trim();
-        print('[DEBUG] Religion - value: "$value", label: "$label"'); // ← Add this line
+      print('[DEBUG] Religion - value: "$value", label: "$label"');
 
-      
-      _religions.add({
-        'value': value,
-        'label': label,
-      });
-    }
-    _religions.sort((a, b) => a['label']!.compareTo(b['label']!));
-
-    // Handle skills
-    final skills = response['skills'] as List?;
-    if (skills != null) {
-      _availableSkills = skills
-          .map((skill) => skill['label'].toString().trim())
-          .toSet()
-          .toList();
-      _availableSkills.sort();
+      // Check BOTH value and label for "other"
+      if (value.toLowerCase() == 'other' || label.toLowerCase() == 'other') {
+        otherReligion = {'value': value, 'label': label};
+      } else {
+        regularReligions.add({'value': value, 'label': label});
+      }
     }
 
-    // Handle languages
-    final languages = response['languages'] as List?;
+    // Sort regular religions alphabetically by label
+    regularReligions.sort((a, b) => a['label']!.compareTo(b['label']!));
+
+    // Build final list: sorted religions + "other" at end
+    _religions = List.from(regularReligions);
+    if (otherReligion != null) {
+      _religions.add(otherReligion);
+    }
+
+    print('[DEBUG] Final religions: ${_religions.map((r) => r['label']).toList()}');
+
+      // Handle skills
+      final skills = response['skills'] as List?;
+      if (skills != null) {
+        _availableSkills = skills
+            .map((skill) => skill['label'].toString().trim())
+            .toSet()
+            .toList();
+        _availableSkills.sort();
+      }
+
+      // Handle languages
+      final languages = response['languages'] as List?;
     if (languages != null) {
-      _availableLanguages = languages
-          .map((lang) => lang['label'].toString().trim())
-          .toSet()
-          .toList();
-      _availableLanguages.sort();
-    }
-
-    // ✅ CRITICAL: Validate and set default values
-    if (_roles.isNotEmpty) {
-      print('[DEBUG] Current _selectedRole: "$_selectedRole"');
-      print('[DEBUG] Available role values: ${_roles.map((r) => r['value']).toList()}');
+      String? otherLanguage;
+      List<String> regularLanguages = [];
       
-      // ✅ Check if it matches by VALUE (slug)
-      bool roleExists = _roles.any((r) => r['value'] == _selectedRole);
-      
-      // ✅ If not found by value, check by LABEL
-      if (!roleExists) {
-        roleExists = _roles.any((r) => r['label'] == _selectedRole);
-        if (roleExists) {
-          // Convert label to value
-          final matchingRole = _roles.firstWhere((r) => r['label'] == _selectedRole);
-          _selectedRole = matchingRole['value']!;
-          print('[DEBUG] Converted label to value: "$_selectedRole"');
+      for (var lang in languages) {
+        final label = lang['label'].toString().trim();
+        if (label.toLowerCase() == 'other') {
+          otherLanguage = label;
+        } else {
+          regularLanguages.add(label);
         }
       }
       
-      print('[DEBUG] Role exists: $roleExists');
+      // Sort regular languages
+      regularLanguages.sort();
       
-      if (_selectedRole.isEmpty || !roleExists) {
-        // ✅ Reset to first item if invalid
-        _selectedRole = _roles[0]['value']!;
-        print('[DEBUG] Reset _selectedRole to: "$_selectedRole"');
+      // Add "other" at the end
+      if (otherLanguage != null) {
+        regularLanguages.add(otherLanguage);
       }
-    } else {
-      print('[ERROR] No roles loaded!');
-      _selectedRole = '';
+      
+      _availableLanguages = regularLanguages;
+      print('[DEBUG] Final languages: $_availableLanguages');
     }
 
-    // ✅ Same logic for religion
-    if (_religions.isNotEmpty) {
-      bool religionExists = _religions.any((r) => r['value'] == _selectedReligion);
-      
-      if (!religionExists) {
-        religionExists = _religions.any((r) => r['label'] == _selectedReligion);
-        if (religionExists) {
-          final matchingReligion = _religions.firstWhere((r) => r['label'] == _selectedReligion);
-          _selectedReligion = matchingReligion['value']!;
-          print('[DEBUG] Converted religion label to value: "$_selectedReligion"');
+
+      // ✅ CRITICAL: Validate and set default values
+      if (_roles.isNotEmpty) {
+        print('[DEBUG] Current _selectedRole: "$_selectedRole"');
+        print(
+          '[DEBUG] Available role values: ${_roles.map((r) => r['value']).toList()}',
+        );
+
+        // ✅ Check if it matches by VALUE (slug)
+        bool roleExists = _roles.any((r) => r['value'] == _selectedRole);
+
+        // ✅ If not found by value, check by LABEL
+        if (!roleExists) {
+          roleExists = _roles.any((r) => r['label'] == _selectedRole);
+          if (roleExists) {
+            // Convert label to value
+            final matchingRole = _roles.firstWhere(
+              (r) => r['label'] == _selectedRole,
+            );
+            _selectedRole = matchingRole['value']!;
+            print('[DEBUG] Converted label to value: "$_selectedRole"');
+          }
         }
-      }
-      
-      if (_selectedReligion.isEmpty || !religionExists) {
-        _selectedReligion = _religions[0]['value']!;
-      }
-    } else {
-      _selectedReligion = '';
-    }
 
-    setState(() => _loadingOptions = false);
+        print('[DEBUG] Role exists: $roleExists');
 
-    
-  } catch (e) {
-    print('[ERROR] Failed to fetch departments: $e');
-    setState(() => _loadingOptions = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load options: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+        if (_selectedRole.isEmpty || !roleExists) {
+          _selectedRole = _roles[0]['value']!;
+          print('[DEBUG] Reset _selectedRole to: "$_selectedRole"');
+        }
+      } else {
+        print('[ERROR] No roles loaded!');
+        _selectedRole = '';
+      }
+
+      // ✅ Same logic for religion
+      if (_religions.isNotEmpty) {
+        bool religionExists = _religions.any(
+          (r) => r['value'] == _selectedReligion,
+        );
+
+        if (!religionExists) {
+          religionExists = _religions.any(
+            (r) => r['label'] == _selectedReligion,
+          );
+          if (religionExists) {
+            final matchingReligion = _religions.firstWhere(
+              (r) => r['label'] == _selectedReligion,
+            );
+            _selectedReligion = matchingReligion['value']!;
+            print(
+              '[DEBUG] Converted religion label to value: "$_selectedReligion"',
+            );
+          }
+        }
+
+        if (_selectedReligion.isEmpty || !religionExists) {
+          _selectedReligion = _religions[0]['value']!;
+        }
+      } else {
+        _selectedReligion = '';
+      }
+
+      setState(() => _loadingOptions = false);
+    } catch (e) {
+      print('[ERROR] Failed to fetch departments: $e');
+      setState(() => _loadingOptions = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load options: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-}
 
   Future<void> _pickImageFromGallery() async {
     try {
@@ -879,6 +955,28 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     String workExperienceJson = _workExperiences.isNotEmpty
         ? jsonEncode(_workExperiences)
         : '';
+
+        // STEP 2: PREPARE DATA
+// String? workExperienceJson;
+
+if (_workExperiences.isNotEmpty) {
+  workExperienceJson = jsonEncode(
+    _workExperiences.map((exp) {
+      return {
+        'company_name': exp['company_name'],
+        'role_title': exp['role_title'],
+        'location': exp['location'],
+        'description': exp['description'],
+        'start_month': exp['start_month'],
+        'start_year': exp['start_year'],
+        'end_month': exp['is_current'] ? null : exp['end_month'],
+        'end_year': exp['is_current'] ? null : exp['end_year'],
+        'is_current': exp['is_current'],
+        'ctc': exp['ctc'], // ✅ Include CTC here
+      };
+    }).toList(),
+  );
+}
 
     String educationJson = _educationList.isNotEmpty
         ? jsonEncode(_educationList)
@@ -1539,8 +1637,28 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                         setState(() {
                           _selectedStateId = value;
                           _stateController.text = selectedState['name']!;
-                          _isOtherState = selectedState['slug'] == 'other';
-                          if (!_isOtherState) {
+                          _isOtherState =
+                              selectedState['slug'] == 'other' ||
+                              selectedState['name']!.toLowerCase() == 'other';
+
+                          // Clear city selection and related fields
+                          _selectedCityId = null;
+                          _cityController.clear();
+                          _isOtherCity = false;
+                          _otherCityController.clear();
+
+                          if (_isOtherState) {
+                            // If "Other" state is selected, manually add "Other" city option
+                            _cities = [
+                              {
+                                'id': 'other-city-id',
+                                'name': 'Other',
+                                'slug': 'other',
+                              },
+                            ];
+                            _loadingCities = false;
+                          } else {
+                            // Fetch cities normally for regular states
                             _otherStateController.clear();
                             _fetchCities(selectedState['slug']!);
                           }
@@ -1584,6 +1702,8 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                     hint: Text(
                       _selectedStateId == null
                           ? 'Select a state first'
+                          : _isOtherState
+                          ? 'Select Other'
                           : 'Select City',
                     ),
                     items: _cities
@@ -1594,7 +1714,7 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                           ),
                         )
                         .toList(),
-                    onChanged: _selectedStateId == null || _isOtherState
+                    onChanged: _selectedStateId == null
                         ? null
                         : (value) {
                             if (value != null) {
@@ -1604,9 +1724,10 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                               setState(() {
                                 _selectedCityId = value;
                                 _cityController.text = selectedCity['name']!;
-                                _isOtherCity = selectedCity['slug']!.endsWith(
-                                  '-other',
-                                );
+                                _isOtherCity =
+                                    selectedCity['slug'] == 'other' ||
+                                    selectedCity['name']!.toLowerCase() ==
+                                        'other';
                                 if (!_isOtherCity) {
                                   _otherCityController.clear();
                                 }
@@ -1614,8 +1735,11 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                             }
                           },
                     validator: (value) {
-                      if (value == null && !_isOtherCity) {
+                      if (value == null && !_isOtherCity && !_isOtherState) {
                         return 'City is required';
+                      }
+                      if (_isOtherState && value == null) {
+                        return 'Please select Other city';
                       }
                       return null;
                     },
@@ -1629,6 +1753,12 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                 icon: Icons.edit_outlined,
                 isRequired: true,
                 hintText: 'Enter your city',
+                validator: (value) {
+                  if (_isOtherCity && (value == null || value.isEmpty)) {
+                    return 'City name is required';
+                  }
+                  return null;
+                },
               ),
             ],
             const SizedBox(height: 16),
@@ -2574,8 +2704,6 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
     );
   }
 
-
-
   Widget _buildEducationDisplayCard(Map<String, dynamic> education, int index) {
     String startYear = education['start_year']?.toString() ?? '';
     String endYear = education['end_year']?.toString() ?? 'Present';
@@ -3040,37 +3168,49 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         _willingToRelocate = profile['willing_to_relocate'] ?? false;
         _joiningAvailability = profile['joining_availability'] ?? 'IMMEDIATE';
         _noticePeriodController.text = profile['notice_period_details'] ?? '';
-             final roleFromProfile = profile['role_name'] ?? ''; // This is a LABEL like "HR"
-  if (roleFromProfile.isNotEmpty && _roles.isNotEmpty) {
-    // Find role by matching LABEL
-    final roleExists = _roles.any((r) => r['label'] == roleFromProfile);
-    if (roleExists) {
-      final matchingRole = _roles.firstWhere((r) => r['label'] == roleFromProfile);
-      _selectedRole = matchingRole['value']!; // Store the VALUE (slug)
-      print('[DEBUG] Loaded role - label: "$roleFromProfile", value: "$_selectedRole"');
-    } else if (_roles.isNotEmpty) {
-      _selectedRole = _roles[0]['value']!;
-      print('[DEBUG] Role not found, using default: "$_selectedRole"');
-    }
-  } else if (_roles.isNotEmpty) {
-    _selectedRole = _roles[0]['value']!;
-  }
-  
-  // ✅ UPDATED: Same for religion
-  final religionFromProfile = profile['religion_name'] ?? ''; // This is a LABEL
-  if (religionFromProfile.isNotEmpty && _religions.isNotEmpty) {
-    final religionExists = _religions.any((r) => r['label'] == religionFromProfile);
-    if (religionExists) {
-      final matchingReligion = _religions.firstWhere((r) => r['label'] == religionFromProfile);
-      _selectedReligion = matchingReligion['value']!; // Store the VALUE (slug)
-      print('[DEBUG] Loaded religion - label: "$religionFromProfile", value: "$_selectedReligion"');
-    } else if (_religions.isNotEmpty) {
-      _selectedReligion = _religions[0]['value']!;
-    }
-  } else if (_religions.isNotEmpty) {
-    _selectedReligion = _religions[0]['value']!;
-  }
+        final roleFromProfile =
+            profile['role_name'] ?? ''; // This is a LABEL like "HR"
+        if (roleFromProfile.isNotEmpty && _roles.isNotEmpty) {
+          // Find role by matching LABEL
+          final roleExists = _roles.any((r) => r['label'] == roleFromProfile);
+          if (roleExists) {
+            final matchingRole = _roles.firstWhere(
+              (r) => r['label'] == roleFromProfile,
+            );
+            _selectedRole = matchingRole['value']!; // Store the VALUE (slug)
+            print(
+              '[DEBUG] Loaded role - label: "$roleFromProfile", value: "$_selectedRole"',
+            );
+          } else if (_roles.isNotEmpty) {
+            _selectedRole = _roles[0]['value']!;
+            print('[DEBUG] Role not found, using default: "$_selectedRole"');
+          }
+        } else if (_roles.isNotEmpty) {
+          _selectedRole = _roles[0]['value']!;
+        }
 
+        // ✅ UPDATED: Same for religion
+        final religionFromProfile =
+            profile['religion_name'] ?? ''; // This is a LABEL
+        if (religionFromProfile.isNotEmpty && _religions.isNotEmpty) {
+          final religionExists = _religions.any(
+            (r) => r['label'] == religionFromProfile,
+          );
+          if (religionExists) {
+            final matchingReligion = _religions.firstWhere(
+              (r) => r['label'] == religionFromProfile,
+            );
+            _selectedReligion =
+                matchingReligion['value']!; // Store the VALUE (slug)
+            print(
+              '[DEBUG] Loaded religion - label: "$religionFromProfile", value: "$_selectedReligion"',
+            );
+          } else if (_religions.isNotEmpty) {
+            _selectedReligion = _religions[0]['value']!;
+          }
+        } else if (_religions.isNotEmpty) {
+          _selectedReligion = _religions[0]['value']!;
+        }
 
         if (profile['languages'] != null &&
             profile['languages'].toString().isNotEmpty) {
@@ -3099,6 +3239,8 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
                   'is_current': exp['is_current'] ?? false,
                   'location': exp['location'] ?? '',
                   'description': exp['description'] ?? '',
+                  'ctc': exp['ctc']?.toString() ?? exp['current_ctc']?.toString() ?? '', // ✅ Load CTC
+
                 },
               )
               .cast<Map<String, dynamic>>()
@@ -3192,6 +3334,21 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
         break;
 
       case 1:
+      final workExpWithCtc = _workExperiences.map((exp) {
+    return {
+      'company_name': exp['company_name'],
+      'role_title': exp['role_title'],
+      'location': exp['location'],
+      'description': exp['description'],
+      'start_month': exp['start_month'],
+      'start_year': exp['start_year'],
+      'end_month': exp['is_current'] ? null : exp['end_month'],
+      'end_year': exp['is_current'] ? null : exp['end_year'],
+      'is_current': exp['is_current'],
+      'ctc': exp['ctc'], // ✅ Include CTC
+    };
+  }).toList();
+
         stepData = {
           // ✅ Notice period ONLY here
           'joining_availability': _joiningAvailability,
@@ -3268,8 +3425,6 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
       return DateTime.now().year.toString();
     }
   }
-
-
 
   Widget _buildDropdown({
     required String value,
@@ -3422,25 +3577,25 @@ class _CandidateSetupScreenSwipeableState extends State<CandidateSetupScreen>
           ),
 
           /// CTC
-          if (experience['ctc'] != null &&
-              experience['ctc'].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.payments_outlined,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${NumberFormat.compact().format(int.parse(experience['ctc'].toString()))} CTC',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
+        /// CTC
+if (experience['ctc'] != null && experience['ctc'].toString().isNotEmpty)
+  Padding(
+    padding: const EdgeInsets.only(top: 8),
+    child: Row(
+      children: [
+        Icon(Icons.payments_outlined, size: 16, color: Colors.grey[600]),
+        const SizedBox(width: 4),
+        Text(
+          '₹${experience['ctc']} LPA',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700],
+          ),
+        ),
+      ],
+    ),
+  ),
 
           /// DESCRIPTION
           if (experience['description'] != null &&
