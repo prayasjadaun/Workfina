@@ -43,7 +43,6 @@ class ThemeController extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(_themeKey, mode.index);
     } catch (e) {
-      debugPrint('Failed to save theme preference: $e');
     }
 
     _updateSystemUIOverlay();

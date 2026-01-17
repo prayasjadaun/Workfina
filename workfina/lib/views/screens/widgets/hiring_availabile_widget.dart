@@ -48,7 +48,6 @@ class HiringAvailabileWidget extends StatefulWidget {
 
       return result ?? false;
     } catch (e) {
-      debugPrint('[DEBUG] Error showing availability prompt: $e');
       return false;
     }
   }
@@ -85,7 +84,6 @@ class _HiringAvailabileWidgetState extends State<HiringAvailabileWidget> {
         Navigator.of(context).pop(true);
       }
     } catch (e) {
-      debugPrint('[DEBUG] Error updating availability: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

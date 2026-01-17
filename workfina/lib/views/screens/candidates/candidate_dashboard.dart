@@ -342,11 +342,8 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       actions: [
         Container(
           margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.grey.shade800.withOpacity(0.0)
-                : Colors.grey.shade200.withOpacity(0.1),
+            color: Colors.grey.shade200.withOpacity(0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: SvgPicture.asset(
@@ -857,11 +854,9 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
             width: 44, // ✅ Quick actions exact size
             height: 44,
             decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.grey.shade800.withOpacity(0.5)
-                  : Colors.grey.shade500.withOpacity(
-                      0.3,
-                    ), // ✅ Quick actions style
+              color: Colors.grey.shade500.withOpacity(
+                0.3,
+              ), // ✅ Quick actions style
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(

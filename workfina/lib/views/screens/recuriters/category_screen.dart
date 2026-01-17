@@ -10,6 +10,7 @@ import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_sc
 import 'package:workfina/views/screens/widgets/category_card_widget.dart';
 import 'package:workfina/views/screens/widgets/candidate_card_widget.dart';
 import 'package:workfina/views/screens/widgets/search_bar.dart';
+import 'package:workfina/views/screens/widgets/horizontal_category_tabs.dart';
 
 class CategoryScreen extends StatefulWidget {
   final String categoryKey;
@@ -46,6 +47,7 @@ class _CategoryScreenState extends State<CategoryScreen>
   Set<String> _selectedCards = {};
   List<String> _tabCategories = [];
   String _selectedCategory = '';
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -96,7 +98,8 @@ class _CategoryScreenState extends State<CategoryScreen>
             vsync: this,
           );
           final initialIndex = _tabCategories.indexOf(widget.categoryName);
-          _tabController.animateTo(initialIndex >= 0 ? initialIndex : 0);
+          _selectedTabIndex = initialIndex >= 0 ? initialIndex : 0;
+          _tabController.animateTo(_selectedTabIndex);
         });
       }
     } catch (e) {
@@ -196,6 +199,7 @@ class _CategoryScreenState extends State<CategoryScreen>
       // Set first category as selected instead of current widget.categoryName
       if (_tabCategories.isNotEmpty) {
         _selectedCategory = _tabCategories[0];
+        _selectedTabIndex = 0;
         _tabController.animateTo(0);
       }
     });
@@ -258,12 +262,14 @@ class _CategoryScreenState extends State<CategoryScreen>
       ),
       bottom: _isSubcategoryMode
           ? PreferredSize(
-              preferredSize: const Size.fromHeight(110),
+              preferredSize: const Size.fromHeight(130),
               child: Container(
                 color: AppTheme.primary,
-                padding: const EdgeInsets.only(bottom: 20),
+                // padding: const EdgeInsets.only(bottom: 20),
                 child: Column(
                   children: [
+                    
+                    const SizedBox(height: 12),
                     // Search Bar
                     GlobalSearchBar(
                       onSearch: (query) {
@@ -273,68 +279,21 @@ class _CategoryScreenState extends State<CategoryScreen>
                       },
                     ),
 
-                    // Tab Bar
-                    // Tab Bar
-                    const SizedBox(height: 20),
+                    // Horizontal Category Tabs
+                    const SizedBox(height: 12),
                     if (_tabCategories.isNotEmpty)
-                      Container(
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        child: TabBar(
-                          controller: _tabController,
-                          isScrollable: true,
-                          tabAlignment: TabAlignment.start,
-                          indicator: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          indicatorPadding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 4,
-                          ),
-                          indicatorSize: TabBarIndicatorSize.tab,
-                          dividerColor: Colors.transparent,
-                          labelColor: AppTheme.primary,
-                          unselectedLabelColor: Colors.white.withOpacity(0.8),
-                          labelStyle: AppTheme.getBodyStyle(
-                            context,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                          unselectedLabelStyle: AppTheme.getBodyStyle(
-                            context,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                          ),
-                          onTap: (index) {
-                            setState(() {
-                              _selectedCategory = _tabCategories[index];
-                            });
-                          },
-                          tabs: _tabCategories
-                              .map(
-                                (category) => Tab(
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 6,
-                                    ),
-                                    child: Text(category),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
+                      HorizontalCategoryTabs(
+                        categories: _tabCategories,
+                        selectedIndex: _selectedTabIndex,
+                        onCategoryTap: (index) {
+                          setState(() {
+                            _selectedTabIndex = index;
+                            _selectedCategory = _tabCategories[index];
+                          });
+                        },
                       )
                     else
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 68),
                   ],
                 ),
               ),

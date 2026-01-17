@@ -14,6 +14,7 @@ import 'package:workfina/views/screens/recuriters/recruiter_candidate_details_sc
 import 'package:workfina/views/screens/widgets/category_card_widget.dart';
 import 'package:workfina/views/screens/widgets/refresh_indicator_wrapper.dart';
 import 'package:workfina/views/screens/widgets/search_bar.dart';
+import 'package:workfina/views/screens/widgets/horizontal_category_tabs.dart';
 import 'package:workfina/views/screens/appVersion/app_version.dart';
 
 class RecruiterDashboard extends StatefulWidget {
@@ -31,12 +32,13 @@ class RecruiterDashboard extends StatefulWidget {
 
 class _RecruiterDashboardState extends State<RecruiterDashboard>
     with TickerProviderStateMixin {
-      final bool isDark =
-    WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+  final bool isDark =
+      WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
   late TabController _tabController;
   List<String> _categories = [];
   late Future<Map<String, dynamic>> _filterOptionsFuture;
   bool _categoriesLoaded = false;
+  int _selectedCategoryIndex = 0;
   Timer? _hintTimer;
   Timer? _searchDebounce;
   bool _isExpanded = false;
@@ -146,10 +148,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       final response = await _filterOptionsFuture;
       final filterCategories = response['filter_categories'] as List? ?? [];
 
-      print(
-        'DEBUG: Filter Categories: ${filterCategories.length}',
-      ); // Debug print
-
+    
       final availableCategories =
           filterCategories
               .where((cat) => (cat['dashboard_display'] ?? 0) != 0)
@@ -160,24 +159,16 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
               ),
             );
 
-      print('DEBUG: Sorted categories with dashboard_display:');
-      for (var cat in availableCategories) {
-        print(
-          '${cat['name']}: dashboard_display = ${cat['dashboard_display']}',
-        );
-      }
 
       final categoryNames = availableCategories
           .take(4)
           .map((cat) => cat['name'] as String)
           .toList();
 
-      print('DEBUG: Available categories: $availableCategories'); // Debug print
 
       if (mounted) {
         final newCategories = categoryNames.cast<String>();
 
-        print('DEBUG: New categories: $newCategories'); // Debug print
 
         _tabController.dispose();
         setState(() {
@@ -189,10 +180,8 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
           _categoriesLoaded = true;
         });
 
-        print('DEBUG: Categories updated: $_categories'); // Debug print
       }
     } catch (e) {
-      print('DEBUG: Error loading categories: $e'); // Debug print
       if (mounted) {
         setState(() {
           _categoriesLoaded = true;
@@ -228,8 +217,9 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         final unlockedCount = controller.unlockedCandidateIds.length;
 
         return Scaffold(
-          // backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          backgroundColor: isDark ? AppTheme.primary : Colors.white,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          // backgroundColor:isDark? AppTheme.primary: Theme.of(context).scaffoldBackgroundColor,
+          // backgroundColor: isDark ? AppTheme.primary : Colors.white,
           body: NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) => [
               _buildSliverHeader(context, controller),
@@ -248,7 +238,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                            padding: const EdgeInsets.fromLTRB(15, 0, 10, 20),
                             child: Text(
                               'What would you like to\nfind today?',
                               style: AppTheme.getHeadlineStyle(
@@ -270,8 +260,15 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                     ),
 
                     // Stats Overview Section
-                    Padding(
+                    Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        // color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(24),
+                          topRight: Radius.circular(24),
+                        ),
+                      ),
                       child: Column(
                         children: [
                           _buildStatsSection(
@@ -351,8 +348,9 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
       snap: false,
       elevation: 0,
       automaticallyImplyLeading: false,
+      toolbarHeight: 0,
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(110),
+        preferredSize: const Size.fromHeight(130),
         child: Container(
           color: AppTheme.primary,
           child: Column(
@@ -366,181 +364,141 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
                 },
               ),
 
-              // Tab Bar
-              const SizedBox(height: 20),
+              // Horizontal Category Tabs
+              const SizedBox(height: 12),
               if (_categoriesLoaded)
-                Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: false,
-                    // tabAlignment: TabAlignment.start,
-                    indicator: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    indicatorPadding: const EdgeInsets.symmetric(
-                      horizontal: 2,
-                      vertical: 4,
-                    ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    labelColor: AppTheme.primary,
-                    unselectedLabelColor: Colors.white.withOpacity(0.8),
-                    labelStyle: AppTheme.getBodyStyle(
+                HorizontalCategoryTabs(
+                  categories: _categories,
+                  selectedIndex: _selectedCategoryIndex,
+                  onCategoryTap: (index) {
+                    setState(() {
+                      _selectedCategoryIndex = index;
+                    });
+                    final selectedCategory = _categories[index];
+                    Navigator.push(
                       context,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                    unselectedLabelStyle: AppTheme.getBodyStyle(
-                      context,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13,
-                    ),
-                    onTap: (index) {
-                      final selectedCategory = _categories[index];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CategoryScreen(
-                            categoryKey: selectedCategory.toLowerCase(),
-                            categoryName: selectedCategory,
-                          ),
+                      MaterialPageRoute(
+                        builder: (context) => CategoryScreen(
+                          categoryKey: selectedCategory.toLowerCase(),
+                          categoryName: selectedCategory,
                         ),
-                      );
-                    },
-
-                    tabs: _categories
-                        .map(
-                          (category) => Tab(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 0,
-                                vertical: 6,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                category,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
+                      ),
+                    );
+                  },
                 )
               else
-                const SizedBox(height: 40),
+                const SizedBox(height: 68),
             ],
           ),
         ),
       ),
-      flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.parallax,
-        background: Container(
-          color: AppTheme.primary,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                child: Row(
+      flexibleSpace: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final expandRatio =
+              (constraints.maxHeight - kToolbarHeight - 130) /
+              (200 - kToolbarHeight - 130);
+          final opacity = expandRatio.clamp(0.0, 1.0);
+
+          return FlexibleSpaceBar(
+            collapseMode: CollapseMode.pin,
+            background: Opacity(
+              opacity: opacity,
+              child: Container(
+                color: AppTheme.primary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.white : Colors.black,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          displayName[0].toUpperCase(),
-                          style: AppTheme.getTitleStyle(
-                            context,
-                            color: isDark ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      padding: const EdgeInsets.fromLTRB(15, 60, 15, 16),
+                      child: Row(
                         children: [
-                          Text(
-                            'Hello 👋',
-                            style: AppTheme.getSubtitleStyle(
-                              context,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 13,
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white : const Color.fromARGB(52, 0, 0, 0),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                displayName[0].toUpperCase(),
+                                style: AppTheme.getTitleStyle(
+                                  context,
+                                  color: isDark ? Colors.black : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 1),
-                          Text(
-                            displayName,
-                            style: AppTheme.getBodyStyle(
-                              context,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Colors.white,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Hello 👋',
+                                  style: AppTheme.getSubtitleStyle(
+                                    context,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                Text(
+                                  displayName,
+                                  style: AppTheme.getBodyStyle(
+                                    context,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: widget.onNavigateToWallet,
+                            child: SvgPicture.asset(
+                              'assets/svg/wallet.svg',
+                              width: 24,
+                              height: 24,
+                              colorFilter: ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NotificationScreen(),
+                                ),
+                              );
+                            },
+                            child: SvgPicture.asset(
+                              'assets/svg/bell.svg',
+                              width: 24,
+                              height: 24,
+                              colorFilter: ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    GestureDetector(
-                      onTap: widget.onNavigateToWallet,
-                      child: SvgPicture.asset(
-                        'assets/svg/wallet.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => NotificationScreen(),
-                          ),
-                        );
-                      },
-                      child: SvgPicture.asset(
-                        'assets/svg/bell.svg',
-                        width: 24,
-                        height: 24,
-                        colorFilter: ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -563,7 +521,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
         if (snapshot.hasError || snapshot.data?['error'] != null) {
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            height: 220,
+            // height: 220,
             child: Center(
               child: Text(
                 'Error loading categories',
@@ -969,8 +927,7 @@ class _RecruiterDashboardState extends State<RecruiterDashboard>
               width: 40,
               height: 40,
               colorFilter: ColorFilter.mode(
-                isDark? Colors.white :
-                AppTheme.secondary.withOpacity(0.5),
+                isDark ? Colors.white : AppTheme.secondary.withOpacity(0.5),
                 BlendMode.srcIn,
               ),
             ),

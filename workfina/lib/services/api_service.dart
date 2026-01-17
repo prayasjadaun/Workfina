@@ -76,40 +76,19 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          if (kDebugMode) {
-            print('[DEBUG] ${options.method} $baseUrl${options.path}');
-            print('[DEBUG] Request Headers: ${options.headers}');
-            if (options.data != null) {
-              print('[DEBUG] Request Data: ${options.data}');
-            }
-            if (options.queryParameters.isNotEmpty) {
-              print('[DEBUG] Query Parameters: ${options.queryParameters}');
-            }
-          }
+        
           handler.next(options);
         },
         onResponse: (response, handler) async {
-          if (kDebugMode) {
-            print('[DEBUG] Response Status: ${response.statusCode}');
-            print('[DEBUG] Response Data: ${response.data}');
-          }
           handler.next(response);
         },
         onError: (DioException e, handler) async {
-          if (kDebugMode) {
-            print('[DEBUG] API Error: ${e.message}');
-            print('[DEBUG] Error Type: ${e.type}');
-            print(
-              '[DEBUG] Request: ${e.requestOptions.method} ${e.requestOptions.path}',
-            );
-            print('[DEBUG] Status Code: ${e.response?.statusCode}');
-          }
+         
 
           // Handle connection errors specifically
           if (e.type == DioExceptionType.connectionError ||
               e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout) {
-            print('[DEBUG] Network connection error detected');
             handler.next(e);
             return;
           }
@@ -135,7 +114,6 @@ class ApiService {
               return;
             } catch (refreshError) {
               if (kDebugMode) {
-                print('[DEBUG] Token refresh failed');
               }
               await logout();
             } finally {
@@ -152,9 +130,7 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
-      if (kDebugMode) {
-        print('[DEBUG] Token being sent: $token');
-      }
+     
       return token;
     } catch (e) {
       return null;
@@ -239,15 +215,10 @@ class ApiService {
         '/auth/send-otp/',
         data: {'email': email},
       );
-      if (kDebugMode) {
-        print('[DEBUG] OTP Response: ${response.data}');
-      }
+     
       return response.data;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('[DEBUG] OTP Error: ${e.message}');
-        print('[DEBUG] Response: ${e.response?.data}');
-      }
+      
 
       // Handle complex validation errors
       if (e.response?.data is Map<String, dynamic>) {

@@ -47,11 +47,7 @@ class AppVersionController extends ChangeNotifier {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      if (kDebugMode) {
-        print('[DEBUG] Current App Version: $currentVersion');
-        print('[DEBUG] Platform: $_platform');
-      }
-
+    
       // Call API to check version
       final result = await ApiService.checkAppVersion(
         currentVersion: currentVersion,
@@ -61,14 +57,10 @@ class AppVersionController extends ChangeNotifier {
       _versionInfo = result;
       _hasChecked = true;
 
-      if (kDebugMode) {
-        print('[DEBUG] Version Info: ${result?.toJson()}');
-      }
+    
     } catch (e) {
       _error = e.toString();
-      if (kDebugMode) {
-        print('[DEBUG] Version Check Error: $e');
-      }
+      
     } finally {
       _isLoading = false;
       notifyListeners();
