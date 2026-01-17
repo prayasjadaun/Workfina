@@ -37,9 +37,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
             // Loading State
             if (profileController.isLoading) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: AppTheme.primary,
-                ),
+                child: CircularProgressIndicator(color: AppTheme.primary),
               );
             }
 
@@ -191,10 +189,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
                 children: [
                   const Text(
                     'Get Started',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(width: 8),
                   const Icon(Icons.arrow_forward_rounded, size: 20),
@@ -253,7 +248,6 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
 
           // Education Card
           // _buildEducationCard(profileData, isDark),
-
           const SizedBox(height: 20),
 
           // Logout Card
@@ -269,117 +263,123 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
   // PROFILE HEADER
   // ============================================================================
   Widget _buildProfileHeader(Map<String, dynamic> profileData, bool isDark) {
-  final firstName = (profileData['first_name'] ?? '').trim();
-final lastName = (profileData['last_name'] ?? '').trim();
-  final fullName = firstName.isNotEmpty||lastName.isNotEmpty ? '$firstName $lastName'.trim() 
-      : 'Candidate';
-  
-  String firstLetter = 'C';
-  
-  if (fullName.isNotEmpty && fullName != 'Candidate') {
-    firstLetter = fullName[0].toUpperCase();
-  }
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Column(
-      children: [
-        // Profile Avatar
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppTheme.primary,
-            shape: BoxShape.circle,
-            image: profileData['profile_image_url'] != null
-                ? DecorationImage(
-                    image: NetworkImage(profileData['profile_image_url']),
-                    fit: BoxFit.cover,
+    final firstName = (profileData['first_name'] ?? '').trim();
+    final lastName = (profileData['last_name'] ?? '').trim();
+    final fullName = firstName.isNotEmpty || lastName.isNotEmpty
+        ? '$firstName $lastName'.trim()
+        : 'Candidate';
+
+    String firstLetter = 'C';
+
+    if (fullName.isNotEmpty && fullName != 'Candidate') {
+      firstLetter = fullName[0].toUpperCase();
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.grey.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Profile Avatar
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              shape: BoxShape.circle,
+              image: profileData['profile_image_url'] != null
+                  ? DecorationImage(
+                      image: NetworkImage(profileData['profile_image_url']),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: profileData['profile_image_url'] == null
+                ? Center(
+                    child: Text(
+                      firstLetter,
+                      style: AppTheme.getHeadlineStyle(
+                        context,
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   )
                 : null,
           ),
-          child: profileData['profile_image_url'] == null
-              ? Center(
-                  child: Text(
-                    firstLetter,
-                    style: AppTheme.getHeadlineStyle(
-                      context,
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-        // Name
-        Text(
-          fullName,
-          style: AppTheme.getTitleStyle(
-            context,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-
-        // Email
-        Text(
-          profileData['email'] ?? 'N/A',
-          style: AppTheme.getSubtitleStyle(
-            context,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Role Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppTheme.primary.withOpacity(0.3),
+          // Name
+          Text(
+            fullName,
+            style: AppTheme.getTitleStyle(
+              context,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.work_outline_rounded,
-                color: AppTheme.primary,
-                size: 14,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                _formatRole(profileData['role_name']),
-                style: AppTheme.getLabelStyle(
-                  context,
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+          const SizedBox(height: 4),
+
+          // Email
+          Text(
+            profileData['email'] ?? 'N/A',
+            style: AppTheme.getSubtitleStyle(
+              context,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          const SizedBox(height: 12),
+
+          // Role Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.grey.shade800.withOpacity(0.5)
+                  : AppTheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark
+                    ? Colors.grey.shade600
+                    : AppTheme.primary.withOpacity(0.3),
+              ),
+            ),
+
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.work_outline_rounded,
+                  color: isDark ? Colors.white : AppTheme.primary,
+                  size: 14,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _formatRole(profileData['role_name']),
+                  style: AppTheme.getLabelStyle(
+                    context,
+                    color: isDark ? Colors.white : AppTheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ============================================================================
   // STATISTICS CARD
@@ -408,12 +408,21 @@ final lastName = (profileData['last_name'] ?? '').trim();
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 126, 126, 125).withOpacity(0.1),
+                    color: isDark
+                        ? Colors.grey.shade800.withOpacity(0.5)
+                        : const Color.fromARGB(
+                            255,
+                            126,
+                            126,
+                            125,
+                          ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.analytics_outlined,
-                    color: const Color.fromARGB(255, 16, 16, 16),
+                    color: isDark
+                        ? Colors.white
+                        : const Color.fromARGB(255, 16, 16, 16),
                     size: 22,
                   ),
                 ),
@@ -444,7 +453,9 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Age',
             value: '${profileData['age'] ?? 0} years',
             isDark: isDark,
-            iconColor: const Color.fromARGB(255, 25, 25, 25),
+            iconColor: isDark
+                ? Colors.white
+                : const Color.fromARGB(255, 35, 35, 36),
           ),
           _buildDivider(isDark),
           _buildProfileInfoItem(
@@ -452,7 +463,9 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Education',
             value: _getHighestEducation(profileData['educations']),
             isDark: isDark,
-            iconColor: const Color.fromARGB(255, 18, 18, 18),
+            iconColor: isDark
+                ? Colors.white
+                : const Color.fromARGB(255, 35, 35, 36),
             isLast: true,
           ),
         ],
@@ -487,12 +500,14 @@ final lastName = (profileData['last_name'] ?? '').trim();
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
+                    color: isDark
+                        ? Colors.grey.shade800.withOpacity(0.5)
+                        : AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.flash_on_outlined,
-                    color: AppTheme.primary,
+                    color: isDark ? Colors.white : AppTheme.primary,
                     size: 22,
                   ),
                 ),
@@ -558,12 +573,14 @@ final lastName = (profileData['last_name'] ?? '').trim();
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
+                    color: isDark
+                        ? Colors.grey.shade800.withOpacity(0.5)
+                        : AppTheme.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.contact_phone_rounded,
-                    color: AppTheme.primary,
+                    color: isDark ? Colors.white : AppTheme.primary,
                     size: 22,
                   ),
                 ),
@@ -586,6 +603,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Email',
             value: profileData['email'] ?? 'N/A',
             isDark: isDark,
+            iconColor: isDark ? Colors.white : AppTheme.primary,
           ),
           _buildDivider(isDark),
           _buildProfileInfoItem(
@@ -593,6 +611,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Phone',
             value: profileData['phone'] ?? 'N/A',
             isDark: isDark,
+            iconColor: isDark ? Colors.white : AppTheme.primary,
           ),
           _buildDivider(isDark),
           _buildProfileInfoItem(
@@ -601,6 +620,8 @@ final lastName = (profileData['last_name'] ?? '').trim();
             value:
                 '${profileData['city_name'] ?? 'N/A'}, ${profileData['state_name'] ?? 'N/A'}',
             isDark: isDark,
+            iconColor: isDark ? Colors.white : AppTheme.primary,
+
             isLast: true,
           ),
         ],
@@ -612,7 +633,9 @@ final lastName = (profileData['last_name'] ?? '').trim();
   // PROFESSIONAL INFORMATION CARD
   // ============================================================================
   Widget _buildProfessionalInfoCard(
-      Map<String, dynamic> profileData, bool isDark) {
+    Map<String, dynamic> profileData,
+    bool isDark,
+  ) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -636,12 +659,21 @@ final lastName = (profileData['last_name'] ?? '').trim();
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color.fromARGB(255, 95, 94, 93).withOpacity(0.1),
+                    color: isDark
+                        ? Colors.grey.shade800.withOpacity(0.5)
+                        : const Color.fromARGB(
+                            255,
+                            95,
+                            94,
+                            93,
+                          ).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.work_rounded,
-                    color: const Color.fromARGB(255, 9, 9, 9),
+                    color: isDark
+                        ? Colors.white
+                        : const Color.fromARGB(255, 9, 9, 9),
                     size: 22,
                   ),
                 ),
@@ -664,6 +696,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Role',
             value: _formatRole(profileData['role_name']),
             isDark: isDark,
+            iconColor: isDark ? Colors.white : AppTheme.primary,
           ),
           _buildDivider(isDark),
           _buildProfileInfoItem(
@@ -671,6 +704,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
             title: 'Experience',
             value: '${profileData['experience_years'] ?? 0} years',
             isDark: isDark,
+            iconColor: isDark ? Colors.white : AppTheme.primary,
           ),
           if (profileData['current_ctc'] != null) ...[
             _buildDivider(isDark),
@@ -734,12 +768,14 @@ final lastName = (profileData['last_name'] ?? '').trim();
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.primary.withOpacity(0.1),
+                        color: isDark
+                            ? Colors.grey.shade800.withOpacity(0.5)
+                            : AppTheme.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         Icons.psychology_rounded,
-                        color: AppTheme.primary,
+                        color: isDark ? Colors.white : AppTheme.primary,
                         size: 22,
                       ),
                     ),
@@ -792,7 +828,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
                               skill.toString(),
                               style: AppTheme.getLabelStyle(
                                 context,
-                                color: AppTheme.primary,
+                                color: isDark ? Colors.white : AppTheme.primary,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -980,11 +1016,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Icon(
-                icon,
-                color: iconColor ?? AppTheme.primary,
-                size: 20,
-              ),
+              child: Icon(icon, color: iconColor ?? AppTheme.primary, size: 20),
             ),
           ),
           const SizedBox(width: 16),
@@ -1042,13 +1074,15 @@ final lastName = (profileData['last_name'] ?? '').trim();
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: isDark
+                    ? Colors.grey.shade800.withOpacity(0.5)
+                    : AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  color: AppTheme.primary,
+                  color: isDark ? Colors.white : AppTheme.primary,
                   size: 20,
                 ),
               ),
@@ -1121,17 +1155,17 @@ final lastName = (profileData['last_name'] ?? '').trim();
 
   List<Map<String, dynamic>> _parseBackendList(String? data) {
     if (data == null || data.isEmpty) return [];
-    
+
     try {
       String cleaned = data.trim();
       if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
         cleaned = cleaned.substring(1, cleaned.length - 1);
       }
-      
+
       List<String> items = [];
       int braceCount = 0;
       int startIndex = 0;
-      
+
       for (int i = 0; i < cleaned.length; i++) {
         if (cleaned[i] == '{') {
           braceCount++;
@@ -1143,20 +1177,20 @@ final lastName = (profileData['last_name'] ?? '').trim();
           }
         }
       }
-      
+
       List<Map<String, dynamic>> result = [];
       for (String item in items) {
         Map<String, dynamic> map = {};
         String content = item.substring(1, item.length - 1);
-        
+
         List<String> pairs = [];
         int depth = 0;
         int lastSplit = 0;
-        
+
         for (int i = 0; i < content.length; i++) {
           if (content[i] == '{') depth++;
           if (content[i] == '}') depth--;
-          
+
           if (depth == 0 && i < content.length - 1) {
             if (content[i] == ',' && content[i + 1] == ' ') {
               pairs.add(content.substring(lastSplit, i));
@@ -1165,13 +1199,13 @@ final lastName = (profileData['last_name'] ?? '').trim();
           }
         }
         pairs.add(content.substring(lastSplit));
-        
+
         for (String pair in pairs) {
           List<String> parts = pair.split(': ');
           if (parts.length == 2) {
             String key = parts[0].trim();
             String value = parts[1].trim();
-            
+
             if (value == 'null') {
               map[key] = null;
             } else if (value == 'true') {
@@ -1183,10 +1217,10 @@ final lastName = (profileData['last_name'] ?? '').trim();
             }
           }
         }
-        
+
         result.add(map);
       }
-      
+
       return result;
     } catch (e) {
       print('Error parsing: $e');
@@ -1195,47 +1229,45 @@ final lastName = (profileData['last_name'] ?? '').trim();
   }
 
   String _getHighestEducation(List<dynamic>? educationList) {
-  if (educationList == null || educationList.isEmpty) {
-    return 'Not specified';
-  }
+    if (educationList == null || educationList.isEmpty) {
+      return 'Not specified';
+    }
 
-  // Find highest degree
-  String? highestDegree;
+    // Find highest degree
+    String? highestDegree;
 
-  for (var edu in educationList) {
-    String degree = edu['degree']?.toString() ?? '';
+    for (var edu in educationList) {
+      String degree = edu['degree']?.toString() ?? '';
 
-    // Priority 1: Post-graduation (MCA, MBA, Master's)
-    if (degree.toLowerCase().contains('master') || 
-        degree.toLowerCase().contains('post') ||
-        degree.toLowerCase().contains('mca') ||
-        degree.toLowerCase().contains('mba') ||
-        degree.toLowerCase().contains('m.tech')) {
-      return degree; // Found highest - return immediately
-    } 
-    // Priority 2: Graduation (BCA, B.Tech, Bachelor's)
-    else if (degree.toLowerCase().contains('bachelor') ||
-             degree.toLowerCase().contains('graduation') ||
-             degree.toLowerCase().contains('bca') ||
-             degree.toLowerCase().contains('b.tech') ||
-             degree.toLowerCase().contains('b.e')) {
-      if (highestDegree == null) {
-        highestDegree = degree;
+      // Priority 1: Post-graduation (MCA, MBA, Master's)
+      if (degree.toLowerCase().contains('master') ||
+          degree.toLowerCase().contains('post') ||
+          degree.toLowerCase().contains('mca') ||
+          degree.toLowerCase().contains('mba') ||
+          degree.toLowerCase().contains('m.tech')) {
+        return degree; // Found highest - return immediately
       }
-    } 
-    // Priority 3: Others (12th, 10th, etc.)
-    else {
-      if (highestDegree == null && degree.isNotEmpty) {
-        highestDegree = degree;
+      // Priority 2: Graduation (BCA, B.Tech, Bachelor's)
+      else if (degree.toLowerCase().contains('bachelor') ||
+          degree.toLowerCase().contains('graduation') ||
+          degree.toLowerCase().contains('bca') ||
+          degree.toLowerCase().contains('b.tech') ||
+          degree.toLowerCase().contains('b.e')) {
+        if (highestDegree == null) {
+          highestDegree = degree;
+        }
+      }
+      // Priority 3: Others (12th, 10th, etc.)
+      else {
+        if (highestDegree == null && degree.isNotEmpty) {
+          highestDegree = degree;
+        }
       }
     }
+
+    return highestDegree ?? 'Not specified';
   }
 
-  return highestDegree ?? 'Not specified';
-}
-
-
- 
   // ============================================================================
   // DIALOG & INTERACTION HANDLERS
   // ============================================================================
@@ -1356,7 +1388,8 @@ final lastName = (profileData['last_name'] ?? '').trim();
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-              color: isDark ? Colors.grey[700]! : Colors.grey.shade300),
+            color: isDark ? Colors.grey[700]! : Colors.grey.shade300,
+          ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -1395,18 +1428,13 @@ final lastName = (profileData['last_name'] ?? '').trim();
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'All Skills',
           style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
         ),
         content: skillsList.isEmpty
-            ? Text(
-                'No skills added yet',
-                style: AppTheme.getBodyStyle(context),
-              )
+            ? Text('No skills added yet', style: AppTheme.getBodyStyle(context))
             : Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -1460,9 +1488,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Education',
           style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),
@@ -1519,9 +1545,7 @@ final lastName = (profileData['last_name'] ?? '').trim();
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Logout',
           style: AppTheme.getTitleStyle(context, fontWeight: FontWeight.w600),

@@ -815,13 +815,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: startMonth,
+                            isExpanded: true, 
                         decoration: const InputDecoration(
                           labelText: 'Month',
                           border: OutlineInputBorder(),
                         ),
                         items: months
                             .map(
-                              (m) => DropdownMenuItem(value: m, child: Text(m)),
+                              (m) => DropdownMenuItem(value: m, child: Text(m,overflow: TextOverflow.ellipsis,)),
                             )
                             .toList(),
                         onChanged: (v) => setDialogState(() => startMonth = v!),
@@ -831,6 +832,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: startYear,
+                        isExpanded: true, 
+
                         decoration: const InputDecoration(
                           labelText: 'Year',
                           border: OutlineInputBorder(),
@@ -1267,13 +1270,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: startMonth,
+                          isExpanded: true, 
+
                         decoration: const InputDecoration(
                           labelText: 'Month',
                           border: OutlineInputBorder(),
                         ),
                         items: months
                             .map(
-                              (m) => DropdownMenuItem(value: m, child: Text(m)),
+                              (m) => DropdownMenuItem(value: m, child: Text(m,overflow: TextOverflow.ellipsis,)),
                             )
                             .toList(),
                         onChanged: (v) => setDialogState(() => startMonth = v!),
@@ -1527,10 +1532,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _workExperiences.map((exp) {
           return {
             'company_name': exp['company_name'],
-            'role_title': exp['role_title'], // ✅ FIXED: 'role_title' use karo
+            'role_title': exp['role_title'], 
 
             'location': exp['location'],
             'description': exp['description'],
+            'ctc': exp['ctc'],  
+
             'start_month': exp['start_month'],
             'start_year': exp['start_year'],
             'end_month': exp['is_current'] ? null : exp['end_month'],
@@ -1885,28 +1892,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Work Experience Section
                   _buildSectionTitle('Work Experience'),
                   const SizedBox(height: 2),
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: Text(
-                  //         'Add at least one work experience (Required)',
-                  //         style: TextStyle(
-                  //           fontSize: 13,
-                  //           color: Colors.grey[600],
-                  //         ),
-                  //       ),
-                  //     ),
-                  //     IconButton(
-                  //       icon: const Icon(
-                  //         Icons.add_circle,
-                  //         color: AppTheme.primary,
-                  //         size: 28,
-                  //       ),
-                  //       onPressed: _showAddExperienceDialog,
-                  //       tooltip: 'Add Experience',
-                  //     ),
-                  //   ],
-                  // ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Add at least one work experience (Required)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
+                        onPressed: _showAddExperienceDialog,
+                        tooltip: 'Add Experience',
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 6),
 
                   // Display Work Experiences
@@ -1921,28 +1928,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   // Education Section
                   _buildSectionTitle('Education'),
                   const SizedBox(height: 4),
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: Text(
-                  //         'Add at least one educational qualification (Required)',
-                  //         style: TextStyle(
-                  //           fontSize: 13,
-                  //           color: Colors.grey[600],
-                  //         ),
-                  //       ),
-                  //     ),
-                  //     IconButton(
-                  //       icon: const Icon(
-                  //         Icons.add_circle,
-                  //         color: AppTheme.primary,
-                  //         size: 28,
-                  //       ),
-                  //       onPressed: _showAddEducationDialog,
-                  //       tooltip: 'Add Education',
-                  //     ),
-                  //   ],
-                  // ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Add at least one educational qualification (Required)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: AppTheme.primary,
+                          size: 28,
+                        ),
+                        onPressed: _showAddEducationDialog,
+                        tooltip: 'Add Education',
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 10),
 
                   // Display Education Cards
@@ -2312,6 +2319,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return DropdownButtonFormField<String>(
       value: value,
       dropdownColor: Colors.white,
+          isExpanded: true,
       style: const TextStyle(color: Color(0xFF1A1A1A), fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
@@ -2337,7 +2345,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .map(
             (item) => DropdownMenuItem(
               value: item['value'],
-              child: Text(item['label']!),
+              child: Text(item['label']!,
+              overflow: TextOverflow.ellipsis,
+              ),
+              
             ),
           )
           .toList(),

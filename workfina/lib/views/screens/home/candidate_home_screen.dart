@@ -31,8 +31,14 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
                   String displayName = 'Candidate';
 
                   if (candidateController.candidateProfile != null) {
-                    final firstName = (candidateController.candidateProfile!['first_name'] ?? '').trim();
-        final lastName = (candidateController.candidateProfile!['last_name'] ?? '').trim();
+                    final firstName =
+                        (candidateController.candidateProfile!['first_name'] ??
+                                '')
+                            .trim();
+                    final lastName =
+                        (candidateController.candidateProfile!['last_name'] ??
+                                '')
+                            .trim();
 
                     if (firstName.isNotEmpty) {
                       // Show first name and last name if both available
@@ -61,7 +67,10 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.primary,
+        // selectedItemColor: AppTheme.primary,
+        selectedItemColor: Theme.of(context).brightness == Brightness.dark
+            ? Colors.white
+            : AppTheme.primary,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
 
@@ -71,7 +80,12 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
               'assets/svg/home.svg',
               width: 24,
               height: 24,
-              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade400
+                    : Colors.grey,
+                BlendMode.srcIn,
+              ),
             ),
             activeIcon: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -84,7 +98,9 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
                 width: 22,
                 height: 22,
                 colorFilter: ColorFilter.mode(
-                  AppTheme.primary,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : AppTheme.primary,
                   BlendMode.srcIn,
                 ),
               ),
@@ -92,64 +108,17 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
             label: 'Dashboard',
           ),
 
-          // BottomNavigationBarItem(
-          //   icon: SvgPicture.asset(
-          //     'assets/svg/work.svg',
-          //     width: 24,
-          //     height: 24,
-          //     colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          //   ),
-          //   activeIcon: Container(
-          //     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          //     decoration: BoxDecoration(
-          //       color: AppTheme.primary.withOpacity(0.12),
-          //       borderRadius: BorderRadius.circular(20),
-          //     ),
-          //     child: SvgPicture.asset(
-          //       'assets/svg/work.svg',
-          //       width: 22,
-          //       height: 22,
-          //       colorFilter: ColorFilter.mode(
-          //         AppTheme.primary,
-          //         BlendMode.srcIn,
-          //       ),
-          //     ),
-          //   ),
-          //   label: 'Jobs',
-          // ),
-
-          // BottomNavigationBarItem(
-          //   icon: SvgPicture.asset(
-          //     'assets/svg/docs.svg',
-          //     width: 24,
-          //     height: 24,
-          //     colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
-          //   ),
-          //   activeIcon: Container(
-          //     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          //     decoration: BoxDecoration(
-          //       color: AppTheme.primary.withOpacity(0.12),
-          //       borderRadius: BorderRadius.circular(20),
-          //     ),
-          //     child: SvgPicture.asset(
-          //       'assets/svg/docs.svg',
-          //       width: 22,
-          //       height: 22,
-          //       colorFilter: ColorFilter.mode(
-          //         AppTheme.primary,
-          //         BlendMode.srcIn,
-          //       ),
-          //     ),
-          //   ),
-          //   label: 'Applications',
-          // ),
-
           BottomNavigationBarItem(
             icon: SvgPicture.asset(
               'assets/svg/profile.svg',
               width: 24,
               height: 24,
-              colorFilter: const ColorFilter.mode(Colors.grey, BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade400
+                    : Colors.grey,
+                BlendMode.srcIn,
+              ),
             ),
             activeIcon: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -162,7 +131,9 @@ class _CandidateHomeScreenState extends State<CandidateHomeScreen> {
                 width: 22,
                 height: 22,
                 colorFilter: ColorFilter.mode(
-                  AppTheme.primary,
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : AppTheme.primary,
                   BlendMode.srcIn,
                 ),
               ),

@@ -18,7 +18,7 @@ class CandidateDashboard extends StatefulWidget {
 }
 
 class _CandidateDashboardState extends State<CandidateDashboard> {
-    bool _isJobSearchActive = true; 
+  bool _isJobSearchActive = true;
 
   @override
   void initState() {
@@ -75,16 +75,19 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
           return _buildNoProfileState(context);
         }
 
-        return Container(
-          height: double.infinity,
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SingleChildScrollView(
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: _buildHeader(context, profileData),
+          ),
+          body: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Section
-                _buildHeader(context, profileData),
+                // _buildHeader(context, profileData),
 
                 // Main Heading
                 Padding(
@@ -167,7 +170,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      banner.title, 
+                                      banner.title,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -200,10 +203,10 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                   ),
                 ),
 
-Padding(
-  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-  child: _buildJobSearchToggleSection(),
-),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  child: _buildJobSearchToggleSection(),
+                ),
 
                 // Stats Overview Section
                 Padding(
@@ -212,12 +215,7 @@ Padding(
                     children: [
                       _buildStatsSection(profileData),
 
-
-
                       const SizedBox(height: 32),
-                      
-
-                      
 
                       // Quick Actions Section
                       Row(
@@ -239,8 +237,6 @@ Padding(
                       _buildQuickActionsSection(profileData),
 
                       const SizedBox(height: 16),
-
-
 
                       // Profile Tips Section
                       Row(
@@ -271,100 +267,102 @@ Padding(
     );
   }
 
- Widget _buildHeader(BuildContext context, Map<String, dynamic> profileData) {
-  // final fullName = profileData['full_name'] ?? 'User';
-  final firstName = profileData['first_name'] ?? '';
-  final lastName = profileData['last_name'] ?? '';
+  Widget _buildHeader(BuildContext context, Map<String, dynamic> profileData) {
+    // final fullName = profileData['full_name'] ?? 'User';
+    final firstName = profileData['first_name'] ?? '';
+    final lastName = profileData['last_name'] ?? '';
     final fullName = '$firstName $lastName'.trim();
 
-  final parts = fullName.trim().split(RegExp(r'\s+'));
+    final parts = fullName.trim().split(RegExp(r'\s+'));
 
-  String displayName = parts.isNotEmpty && parts[0].isNotEmpty 
-      ? parts[0] 
-      : 'User';
-
+    String displayName = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'User';
 
     return AppBar(
-  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-  elevation: 0,
-  toolbarHeight: 60,
-  titleSpacing: 0,
-  automaticallyImplyLeading: false,
-  title: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 18 ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.center, 
-      children: [
-        // Profile Avatar
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryDark,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              displayName[0].toUpperCase(),
-              style: AppTheme.getTitleStyle(
-                context,
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 20,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      elevation: 0,
+      toolbarHeight: 60,
+      titleSpacing: 0,
+      automaticallyImplyLeading: false,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Profile Avatar
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryDark,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Center(
+                child: Text(
+                  displayName[0].toUpperCase(),
+                  style: AppTheme.getTitleStyle(
+                    context,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Greeting
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Hello 👋',
+                    style: AppTheme.getSubtitleStyle(
+                      context,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  Text(
+                    displayName,
+                    style: AppTheme.getBodyStyle(
+                      context,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        Container(
+          margin: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.shade800.withOpacity(0.0)
+                : Colors.grey.shade200.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: SvgPicture.asset(
+            'assets/svg/bell.svg',
+            width: 24,
+            height: 24,
+            colorFilter: ColorFilter.mode(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.grey.shade600,
+              BlendMode.srcIn,
             ),
           ),
         ),
-        const SizedBox(width: 16),
-        // Greeting
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Hello 👋',
-                style: AppTheme.getSubtitleStyle(
-                  context,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-              Text(
-                displayName,
-                style: AppTheme.getBodyStyle(
-                  context,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
-    ),
-  ),
-  actions: [
-    Container(
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SvgPicture.asset(
-        'assets/svg/bell.svg',
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(
-          Theme.of(context).brightness == Brightness.dark
-              ? Colors.white
-              : Colors.grey.shade600,
-          BlendMode.srcIn,
-        ),
-      ),
-    ),
-  ],
-);
+    );
   }
 
   Map<String, int> _calculateTotalExperience(Map<String, dynamic> profileData) {
@@ -483,7 +481,9 @@ Padding(
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade500.withOpacity(0.3),
+              color: isDark
+                  ? Colors.grey.shade800.withOpacity(0.5)
+                  : Colors.grey.shade500.withOpacity(0.3),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -580,7 +580,9 @@ Padding(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.grey.shade500.withOpacity(0.3),
+                color: isDark
+                    ? Colors.grey.shade800.withOpacity(0.5)
+                    : Colors.grey.shade500.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -665,13 +667,15 @@ Padding(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
+                      color: isDark
+                          ? Colors.grey.shade800.withOpacity(0.5)
+                          : AppTheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       tip['icon'] as IconData,
                       size: 20,
-                      color: AppTheme.primary,
+                      color: isDark ? Colors.white : AppTheme.primary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -837,8 +841,8 @@ Padding(
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 3), 
-      padding: const EdgeInsets.all(16), 
+      margin: const EdgeInsets.symmetric(horizontal: 3),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCardBackground : Colors.white,
         borderRadius: BorderRadius.circular(12), // ✅ Quick actions radius
@@ -853,21 +857,28 @@ Padding(
             width: 44, // ✅ Quick actions exact size
             height: 44,
             decoration: BoxDecoration(
-              color: Colors.grey.shade500.withOpacity(0.3), // ✅ Quick actions style
+              color: isDark
+                  ? Colors.grey.shade800.withOpacity(0.5)
+                  : Colors.grey.shade500.withOpacity(
+                      0.3,
+                    ), // ✅ Quick actions style
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              _isJobSearchActive ? Icons.visibility : Icons.visibility_off_outlined,
+              _isJobSearchActive
+                  ? Icons.visibility
+                  : Icons.visibility_off_outlined,
               size: 20, // ✅ Quick actions size
               color: isDark ? Colors.white : AppTheme.secondary,
             ),
           ),
-          const SizedBox(width: 12), 
-          
+          const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [ // ✅ Removed mainAxisAlignment.center
+              children: [
+                // ✅ Removed mainAxisAlignment.center
                 Text(
                   'Job Search Status',
                   style: AppTheme.getBodyStyle(
@@ -878,8 +889,8 @@ Padding(
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _isJobSearchActive 
-                      ? 'Your profile is visible to recruiters' 
+                  _isJobSearchActive
+                      ? 'Your profile is visible to recruiters'
                       : 'Job search is paused - recruiters can\'t see you',
                   style: AppTheme.getSubtitleStyle(
                     context,
@@ -891,7 +902,7 @@ Padding(
               ],
             ),
           ),
-          
+
           // Toggle Switch
           Switch(
             value: _isJobSearchActive, // ✅ State variable use
@@ -901,7 +912,9 @@ Padding(
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(value ? '✅ Job search activated!' : '⏸️ Job search paused!'),
+                  content: Text(
+                    value ? '✅ Job search activated!' : '⏸️ Job search paused!',
+                  ),
                   backgroundColor: value ? Colors.green : Colors.orange,
                   duration: const Duration(seconds: 1),
                 ),
@@ -909,12 +922,15 @@ Padding(
             },
             activeColor: AppTheme.primary,
             activeTrackColor: AppTheme.primary.withOpacity(0.6),
-            inactiveThumbColor: Colors.grey.shade400,
-            inactiveTrackColor: Colors.grey.shade300,
+            inactiveThumbColor: isDark
+                ? Colors.grey.shade600
+                : Colors.grey.shade400,
+            inactiveTrackColor: isDark
+                ? Colors.grey.shade700
+                : Colors.grey.shade300,
           ),
         ],
       ),
     );
   }
-
 }
