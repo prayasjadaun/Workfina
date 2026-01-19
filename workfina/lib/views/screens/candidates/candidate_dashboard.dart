@@ -19,6 +19,8 @@ class CandidateDashboard extends StatefulWidget {
 
 class _CandidateDashboardState extends State<CandidateDashboard> {
   bool _isJobSearchActive = true;
+  String _mainHeading = 'Ready to take the next step?';
+  String _welcomePrefix = 'Hello 👋';
 
   @override
   void initState() {
@@ -27,6 +29,7 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       context.read<CandidateController>().checkProfileExists();
       _checkAppVersion();
       _checkHiringAvailability();
+      _loadDashboardContent();
     });
   }
 
@@ -37,6 +40,27 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     if (!mounted) return;
 
     await HiringAvailabileWidget.showIfNeeded(context);
+  }
+
+  /// Load dashboard content from backend
+  Future<void> _loadDashboardContent() async {
+    try {
+      final result = await ApiService.getDashboardContent();
+
+      if (result['success'] == true && result['content'] != null) {
+        final content = result['content'];
+
+        if (mounted) {
+          setState(() {
+            _mainHeading =
+                content['main_heading'] ?? 'Ready to take the\nnext step?';
+            _welcomePrefix = content['welcome_prefix'] ?? 'Hello 👋';
+          });
+        }
+      }
+    } catch (e) {
+      print('[DEBUG] Failed to load dashboard content: $e');
+    }
   }
 
   /// Check app version and show update dialog if needed
@@ -96,11 +120,12 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ready to take the\nnext step?',
+                        _mainHeading,
+
                         style: AppTheme.getHeadlineStyle(
                           context,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 32,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 30,
                         ),
                       ),
                     ],
@@ -318,11 +343,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Hello 👋',
+                    _welcomePrefix,
                     style: AppTheme.getSubtitleStyle(
                       context,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w400,
+                      color: const Color.fromARGB(255, 100, 100, 100),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   Text(
@@ -788,9 +813,11 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
     int totalFields = 16;
     int completedFields = 0;
 
-    if (profileData['full_name']?.toString().isNotEmpty == true) {
-      completedFields++;
-    }
+    // if (profileData['full_name']?.toString().isNotEmpty == true) {
+    //   completedFields++;
+    // }
+     if (profileData['first_name']?.toString().isNotEmpty == true) completedFields++;
+  if (profileData['last_name']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['phone']?.toString().isNotEmpty == true) completedFields++;
     if (profileData['age'] != null) completedFields++;
     if (profileData['role_name']?.toString().isNotEmpty == true) {
@@ -811,19 +838,17 @@ class _CandidateDashboardState extends State<CandidateDashboard> {
       completedFields++;
     }
     if (profileData['current_ctc'] != null) completedFields++;
-    if (profileData['expected_ctc'] != null) completedFields++;
+    // if (profileData['expected_ctc'] != null) completedFields++;
 
-    if (profileData['languages']?.toString().isNotEmpty == true)
-      completedFields++;
-    if (profileData['street_address']?.toString().isNotEmpty == true)
-      completedFields++;
-    if (profileData['career_objective']?.toString().isNotEmpty == true)
-      completedFields++;
-    if (profileData['profile_image_url']?.toString().isNotEmpty == true)
-      completedFields++;
+    if (profileData['languages']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['street_address']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['career_objective']?.toString().isNotEmpty == true) completedFields++;
+    if (profileData['profile_image_url']?.toString().isNotEmpty == true) completedFields++;
 
     final educations = profileData['educations'] as List<dynamic>?;
     if (educations != null && educations.isNotEmpty) completedFields++;
+    final workExperiences = profileData['work_experiences'] as List<dynamic>?;
+  if (workExperiences != null && workExperiences.isNotEmpty) completedFields++;
 
     return ((completedFields / totalFields) * 100).round();
   }

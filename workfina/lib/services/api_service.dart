@@ -1523,4 +1523,33 @@ class ApiService {
       };
     }
   }
+
+  static Future<Map<String, dynamic>> getDashboardContent() async {
+    try {
+      final response = await _dio.get('/content/dashboard/');
+
+      if (kDebugMode) {
+        print('[DEBUG] Dashboard Content Response: ${response.data}');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Dashboard Content Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      
+      // Return default values if API fails
+      return {
+        'success': true,
+        'content': {
+          'main_heading': 'Ready to take the\\nnext step?',
+          'main_heading_lines': ['Ready to take the', 'next step?'],
+          'subheading': null,
+          'welcome_prefix': 'Hello 👋',
+          'is_active': true
+        }
+      };
+    }
+  }
 }

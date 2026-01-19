@@ -14,6 +14,45 @@ class CandidateProfileScreen extends StatefulWidget {
 }
 
 class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
+  Map<String, int> _calculateTotalExperience(Map<String, dynamic> profileData) {
+    final workExperiences = profileData['work_experiences'] as List<dynamic>?;
+    if (workExperiences == null || workExperiences.isEmpty) {
+      return {'years': 0, 'months': 0};
+    }
+
+    int totalMonths = 0;
+    final now = DateTime.now();
+
+    for (var exp in workExperiences) {
+      try {
+        final startDate = DateTime.parse(exp['start_date']);
+        final endDate = exp['is_current'] == true
+            ? now
+            : (exp['end_date'] != null ? DateTime.parse(exp['end_date']) : now);
+
+        totalMonths +=
+            ((endDate.year - startDate.year) * 12) +
+            (endDate.month - startDate.month);
+      } catch (e) {
+        continue;
+      }
+    }
+
+    return {'years': totalMonths ~/ 12, 'months': totalMonths % 12};
+  }
+
+  String _formatExperience(Map<String, dynamic> profileData) {
+    final exp = _calculateTotalExperience(profileData);
+    final years = exp['years']!;
+    final months = exp['months']!;
+
+    if (years == 0 && months == 0) return '0 years';
+    if (years == 0) return '$months ${months == 1 ? 'month' : 'months'}';
+    if (months == 0) return '$years ${years == 1 ? 'year' : 'years'}';
+
+    return '$years ${years == 1 ? 'year' : 'years'} $months ${months == 1 ? 'month' : 'months'}';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -702,7 +741,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
           _buildProfileInfoItem(
             icon: Icons.work_history_rounded,
             title: 'Experience',
-            value: '${profileData['experience_years'] ?? 0} years',
+            value: _formatExperience(profileData),
             isDark: isDark,
             iconColor: isDark ? Colors.white : AppTheme.primary,
           ),
