@@ -23,8 +23,7 @@ class _GlobalSearchBarState extends State<GlobalSearchBar>
     with TickerProviderStateMixin {
   late final TextEditingController _controller;
   late final ValueNotifier<String> _animatedHint;
-  late final AnimationController _fadeController;
-  late final Animation<double> _fadeAnimation;
+  
 
   Timer? _hintTimer;
   Timer? _typeTimer;

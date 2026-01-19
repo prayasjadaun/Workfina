@@ -9,6 +9,7 @@ import 'package:workfina/views/screens/recuriters/recruiter_dashboard.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_filter_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_profile_screen.dart';
 import 'package:workfina/views/screens/recuriters/recruiter_wallet_screen.dart';
+import 'package:workfina/views/screens/recuriters/subscription_main_screen.dart';
 
 class RecruiterHomeScreen extends StatefulWidget {
   const RecruiterHomeScreen({super.key});
@@ -28,6 +29,7 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
       final controller = context.read<RecruiterController>();
       controller.loadHRProfile();
       controller.loadWalletBalance();
+      controller.loadSubscriptionStatus();
       controller.loadUnlockedCandidates();
       controller.loadCandidates();
     });
@@ -43,9 +45,8 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
         children: [
           RecruiterDashboard(
             onNavigateToUnlocked: () => setState(() => _currentIndex = 1),
-              onNavigateToWallet: () => setState(() => _currentIndex = 2),
+            onNavigateToWallet: () => setState(() => _currentIndex = 2),
           ),
-          // RecruiterFilterScreen(key: _filterKey, showUnlockedOnly: false),
           RecruiterCandidate(
             onSwitchToWallet: (index) => setState(() => _currentIndex = 2),
             showOnlyUnlocked: true,
@@ -53,20 +54,21 @@ class _RecruiterHomeScreenState extends State<RecruiterHomeScreen> {
           RecruiterWalletScreen(
             onNavigateToWallet: () => setState(() => _currentIndex = 2),
           ),
+          const SubscriptionMainScreen(),
           const RecruiterProfileScreen(),
         ],
       ),
       bottomNavigationBar: Container(
         color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-        padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 20),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildCustomTab('assets/svg/home.svg', 'Home', 0, isDark),
-            // _buildCustomTab('assets/svg/filter.svg', 'Filters', 1, isDark),
             _buildCustomTab('assets/svg/unlock.svg', 'Unlocked', 1, isDark),
             _buildCustomTab('assets/svg/wallet.svg', 'Wallet', 2, isDark),
-            _buildCustomTab('assets/svg/profile.svg', 'Profile', 3, isDark),
+            _buildCustomTab('assets/svg/card.svg', 'Plans', 3, isDark),
+            _buildCustomTab('assets/svg/profile.svg', 'Profile', 4, isDark),
           ],
         ),
       ),

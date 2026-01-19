@@ -635,22 +635,52 @@ class _RecruiterCandidateState extends State<RecruiterCandidate>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.account_balance_wallet,
-                    color: AppTheme.primary,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Current balance: ${hrController.walletBalance} credits',
-                    style: AppTheme.getLabelStyle(
-                      context,
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w600,
+                  if (hrController.subscriptionStatus?.hasSubscription ?? false) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.card_membership,
+                          color: AppTheme.greenCard,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            hrController.subscriptionStatus!.isUnlimited
+                                ? 'Subscription: Unlimited Credits'
+                                : 'Subscription: ${(hrController.subscriptionStatus!.creditsLimit ?? 0) - hrController.subscriptionStatus!.creditsUsed} credits left',
+                            style: AppTheme.getLabelStyle(
+                              context,
+                              color: AppTheme.greenCard,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ] else ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: AppTheme.primary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Wallet: ${hrController.walletBalance} credits',
+                          style: AppTheme.getLabelStyle(
+                            context,
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:workfina/services/api_service.dart';
+import 'package:workfina/models/subscription_model.dart';
 
 class RecruiterController extends ChangeNotifier {
   bool _isLoading = false;
@@ -11,6 +12,7 @@ class RecruiterController extends ChangeNotifier {
   List<dynamic> _transactions = [];
   Set<String> _unlockedCandidateIds = {};
   Map<String, dynamic>? _pagination;
+  SubscriptionStatus? _subscriptionStatus;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -345,7 +347,39 @@ class RecruiterController extends ChangeNotifier {
 
   int get walletBalance => _wallet?['balance'] ?? 0;
 
+  SubscriptionStatus? get subscriptionStatus => _subscriptionStatus;
+
+  Future<void> loadSubscriptionStatus() async {
+    try {
+      final response = await ApiService.getSubscriptionStatus();
+      if (!response.containsKey('error')) {
+        _subscriptionStatus = SubscriptionStatus.fromJson(response);
+        notifyListeners();
+      }
+    } catch (e) {
+      // silent fail
+    }
+  }
+
   bool canUnlockCandidate({int requiredCredits = 10}) {
+    // First check if user has active subscription with unlimited credits
+    if (_subscriptionStatus != null &&
+        _subscriptionStatus!.hasSubscription &&
+        _subscriptionStatus!.isUnlimited) {
+      return true;
+    }
+
+    // Check if user has subscription with remaining credits
+    if (_subscriptionStatus != null &&
+        _subscriptionStatus!.hasSubscription &&
+        !_subscriptionStatus!.isUnlimited) {
+      final creditsLeft = (_subscriptionStatus!.creditsLimit ?? 0) - _subscriptionStatus!.creditsUsed;
+      if (creditsLeft > 0) {
+        return true;
+      }
+    }
+
+    // Fallback to old wallet balance check
     return walletBalance >= requiredCredits;
   }
 

@@ -29,12 +29,18 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
       body: Consumer<RecruiterController>(
         builder: (context, hrController, child) {
           final balance = hrController.wallet?['balance'] ?? 0;
+          final subscription = hrController.subscriptionStatus;
+          final hasSubscription = subscription?.hasSubscription ?? false;
+          final isUnlimited = subscription?.isUnlimited ?? false;
+          final creditsLeft = hasSubscription && !isUnlimited
+              ? (subscription!.creditsLimit ?? 0) - subscription.creditsUsed
+              : 0;
 
           return CustomScrollView(
             slivers: [
               // SliverAppBar with wallet card
               SliverAppBar(
-                expandedHeight: 230,
+                expandedHeight: 280,
                 pinned: true,
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
@@ -119,9 +125,13 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                const Text(
-                                  'Available Credits',
-                                  style: TextStyle(
+                                Text(
+                                  hasSubscription
+                                      ? (isUnlimited
+                                          ? 'Subscription Credits'
+                                          : 'Subscription Credits')
+                                      : 'Available Credits',
+                                  style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
@@ -132,20 +142,24 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                      balance.toString(),
-                                      style: const TextStyle(
+                                      hasSubscription
+                                          ? (isUnlimited ? '∞' : creditsLeft.toString())
+                                          : balance.toString(),
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 48,
+                                        fontSize: hasSubscription && isUnlimited ? 60 : 48,
                                         fontWeight: FontWeight.bold,
                                         height: 1,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Padding(
-                                      padding: EdgeInsets.only(bottom: 8),
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
                                       child: Text(
-                                        'Credits',
-                                        style: TextStyle(
+                                        hasSubscription && isUnlimited
+                                            ? 'Unlimited'
+                                            : 'Credits',
+                                        style: const TextStyle(
                                           color: Colors.white70,
                                           fontSize: 16,
                                           fontWeight: FontWeight.w500,
@@ -154,6 +168,39 @@ class _RecruiterWalletScreenState extends State<RecruiterWalletScreen> {
                                     ),
                                   ],
                                 ),
+                                if (hasSubscription)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.card_membership,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            subscription!.plan ?? 'Active Plan',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(

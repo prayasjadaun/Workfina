@@ -76,19 +76,40 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-        
+          if (kDebugMode) {
+            print('[DEBUG] ${options.method} $baseUrl${options.path}');
+            print('[DEBUG] Request Headers: ${options.headers}');
+            if (options.data != null) {
+              print('[DEBUG] Request Data: ${options.data}');
+            }
+            if (options.queryParameters.isNotEmpty) {
+              print('[DEBUG] Query Parameters: ${options.queryParameters}');
+            }
+          }
           handler.next(options);
         },
         onResponse: (response, handler) async {
+          if (kDebugMode) {
+            print('[DEBUG] Response Status: ${response.statusCode}');
+            print('[DEBUG] Response Data: ${response.data}');
+          }
           handler.next(response);
         },
         onError: (DioException e, handler) async {
-         
+          if (kDebugMode) {
+            print('[DEBUG] API Error: ${e.message}');
+            print('[DEBUG] Error Type: ${e.type}');
+            print(
+              '[DEBUG] Request: ${e.requestOptions.method} ${e.requestOptions.path}',
+            );
+            print('[DEBUG] Status Code: ${e.response?.statusCode}');
+          }
 
           // Handle connection errors specifically
           if (e.type == DioExceptionType.connectionError ||
               e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout) {
+            print('[DEBUG] Network connection error detected');
             handler.next(e);
             return;
           }
@@ -114,6 +135,7 @@ class ApiService {
               return;
             } catch (refreshError) {
               if (kDebugMode) {
+                print('[DEBUG] Token refresh failed');
               }
               await logout();
             } finally {
@@ -130,7 +152,9 @@ class ApiService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('access_token');
-     
+      if (kDebugMode) {
+        print('[DEBUG] Token being sent: $token');
+      }
       return token;
     } catch (e) {
       return null;
@@ -215,10 +239,15 @@ class ApiService {
         '/auth/send-otp/',
         data: {'email': email},
       );
-     
+      if (kDebugMode) {
+        print('[DEBUG] OTP Response: ${response.data}');
+      }
       return response.data;
     } on DioException catch (e) {
-      
+      if (kDebugMode) {
+        print('[DEBUG] OTP Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
 
       // Handle complex validation errors
       if (e.response?.data is Map<String, dynamic>) {
@@ -1020,9 +1049,25 @@ class ApiService {
       }
       return response.data;
     } on DioException catch (e) {
-      return {
-        'error': e.response?.data['message'] ?? 'Failed to unlock candidate',
-      };
+      if (kDebugMode) {
+        print('[DEBUG] Unlock Error Status: ${e.response?.statusCode}');
+        print('[DEBUG] Unlock Error Response: ${e.response?.data}');
+      }
+
+      // Try multiple error field locations
+      final errorData = e.response?.data;
+      String errorMessage = 'Failed to unlock candidate';
+
+      if (errorData is Map) {
+        errorMessage = errorData['error']?.toString() ??
+            errorData['message']?.toString() ??
+            errorData['detail']?.toString() ??
+            errorMessage;
+      } else if (errorData is String) {
+        errorMessage = errorData;
+      }
+
+      return {'error': errorMessage};
     }
   }
 
@@ -1346,31 +1391,13 @@ class ApiService {
 
   static Future<void> uploadFCMToken() async {
     try {
-      if (kDebugMode) print('[DEBUG] Starting FCM token upload...');
       final token = await NotificationService.getToken();
-      if (kDebugMode) print('[DEBUG] FCM Token retrieved: $token');
-
       if (token != null) {
-        if (kDebugMode) print('[DEBUG] Sending FCM token to backend...');
-        final response = await _dio.post(
-          '/auth/update-fcm-token/',
-          data: {'token': token},
-        );
-        if (kDebugMode) {
-          print('[DEBUG] FCM Token uploaded successfully');
-          print('[DEBUG] Response: ${response.data}');
-        }
-      } else {
-        if (kDebugMode) print('[DEBUG] FCM Token is null, skipping upload');
+        await _dio.post('/auth/update-fcm-token/', data: {'token': token});
+        if (kDebugMode) print('[DEBUG] FCM Token uploaded');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('[DEBUG] FCM Token upload failed: $e');
-        if (e is DioException) {
-          print('[DEBUG] Status Code: ${e.response?.statusCode}');
-          print('[DEBUG] Response: ${e.response?.data}');
-        }
-      }
+      if (kDebugMode) print('[DEBUG] FCM Token upload failed: $e');
     }
   }
 
@@ -1552,4 +1579,130 @@ class ApiService {
       };
     }
   }
+  // ========== Subscription APIs ==========
+
+  /// Get all available subscription plans
+  static Future<Map<String, dynamic>> getSubscriptionPlans() async {
+    try {
+      final response = await _dio.get('/subscriptions/plans/');
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Plans Response: ${response.data}');
+      }
+      return {'plans': response.data};
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Plans Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load subscription plans',
+      };
+    }
+  }
+
+  /// Get current active subscription with full details
+  static Future<Map<String, dynamic>> getCurrentSubscription() async {
+    try {
+      final response = await _dio.get('/subscriptions/subscriptions/current/');
+      if (kDebugMode) {
+        print('[DEBUG] Current Subscription Response: ${response.data}');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Current Subscription Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+
+      // Return 404 error if no subscription found
+      if (e.response?.statusCode == 404) {
+        return {
+          'error': e.response?.data['message'] ?? 'No active subscription found',
+          'status_code': 404,
+        };
+      }
+
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load subscription',
+      };
+    }
+  }
+
+  /// Get quick subscription status (lightweight)
+  static Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    try {
+      final response = await _dio.get('/subscriptions/subscriptions/status/');
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Status Response: ${response.data}');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Status Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load subscription status',
+      };
+    }
+  }
+
+  /// Get all subscriptions (history)
+  static Future<Map<String, dynamic>> getAllSubscriptions() async {
+    try {
+      final response = await _dio.get('/subscriptions/subscriptions/');
+      if (kDebugMode) {
+        print('[DEBUG] All Subscriptions Response: ${response.data}');
+      }
+      return {'subscriptions': response.data};
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] All Subscriptions Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load subscriptions',
+      };
+    }
+  }
+
+  /// Get single subscription details by ID
+  static Future<Map<String, dynamic>> getSubscriptionById(
+    String subscriptionId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        '/subscriptions/subscriptions/$subscriptionId/',
+      );
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Details Response: ${response.data}');
+      }
+      return response.data;
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        print('[DEBUG] Subscription Details Error: ${e.message}');
+        print('[DEBUG] Response: ${e.response?.data}');
+      }
+      return {
+        'error':
+            e.response?.data['error'] ??
+            e.response?.data['message'] ??
+            'Failed to load subscription details',
+      };
+    }
+  }
+
+
 }

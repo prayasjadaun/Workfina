@@ -1051,22 +1051,52 @@ class _CategoryScreenState extends State<CategoryScreen>
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.primary.withOpacity(0.2)),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.account_balance_wallet,
-                    color: AppTheme.primary,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Current balance: ${recruiterController.walletBalance} credits',
-                    style: AppTheme.getLabelStyle(
-                      context,
-                      color: AppTheme.primary,
-                      fontWeight: FontWeight.w600,
+                  if (recruiterController.subscriptionStatus?.hasSubscription ?? false) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.card_membership,
+                          color: AppTheme.greenCard,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            recruiterController.subscriptionStatus!.isUnlimited
+                                ? 'Subscription: Unlimited Credits'
+                                : 'Subscription: ${(recruiterController.subscriptionStatus!.creditsLimit ?? 0) - recruiterController.subscriptionStatus!.creditsUsed} credits left',
+                            style: AppTheme.getLabelStyle(
+                              context,
+                              color: AppTheme.greenCard,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ] else ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet,
+                          color: AppTheme.primary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Wallet: ${recruiterController.walletBalance} credits',
+                          style: AppTheme.getLabelStyle(
+                            context,
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1089,14 +1119,19 @@ class _CategoryScreenState extends State<CategoryScreen>
               final result = await recruiterController.unlockCandidate(
                 candidate['id'].toString(),
               );
+              if (!mounted) return;
+
               if (result != null) {
-                _navigateToDetail(
-                  context,
-                  result['candidate'],
-                  result['already_unlocked'],
+                await Navigator.of(this.context).push(
+                  MaterialPageRoute(
+                    builder: (context) => CandidateDetailScreen(
+                      candidate: result['candidate'],
+                      isAlreadyUnlocked: result['already_unlocked'],
+                    ),
+                  ),
                 );
-                if (!result['already_unlocked']) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                if (!result['already_unlocked'] && mounted) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
                     SnackBar(
                       content: Text(
                         'Profile unlocked! ${result['credits_used']} credits deducted.',
@@ -1110,8 +1145,8 @@ class _CategoryScreenState extends State<CategoryScreen>
                     ),
                   );
                 }
-              } else if (recruiterController.error != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              } else if (recruiterController.error != null && mounted) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
                   SnackBar(
                     content: Text(
                       recruiterController.error!,

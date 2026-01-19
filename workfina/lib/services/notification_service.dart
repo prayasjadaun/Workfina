@@ -93,6 +93,9 @@ class NotificationService {
       'High Importance Notifications',
       description: 'This channel is used for important notifications.',
       importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
     );
 
     await _localNotifications
@@ -174,6 +177,9 @@ class NotificationService {
               'This channel is used for important notifications.',
           importance: Importance.max,
           priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+          enableLights: true,
         );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
